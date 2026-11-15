@@ -576,6 +576,17 @@ export default function App() {
     setAnswers([...answers, { q: text, a }]);
     setQuestion("");
   }
+  const publicProfile = s.raw && typeof s.raw === "object" && !Array.isArray(s.raw)
+    ? s.raw as Record<string, unknown> : {};
+  const profileBadges = Array.isArray(publicProfile.badges)
+    ? publicProfile.badges.filter((v): v is Record<string, unknown> =>
+        !!v && typeof v === "object" && !Array.isArray(v)) : [];
+  const profileAchievements = Array.isArray(publicProfile.achievements)
+    ? publicProfile.achievements.filter((v): v is Record<string, unknown> =>
+        !!v && typeof v === "object" && !Array.isArray(v)) : [];
+  const profileProgress = publicProfile.progress && typeof publicProfile.progress === "object"
+    && !Array.isArray(publicProfile.progress)
+    ? Object.entries(publicProfile.progress as Record<string, unknown>) : [];
   const upgrades = s.cards
     .filter((c) => c.level != null && c.level < s.cap)
     .map((c) => ({
@@ -598,6 +609,7 @@ export default function App() {
             <strong>{b.opponent.map((p) => p.name).join(" & ")}</strong>
             <small>
               {b.mode} · {b.time.slice(0, 10)}
+              {b.trophyChange == null ? "" : " · " + (b.trophyChange > 0 ? "+" : "") + b.trophyChange + " trophies"}
             </small>
           </span>
           <span className="mini-deck">
@@ -627,6 +639,21 @@ export default function App() {
                   {i < b.team.length ? "Team" : "Opponent"} · {p.name}
                 </h4>
                 <Deck cards={p.cards} onClick={setSelected} />
+                <div className="actions">
+                  <button type="button" className="text-btn"
+                    disabled={!p.tag.startsWith("#")}
+                    onClick={() => { setTag(p.tag); go("Overview"); void connect(p.tag); }}>
+                    View public player ↗
+                  </button>
+                  {p.cards.length === 8 && (
+                    <button type="button" className="text-btn"
+                      onClick={() => {
+                        setEnemy(p.cards);
+                        setScouted(null);
+                        go("Matchup Lab");
+                      }}>Analyze this battle deck ↗</button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -1066,6 +1093,63 @@ export default function App() {
                   <p className="micro">Ranked and challenge fields appear only when the official API returns them. Detailed historical charts need snapshots collected over time.</p>
                 </Panel>
               </div>
+              <div className="two-col">
+                <Panel title="Ranked / Path of Legend" kicker="OFFICIAL PROFILE · SEASON RESULTS">
+                  <div className="fact"><span>Current league number</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <div className="fact"><span>Current Ranked trophies</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "trophies"))}</strong></div>
+                  <div className="fact"><span>Current global rank</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "rank"))}</strong></div>
+                  <div className="fact"><span>Previous league number</span><strong>{fmt(playerNumber(s.raw, "lastPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <div className="fact"><span>Best Ranked league number</span><strong>{fmt(playerNumber(s.raw, "bestPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <p className="micro">These values are separate from Trophy Road. No ranking is inferred when Supercell returns null.</p>
+                </Panel>
+                <Panel title="Favorites and active tower" kicker="PUBLIC PLAYER PROFILE">
+                  <div className="fact"><span>Favorite card</span><strong>{String((publicProfile.currentFavouriteCard as {name?: string}|undefined)?.name ?? "—")}</strong></div>
+                  <div className="fact"><span>Current Tower Troop</span><strong>{
+                    Array.isArray(publicProfile.currentDeckSupportCards)
+                      ? publicProfile.currentDeckSupportCards.map((v) =>
+                          String((v as {name?: string})?.name ?? "Unknown")).join(", ") || "—"
+                      : "—"
+                  }</strong></div>
+                  <div className="fact"><span>Legacy Trophy Road high score</span><strong>{fmt(playerNumber(s.raw, "legacyTrophyRoadHighScore"))}</strong></div>
+                  <div className="fact"><span>Current win/loss streak</span><strong>{fmt(playerNumber(s.raw, "currentWinLoseStreak"))}</strong></div>
+                  <p className="micro">Tower Troops and special-form deployment are reported independently of ordinary card ownership.</p>
+                </Panel>
+              </div>
+              <div className="two-col">
+                <Panel title="Player achievements" kicker="OFFICIAL PLAYER PROFILE">
+                  {profileAchievements.slice(0, 20).map((achievement, i) => (
+                    <div className="fact" key={String(achievement.name ?? i)}>
+                      <span>{String(achievement.name ?? "Achievement")}</span>
+                      <strong>{fmt(publicNumber(achievement,"stars"))} stars</strong>
+                    </div>
+                  ))}
+                  {!profileAchievements.length && <Empty>No achievements returned for this player.</Empty>}
+                </Panel>
+                <Panel title="Public badges" kicker="OFFICIAL PLAYER PROFILE">
+                  {profileBadges.slice(0, 20).map((badge, i) => (
+                    <div className="fact" key={String(badge.name ?? i)}>
+                      <span>{String(badge.name ?? "Badge")}</span>
+                      <strong>{publicNumber(badge,"level") != null
+                        ? "Level " + fmt(publicNumber(badge, "level"))
+                        : publicNumber(badge,"progress") != null
+                          ? fmt(publicNumber(badge,"progress")) + " progress"
+                          : "Earned"}</strong>
+                    </div>
+                  ))}
+                  {!profileBadges.length && <Empty>No badges returned for this player.</Empty>}
+                  <p className="micro">Badge names and progression are supplied by the official API.</p>
+                </Panel>
+              </div>
+              <Panel title="Side-mode progress" kicker="OFFICIAL PROFILE · MODE SEASON KEYS">
+                {profileProgress.slice(0, 20).map(([mode, value]) => (
+                  <div className="fact" key={mode}>
+                    <span>{mode || "Legacy / default mode"} · {String((value as {arena?:{name?:string}}|null)?.arena?.name ?? "Unspecified arena")}</span>
+                    <strong>{fmt(publicNumber(value,"trophies"))} / best {fmt(publicNumber(value,"bestTrophies"))}</strong>
+                  </div>
+                ))}
+                {!profileProgress.length && <Empty>No extra mode progression returned.</Empty>}
+                <p className="micro">Mode-season keys are treated as source identifiers; they are not renamed or inferred.</p>
+              </Panel>
             </>
           )}
           {page === "Clan Intelligence" && (
