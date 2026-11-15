@@ -310,8 +310,8 @@ export function card(
     image: c.iconUrls?.medium,
     // The collection omits evolutionLevel when no special form is unlocked.
     // Battle/deck entries omit it when the base form is equipped or played.
-    evo: valid ? !!(flag! & 1) : owned && !active ? false : null,
-    hero: valid ? !!(flag! & 2) : owned && !active ? false : null,
+    evo: valid ? !!(flag! & 1) : flag === undefined && owned && !active ? false : null,
+    hero: valid ? !!(flag! & 2) : flag === undefined && owned && !active ? false : null,
     active: active
       ? flag === 1 ? "evolution" : flag === 2 ? "hero" : flag === 3 ? "unknown" : "base"
       : "unknown",
