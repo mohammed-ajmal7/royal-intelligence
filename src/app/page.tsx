@@ -91,6 +91,7 @@ type ScoutedPlayer = { tag: string; name: string; trophies: number | null; deck:
 type ClanProfile = {
   clan: { tag: string; name: string; [key: string]: unknown };
   members: { tag: string; name: string; [key: string]: unknown }[];
+  riverRace: { clan?: { tag?: string; name?: string; [key: string]: unknown }; [key: string]: unknown } | null;
   warnings: string[];
   fetchedAt: string;
 };
@@ -1199,6 +1200,19 @@ export default function App() {
                       <p className="micro">Only fields returned for this clan are shown. Donations are a sum of roster values, not an all-time total.</p>
                     </Panel>
                   </div>
+                  <Panel title="Current Clan River Race" kicker="OFFICIAL CURRENT CLAN WAR DATA">
+                    {clan.riverRace?.clan ? (
+                      <>
+                        <div className="fact"><span>River Race phase</span><strong>{String(clan.riverRace.periodType ?? "—")}</strong></div>
+                        <div className="fact"><span>Clan fame</span><strong>{fmt(publicNumber(clan.riverRace.clan, "fame"))}</strong></div>
+                        <div className="fact"><span>Boat attacks</span><strong>{fmt(publicNumber(clan.riverRace.clan, "boatAttacks"))}</strong></div>
+                        <div className="fact"><span>Participating members reported</span><strong>{
+                          Array.isArray(clan.riverRace.clan.participants) ? clan.riverRace.clan.participants.length : "—"
+                        }</strong></div>
+                        <p className="micro">These are official values for the current river race when returned. Historic wars are not inferred.</p>
+                      </>
+                    ) : <Empty>No current River Race data was returned.</Empty>}
+                  </Panel>
                   <Panel title="Clan member roster" kicker="CLICK A MEMBER TO INSPECT THEIR PUBLIC PLAYER DATA">
                     {clan.members.length ? (
                       <div className="table-wrap">
