@@ -208,11 +208,6 @@ export async function api(req: Request, env: Env) {
       req.headers.get("x-app-access-key") === env.APP_ACCESS_KEY
         ? "personal"
         : null);
-    if (!owner)
-      throw new APIError(
-        401,
-        "Sign in to this private site. For standalone hosting, configure an application access key.",
-      );
     if (
       req.method !== "GET" &&
       req.headers.get("origin") &&
@@ -220,11 +215,18 @@ export async function api(req: Request, env: Env) {
     )
       throw new APIError(403, "Cross-origin write denied.");
     if (u.pathname === "/api/player" && req.method === "GET") {
-      await throttle(owner, env);
+      // Public read-only player lookups; private storage still requires identity.
+      // Prefer trusted hosting-provider IP headers for best-effort per-client limits.
+      const forwarded =
+        req.headers.get("cf-connecting-ip") ??
+        req.headers.get("x-vercel-forwarded-for") ??
+        "shared";
+      const bucket = owner ?? "public:" + forwarded.split(",")[0].trim().slice(0, 80);
+      await throttle(bucket, env);
       const t = tag(u.searchParams.get("tag") ?? "");
       try {
         const s = await load(t, env);
-        if (env.DB) {
+        if (owner && env.DB) {
           s.stored = true;
           try {
             await ingest(env.DB, owner, s);
@@ -237,7 +239,7 @@ export async function api(req: Request, env: Env) {
         }
         return json(s);
       } catch (e) {
-        if (e instanceof APIError && [429, 502, 503].includes(e.status)) {
+        if (owner && e instanceof APIError && [429, 502, 503].includes(e.status)) {
           const h = await history(env.DB, owner, t);
           if (h.snapshots[0])
             return json({
@@ -253,6 +255,11 @@ export async function api(req: Request, env: Env) {
         throw e;
       }
     }
+    if (!owner)
+      throw new APIError(
+        401,
+        "Private history and deck tracking require an authenticated workspace.",
+      );
     if (u.pathname === "/api/history") {
       const t = tag(u.searchParams.get("tag") ?? "");
       if (req.method === "GET") return json(await history(env.DB, owner, t));
