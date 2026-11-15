@@ -1,3 +1,5 @@
+import { recentCardReference } from "./recentCardMechanics";
+
 /**
  * Mechanics are a SECOND, community-maintained dataset, not a Supercell player
  * API response. Missing fields are always null; no level scaling is invented.
@@ -26,7 +28,12 @@ export type MechanicsCard = {
   firstHitSeconds: number | null;
   specialAbility: boolean;
   /** The data source may be behind current balance patches. */
-  provenance: "royaleapi-community";
+  provenance: "royaleapi-community" | "crtool-game-data";
+  /** Either the played unit or a separately identified spawned unit. */
+  statSubject?: "card" | "spawned-unit";
+  statSubjectLabel?: string;
+  sourceUrl?: string;
+  sourceUpdatedAt?: string;
   description?: string;
   /** Public source records, kept separate to preserve units and provenance. */
   sourceRecords?: Record<string, Record<string, unknown>>;
@@ -295,17 +302,30 @@ const mechanicsIndices = new WeakMap<
   MechanicsCatalog,
   Map<number, MechanicsCard>
 >();
-export function resolveMechanics(
-  card: { id: number; level: number | null },
+/** Prefer the dated 2026 card reference for the named game cards; match the
+ * numeric ID from the official player/catalog entry, never an invented ID.
+ * All other cards use the existing historical community registry unchanged.
+ */
+export function getMechanicsRecord(
+  card: { id: number; name?: string },
   catalog?: MechanicsCatalog | null,
-): ResolvedMechanics | null {
-  if (!catalog) return null;
+): MechanicsCard | undefined {
+  const recent = recentCardReference(card);
+  if (recent) return recent;
+  if (!catalog) return undefined;
   let index = mechanicsIndices.get(catalog);
   if (!index) {
     index = new Map(catalog.cards.map((c) => [c.id, c]));
     mechanicsIndices.set(catalog, index);
   }
-  const item = index.get(card.id);
+  return index.get(card.id);
+}
+
+export function resolveMechanics(
+  card: { id: number; level: number | null; name?: string },
+  catalog?: MechanicsCatalog | null,
+): ResolvedMechanics | null {
+  const item = getMechanicsRecord(card, catalog);
   if (!item) return null;
   const hitpoints = statForLevel(item.hpByLevel, card.level);
   const damage = statForLevel(item.damageByLevel, card.level);

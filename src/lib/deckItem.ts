@@ -1,5 +1,6 @@
 import type { Card } from "./model";
 import {
+  getMechanicsRecord,
   resolveMechanics,
   statForLevel,
   type MechanicsCatalog,
@@ -64,6 +65,11 @@ export type RankedItem = {
   deploySeconds: number | null;
   firstHitSeconds: number | null;
   specialAbility: boolean | null;
+  /** Distinguish damage/HP of one spawned unit from direct card effects. */
+  statSubject: "card" | "spawned-unit";
+  statSubjectLabel: string | null;
+  sourceUrl: string | null;
+  sourceUpdatedAt: string | null;
   available: boolean;
   missingReason: string | null;
 };
@@ -175,7 +181,6 @@ export function rankDeckItems(
 ): RankedItem[] {
   const seen = new Set<number>();
   const filter = options.query.trim().toLocaleLowerCase();
-  const reference = new Map(catalog?.cards.map(card => [card.id, card]) ?? []);
   const ranked: RankedItem[] = [];
   for (const card of cards) {
     if (card.tower || seen.has(card.id)) continue;
@@ -184,7 +189,8 @@ export function rankDeckItems(
     if (filter && !card.name.toLocaleLowerCase().includes(filter)) continue;
 
     const chosen = selectedItemLevel(card, options);
-    const m = resolveMechanics({ id: card.id, level: chosen.level }, catalog);
+    const record = getMechanicsRecord(card, catalog);
+    const m = resolveMechanics({ id: card.id, name: card.name, level: chosen.level }, catalog);
     const classified = classifyCard(card, m);
     if (
       options.kind !== "all" &&
@@ -209,8 +215,12 @@ export function rankDeckItems(
       rank: null,
       value,
       unit: options.category === "defense"
-        ? options.defenseMetric === "hits" ? "hits to defeat" : "HP per unit"
-        : options.attackMetric === "hit" ? "damage per hit" : "DPS per unit",
+        ? options.defenseMetric === "hits"
+          ? record?.statSubject === "spawned-unit" ? "hits to defeat one " + (record.statSubjectLabel ?? "summoned unit") : "hits to defeat"
+          : record?.statSubject === "spawned-unit" ? "HP per " + (record.statSubjectLabel ?? "summoned unit") : "HP per unit"
+        : options.attackMetric === "hit"
+          ? record?.statSubject === "spawned-unit" ? "damage per " + (record.statSubjectLabel ?? "summoned unit") + " hit" : "damage per hit"
+          : record?.statSubject === "spawned-unit" ? "DPS per " + (record.statSubjectLabel ?? "summoned unit") : "DPS per unit",
       hp, damage, dps,
       hitsToDefeat: hits,
       hitsSurvived: hits === null ? null : hits - 1,
@@ -225,9 +235,13 @@ export function rankDeckItems(
       deploySeconds: m?.deploySeconds ?? null,
       firstHitSeconds: m?.firstHitSeconds ?? null,
       specialAbility: m?.specialAbility ?? null,
+      statSubject: record?.statSubject ?? "card",
+      statSubjectLabel: record?.statSubjectLabel ?? null,
+      sourceUrl: record?.sourceUrl ?? null,
+      sourceUpdatedAt: record?.sourceUpdatedAt ?? null,
       available,
       missingReason: available ? null :
-        missingValueReason(reference.get(card.id), m, classified.kind, chosen.level, options),
+        missingValueReason(record, m, classified.kind, chosen.level, options),
     });
   }
 
@@ -268,7 +282,7 @@ export function itemLevelRows(
   incomingDamage: number,
   playerCap = 16,
 ): ItemLevelRow[] {
-  const reference = catalog?.cards.find(item => item.id === card.id);
+  const reference = getMechanicsRecord(card, catalog);
   const length = Math.min(30, Math.max(
     validLevel(playerCap) ? playerCap : 16,
     reference?.hpByLevel?.length ?? 0,

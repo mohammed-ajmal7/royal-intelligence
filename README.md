@@ -28,6 +28,41 @@ The **Deck Item** page has a mobile-first attack/defense leaderboard with a sepa
 
 Every card row opens a separate **All levels + full card stats** panel with HP/unit, damage/hit, DPS, hit interval, attack range, movement (raw units), air/ground/building targeting, splash radius, unit count, deploy time, attack preload, special-mechanics flag and configurable hit endurance. A horizontally scrollable table lists every available reference-level HP/damage/DPS/hit-endurance value. Unsupported levels display `—` rather than interpolated values. The collapsible **all available community source fields (JSON)** section exposes the underlying registry/unit/deployment/projectile data when the record exists.
 
+### Updated 2026 data for Minion Giant and Goblin Barrel
+
+These two cards were previously missing numeric leaderboards because the older
+community files predate Minion Giant and treat Goblin Barrel primarily as a
+summoning spell. A separate, **dated game-data reference** supplies their exact
+published level tables (not generic level multipliers):
+
+- **Minion Giant:** sourced HP and damage per hit for levels **3–20**,
+  **1.7-second hit interval**, range 4 tiles, medium movement speed,
+  building-only targeting. At **level 9**, published values are **1,505 HP**
+  and **127 damage per hit**; at level 11, **1,817 HP** and **153 damage/hit**
+  after the October 2026 balance change.
+- **Goblin Barrel:** the barrel itself deals **0 direct impact damage** and
+  summons **three Goblins**. The attack leaderboard displays **damage per
+  individual spawned Goblin**, not combined damage or spell-impact damage.
+  Each Goblin has a **1.1-second attack interval**. At **level 8**, each
+  Goblin has **152 HP** and deals **94 damage per hit**; at **level 11**,
+  **202 HP** and **125 damage per hit**. Published per-Goblin HP and damage
+  data are included for levels **6–20**. Evolved Decoy Goblins use different
+  values and are not mixed into the base-card stats.
+
+Both references are sourced from independently maintained
+[Minion Giant game-data tables](https://crtool.app/en/units/minion-giant/)
+and [Goblin Barrel / Goblin game-data tables](https://crtool.app/en/units/goblin-barrel/)
+(version **16.635.1**, marked updated **November 9, 2026**). Level-11 values
+are cross-checked against RoyaleTools' November 2026 card references.
+They are **not** returned by the official Supercell player-profile API.
+They are matched to the official catalog's card **name and ID** at runtime,
+so neither card requires an invented numeric card ID.
+
+The leaderboard and the per-level table show which unit the displayed HP/damage
+belongs to and attribute the fresh source separately from the historical
+community dataset. Other missing cards still show unknown when current
+numeric game-data sources are not available.
+
 ### Source accuracy / hard boundary
 
 **The official Supercell API provides current card identity, cost, icons, ownership and the player's recorded card levels; it does not publish a complete live all-level HP/damage table.** The numerical mechanics in this release are from independently maintained [RoyaleAPI/cr-api-data](https://github.com/RoyaleAPI/cr-api-data), which was last maintained in 2023 and is **not an authoritative 2026 balance-patch source**. New cards and mechanics introduced later can have no source stats; those cards remain visible with no numerical rank. No guessed damage, placeholder HP, level extrapolation, one-size-fits-all 10% scaling or external-site scraping is added. The application distinguishes source-update date from download date.
