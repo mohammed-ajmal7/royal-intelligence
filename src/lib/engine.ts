@@ -218,6 +218,11 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
         : clamp(
             100 - Math.max(0, avg - (q.mode === "Fast cycle" ? 2.6 : 3.5)) * 30,
           ),
+    // The lowest possible four-card rotation cost is an independent
+    // efficiency signal. It is not always a card-specific return cost.
+    cycleTarget = q.mode === "Fast cycle" ? 7 : /defens|offense/i.test(q.mode) ? 12 : 10,
+    cycleEfficiency = cycle == null ? 0 :
+      clamp(100 - Math.max(0, cycle - cycleTarget) * (q.mode === "Fast cycle" ? 15 : 10)),
     balance = clamp(
       (roles["Win condition"] === 1
         ? 40
@@ -258,6 +263,11 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
       name: "Elixir efficiency",
       value: efficiency,
       weight: q.mode === "Fast cycle" ? 30 : 10,
+    },
+    {
+      name: "Four-card cycle efficiency",
+      value: cycleEfficiency,
+      weight: q.mode === "Fast cycle" ? 25 : 10,
     },
     { name: "Composition balance", value: balance, weight: 20 },
     { name: "Editorial archetype fit", value: fit, weight: 30 },
@@ -310,6 +320,7 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
     audit,
     avg,
     cycle,
+    cycleEfficiency,
     roles,
     air,
     defense,
