@@ -172,7 +172,18 @@ export async function clanInfo(
   } catch {
     warnings.push("Clan roster is temporarily unavailable.");
   }
-  return { clan, members, warnings, fetchedAt: new Date(response.at).toISOString() };
+  let riverRace: Record<string, unknown> | null = null;
+  try {
+    const response = await upstream(path + "/currentriverrace", env, fetcher);
+    const parsed = z.object({
+      clan: z.object({ tag: z.string(), name: z.string() }).passthrough(),
+    }).passthrough().safeParse(response.value);
+    if (parsed.success) riverRace = parsed.data;
+    else warnings.push("Current River Race format is unsupported.");
+  } catch {
+    warnings.push("Current River Race data is unavailable.");
+  }
+  return { clan, members, riverRace, warnings, fetchedAt: new Date(response.at).toISOString() };
 }
 
 
