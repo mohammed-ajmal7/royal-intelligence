@@ -45,9 +45,10 @@ test("source joins troop and ranged projectile by card ID, with exact level stat
       hit_speed:1100,range:5500,attacks_air:true,attacks_ground:true,
     }],
     spell:[],
-    projectile:[{
-      name: "MusketeerBullet", damage_per_level: levels(15),
-    }],
+    projectile:[
+      { name: "MusketeerBullet", damage_per_level: levels(15) },
+      { name: "FireballSpell", damage_per_level: levels(100) },
+    ],
   }, "2026-11-15T08:00:00Z");
   assert.equal(catalog.cards.length,4);
   assert.equal(catalog.source,"https://github.com/RoyaleAPI/cr-api-data");
@@ -65,7 +66,8 @@ test("source joins troop and ranged projectile by card ID, with exact level stat
   const tesla=resolveMechanics({id:27000006,level:11},catalog)!;
   assert.equal(tesla.targetsAir,true);
   assert.equal(tesla.hitSpeedSeconds,1.1);
-  assert.equal(resolveMechanics({id:28000000,level:11},catalog)!.damage,null);
+  assert.equal(resolveMechanics({id:28000000,level:11},catalog)!.damage,levels(100)[10]);
+  assert.equal(resolveMechanics({id:28000000,level:25},catalog)!.damage,null);
   assert.equal(statForLevel(levels(15),20),null,"Unknown levels cannot be extrapolated");
 });
 
