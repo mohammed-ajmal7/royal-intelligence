@@ -175,6 +175,56 @@ export async function clanInfo(
   return { clan, members, warnings, fetchedAt: new Date(response.at).toISOString() };
 }
 
+
+/** Official rankings and public in-game events. Empty/error sources remain honest. */
+export async function publicRankings(
+  env: Env,
+  fetcher: typeof fetch = fetch,
+) {
+  const sources = [
+    ["/locations/global/pathoflegend/players?limit=25", "Ranked ladder"],
+    ["/locations/global/rankings/players?limit=25", "Trophy Road"],
+    ["/events", "In-game events"],
+  ] as const;
+  const responses = await Promise.allSettled(
+    sources.map(([path]) => upstream(path, env, fetcher)),
+  );
+  const warnings: string[] = [];
+  const rankingSchema = z.object({
+    items: z.array(z.object({ tag: z.string(), name: z.string() }).passthrough()),
+  });
+  const parseRanking = (index: number) => {
+    const response = responses[index];
+    if (response.status === "rejected") {
+      warnings.push(sources[index][1] + " data is unavailable.");
+      return [];
+    }
+    const parsed = rankingSchema.safeParse(response.value.value);
+    if (!parsed.success) {
+      warnings.push(sources[index][1] + " response format is unsupported.");
+      return [];
+    }
+    return parsed.data.items.slice(0, 25);
+  };
+  const ranked = parseRanking(0);
+  const trophyRoad = parseRanking(1);
+  const eventResult = responses[2];
+  let events: Record<string, unknown>[] = [];
+  if (eventResult.status === "fulfilled") {
+    if (Array.isArray(eventResult.value.value)) {
+      events = eventResult.value.value
+        .filter((item): item is Record<string, unknown> =>
+          !!item && typeof item === "object" && !Array.isArray(item))
+        .slice(0, 16);
+    } else {
+      warnings.push("In-game events response format is unsupported.");
+    }
+  } else {
+    warnings.push("In-game events are unavailable.");
+  }
+  return { ranked, trophyRoad, events, warnings };
+}
+
 export async function history(db: DB | undefined, owner: string, t: string) {
   if (!db) return { snapshots: [], battles: [], choices: [] };
   const values = await Promise.all(
@@ -316,6 +366,10 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
     if (u.pathname === "/api/clan" && req.method === "GET") {
       await throttle(publicBucket, env);
       return json(await clanInfo(u.searchParams.get("tag") ?? "", env, fetcher));
+    }
+    if (u.pathname === "/api/rankings" && req.method === "GET") {
+      await throttle(publicBucket, env);
+      return json(await publicRankings(env, fetcher));
     }
     if (!owner)
       throw new APIError(
