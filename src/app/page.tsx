@@ -454,6 +454,10 @@ export default function App() {
       setQ({ ...defaults, cap: result.cap });
       setCandidates([]);
       setEnemy([]);
+      setScouted(null);
+      setOpponentTag("");
+      setTeammateTag("");
+      setAnswers([]);
       setModeFilter("All modes");
       let local = withSnapshot(readLocalHistory(result.tag), result);
       try {
@@ -1042,8 +1046,8 @@ export default function App() {
                     </strong>
                   </div>
                   <div className="fact">
-                    <span>Persistent history</span>
-                    <strong>{s.stored ? "Saved" : "Session only"}</strong>
+                    <span>Observed history</span>
+                    <strong>{s.stored ? "Private workspace" : hist.snapshots.length ? "Saved on this device" : "Not yet saved"}</strong>
                   </div>
                   <details>
                     <summary>Inspect all returned profile fields</summary>
@@ -2190,9 +2194,9 @@ export default function App() {
                     </Pill>
                   </div>
                   <div className="fact">
-                    <span>Persistent database</span>
-                    <Pill tone={status?.database ? "green" : "gold"}>
-                      {status?.database ? "Configured" : "Unavailable"}
+                    <span>Private database (not required for visitors)</span>
+                    <Pill tone={status?.database ? "green" : ""}>
+                      {status?.database ? "Configured" : "Local browser tracking"}
                     </Pill>
                   </div>
                   <div className="fact">
@@ -2215,43 +2219,27 @@ export default function App() {
                     Check configuration
                   </button>
                 </Panel>
-                <Panel title="Connect your real account">
-                  <ol className="steps">
-                    <li>
-                      Create an official API key at{" "}
-                      <a
-                        href="https://developer.clashroyale.com/"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        developer.clashroyale.com
-                      </a>
-                      .
-                    </li>
-                    <li>
-                      Configure <code>CLASH_API_TOKEN</code> as a server secret.
-                    </li>
-                    <li>
-                      For serverless hosting, the{" "}
-                      <a
-                        href="https://docs.royaleapi.com/proxy"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        documented RoyaleAPI proxy
-                      </a>{" "}
-                      is an option. It receives the API key and requests; follow
-                      its IP-allowlist instructions.
-                    </li>
-                    <li>
-                      Set <code>CLASH_API_BASE</code> to the chosen supported
-                      endpoint, redeploy, then connect your tag.
-                    </li>
-                  </ol>
-                  <p className="micro">
-                    Never enter your Supercell password or API token in the
-                    player-tag field.
+                <Panel title="Use any Clash Royale player tag">
+                  <p>
+                    Enter a valid player tag at the top of the page or share
+                    a link containing <code>?tag=PLAYER_TAG</code>.
+                    Anyone can search available public player information.
+                    No Supercell login, developer key, or Vercel account is needed.
                   </p>
+                  <p className="micro">
+                    The website operator configures the official Supercell API
+                    key privately on Vercel. Visitors should never enter API tokens.
+                  </p>
+                  <details>
+                    <summary>Server administrator setup</summary>
+                    <p>Generate a key at <a href="https://developer.clashroyale.com/"
+                      target="_blank" rel="noreferrer">Supercell Developer Portal ↗</a>.
+                      Set <code>CLASH_API_TOKEN</code> in server environment variables.
+                      Choose an authorized API base; for dynamic hosting, follow the
+                      <a href="https://docs.royaleapi.com/proxy"
+                        target="_blank" rel="noreferrer"> RoyaleAPI proxy instructions ↗</a>,
+                      then redeploy. Never publish real tokens in GitHub.</p>
+                  </details>
                 </Panel>
               </div>
               <Panel title="Public visitor data and privacy">
@@ -2371,16 +2359,21 @@ export default function App() {
               </Panel>
               <Panel title="Release scope">
                 <p>
-                  Implemented: player sync, catalog browsing, base-deck
-                  generation, role analysis, matchup notes, battle history,
-                  database snapshots and tracked choices, heuristic upgrade
-                  priorities, manual resources, export and deletion.
+                  Implemented: public tag lookup and shareable profiles,
+                  official player/deck/cards/chests and observed battle data,
+                  badges, achievements, Ranked and side-mode progression,
+                  clan rosters and current River Race, opponent and teammate
+                  tag scouting, official global leaderboards and in-game events,
+                  browser-local history and tracked choices, explainable deck
+                  generation, upgrade priorities, matchup notes, export and deletion.
                 </p>
                 <Notice>
-                  Not implemented: full combat simulation, automatic
-                  special-form/tower optimization, representative global meta,
-                  calibrated matchup predictions, replay analysis, cost-aware
-                  upgrades or background refresh scheduling.
+                  Not available from the public API alone: complete lifetime
+                  battle logs, replay or placement analysis, definitive card
+                  damage at every level, global deck matchup/win rates, private
+                  inventories, calibrated matchup predictions, automated in-game
+                  upgrades or historical data before the browser first tracked
+                  a player. The local coach is deterministic, not an LLM.
                 </Notice>
                 <p className="micro">
                   Source is public on{" "}
