@@ -2899,3 +2899,247 @@ footer p { color: #afcbe4; }
 }
 .detail-column-names { display:grid; grid-template-columns:1fr 1fr; gap:28px; padding:14px 16px; background:#103554; font-size:12px; color:#8bd2ff; }
 .detail-column-names strong:last-child { color:#ffd060; }
+
+/* Deck Item reference levels, complete sourced card fields and compact tables */
+.deck-item-level-disclosure {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #cbe8f9;
+  background: #124b78;
+  border: 1px solid #467caa;
+  border-radius: 9px;
+  margin: 13px 0 0;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.deck-item-level-disclosure svg {
+  color: #ffe08c;
+  flex: 0 0 16px;
+  margin-top: 2px;
+}
+.deck-item-entry-wrap {
+  min-width: 0;
+  background: linear-gradient(135deg, #123e6c, #082b50);
+  border: 1px solid #427daf;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 3px 0 #071d3c, 0 7px 16px #0002;
+}
+.deck-item-entry-wrap > .deck-item-row {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  min-height: 92px;
+}
+.deck-item-entry-wrap:has(.deck-item-row-first) {
+  border: 2px solid #f2ce72;
+  background: linear-gradient(125deg, #1c6199, #10406d);
+  box-shadow: inset 0 1px #fff6b54a, 0 4px 0 #674c19;
+}
+.deck-item-entry-wrap .deck-item-row:hover { background: #357bab2a; }
+.deck-item-entry-wrap .deck-item-row:focus-visible {
+  outline-offset: -3px;
+  position: relative;
+  z-index: 1;
+}
+.deck-item-row .deck-item-name { gap: 3px; }
+.deck-item-row .deck-item-detail {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.deck-item-owned-label {
+  color: #a6e3ff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.deck-item-row-unknown .deck-item-owned-label { color: #b3cbe2; }
+.deck-item-expand {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #082c53;
+  border: 0;
+  border-top: 1px solid #3c79a5;
+  color: #a6ddff;
+  font-size: 11px;
+  font-weight: 850;
+}
+.deck-item-expand:hover {
+  background: #154674;
+  color: #fff1c1;
+}
+.deck-item-expand svg:last-child { margin-left: 4px; }
+.deck-item-expanded {
+  padding: 18px;
+  border-top: 1px solid #63a0ca;
+  background: linear-gradient(140deg, #0e345b, #08254a);
+}
+.deck-item-expanded-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.deck-item-expanded-title strong {
+  color: #ffe7a1;
+  font-size: 15px;
+}
+.deck-item-expanded-title p {
+  margin: 5px 0 0;
+  font-size: 11px;
+}
+.deck-item-expanded-title .btn { flex-shrink: 0; }
+.deck-item-full-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 9px;
+  margin: 14px 0 20px;
+}
+.deck-item-stat {
+  min-width: 0;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid #3b7baf;
+  background: #0b2d55;
+}
+.deck-item-stat small {
+  font-size: 9px;
+  line-height: 1.3;
+  color: #bdddf0;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+}
+.deck-item-stat strong {
+  color: #ffedba;
+  font-size: 14px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+.deck-item-level-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+}
+.deck-item-level-head h4 {
+  margin: 0 0 4px;
+  color: #ffe5a0;
+  font-size: 14px;
+}
+.deck-item-level-head small { color: #bbd9ee; }
+.deck-item-level-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #508ab6;
+  border-radius: 9px;
+  scrollbar-color: #529bc9 #0b3159;
+}
+.deck-item-level-table {
+  width: 100%;
+  min-width: 610px;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.deck-item-level-table th {
+  color: #ffdf91;
+  background: #114777;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+  padding: 12px 10px;
+  text-align: right;
+}
+.deck-item-level-table td {
+  color: #e0effb;
+  border-top: 1px solid #285783;
+  background: #0d315a;
+  padding: 11px 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.deck-item-level-table th:first-child,
+.deck-item-level-table td:first-child { text-align: left; }
+.deck-item-level-table tr:nth-child(even) td { background: #123b67; }
+.deck-item-level-table .deck-item-current-level td {
+  color: #fff0b4;
+  background: #285d8b;
+  font-weight: 800;
+}
+.deck-item-raw {
+  margin-top: 17px;
+  border-radius: 9px;
+  border: 1px solid #3e82b4;
+  background: #0a2b52;
+  padding: 12px 14px;
+}
+.deck-item-raw > summary {
+  cursor: pointer;
+  color: #ffdf94;
+  font-size: 12px;
+}
+.deck-item-raw p,
+.deck-item-note {
+  margin: 13px 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #c0dcf0;
+}
+.deck-item-raw pre {
+  display: block;
+  max-width: 100%;
+  max-height: 440px;
+  overflow: auto;
+  color: #d6edff;
+  background: #061b36;
+  padding: 13px;
+  margin: 12px 0 0;
+  border-radius: 8px;
+  white-space: pre;
+  font-size: 10px;
+  line-height: 1.65;
+}
+@media (max-width: 900px) {
+  .deck-item-full-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 650px) {
+  .deck-item-entry-wrap > .deck-item-row { min-height: 89px; }
+  .deck-item-row .deck-item-name > strong { font-size: 12px; }
+  .deck-item-row .deck-item-detail { font-size: 9px; }
+  .deck-item-owned-label { font-size: 9px; }
+  .deck-item-expand { min-height: 43px; font-size: 11px; }
+  .deck-item-expanded { padding: 12px 9px 16px; }
+  .deck-item-expanded-title {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .deck-item-expanded-title .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 43px;
+  }
+  .deck-item-full-stats {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 7px;
+  }
+  .deck-item-stat { padding: 9px; min-height: 55px; }
+  .deck-item-stat strong { font-size: 13px; }
+  .deck-item-level-table { min-width: 565px; }
+}

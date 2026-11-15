@@ -9,18 +9,30 @@ On phones and tablets, use the fixed **Home · Cards · Build · Battles · More
 The main deck panel now shows **Average Elixir** (sum of eight known costs / eight) and **4-Card Cycle** (sum of the four cheapest known card costs) separately. Both come from the card-cost data actually returned by the game API. Four-card cycle is an optimistic rotation benchmark, not a guarantee for a particular card; it does not model active Champion abilities, variable-cost cards or live hand state. Fast Cycle mode weights four-card efficiency more strongly than standard modes. The scoring now prioritizes detailed combat mechanics **where a separate, sourced reference exists**; the official public player API alone still does not provide a complete validated HP/damage/range dataset. Missing values are never inferred.
 
 
-## Deck Item — numeric attack and defense rankings
+## Deck Item — complete catalog and available level-by-level reference data
 
-The **Deck Item** sidebar section (also linked from **My Collection**) ranks a player's card collection **in descending numerical order**. On mobile, open **More → Deck Item**, or use the prominent collection shortcut.
+The **Deck Item** page has a mobile-first attack/defense leaderboard with a separate source-aware **all-level inspector for every card**, including cards the player does not own. Open **More → Deck Item** or the **My Collection** shortcut.
 
-- **Defense → Hits needed to defeat** (default): for an input attack of `D` damage per hit and a card unit's recorded level-specific hitpoints `H`, show `ceil(H / D)`. This counts the final lethal hit. The complete hits survived before defeat are `ceil(H / D) − 1`. The reference input is editable (1–100,000 damage). Cards with identical hit counts are ordered by their higher actual HP.
-- **Defense → HP**: order directly by hitpoints (damage capacity for one unit).
-- **Attack → Damage per hit**: order by recorded per-hit damage (a spell's listed damage is not guaranteed to be equivalent to sustained troop attack power).
-- **Attack → DPS**: order by damage per hit divided by attack interval when both are explicitly available.
-- Additional selectors: All cards / Troops / Buildings / Spells, Owned-only toggle (default enabled), and name search. A card's official player-record level is used to retrieve the exact indexed community combat reference where available.
-- Unknown stats, unowned cards with unknown levels and unsupported mechanics remain **unranked**, clearly marked at the end rather than assigned zero or a fabricated attack/defense score. Clicking a row opens the existing card inspector.
+### Ranking options
 
-**Limits:** HP and hit counts are per unit, not the combined HP of a swarm. Shields, spell damage reductions, variable attacks, projectile delays, building decay, buffs, activated abilities, arena placements and simultaneous attackers are not simulated. The current community reference source [RoyaleAPI/cr-api-data](https://github.com/RoyaleAPI/cr-api-data) may be old relative to live balance changes; fetch time is not a balance-patch date. The user can use the feature for transparent comparisons of **available** values but should not interpret the results as verified current-patch global strength rankings.
+- **Category:** Attack or Defense. The default leaderboard is **Attack → Damage per hit** (descending).
+- **Attack:** Sort by sourced **damage per hit** or steady **DPS = damage per hit / attack interval**.
+- **Defense:** Sort by sourced **HP per unit** or **hits needed to defeat** for adjustable incoming fixed hit damage `D`: `ceil(HP / D)`. The lethal hit counts; complete hits survived are one fewer.
+- **Comparison mode (default):** All 123+ official catalog entries, **including unowned cards**, compared at **one selected reference level** (default 11). This avoids an owned-only leaderboard incorrectly showing 76 unowned cards as "not ranked" solely because the player hasn't unlocked them.
+- **Player-level mode:** Owned cards use levels from the actual Supercell player API; **unowned cards are explicitly labeled reference level** instead of pretending they have an actual unlocked level. Mixed levels are not a fair same-level comparison.
+- **Card classification:** Community type when available, otherwise inferred Troop/Building/Spell only from the official card-ID family. ID-based classification is labeled; it never supplies invented numeric stats.
+- **Filters:** All types / Troops / Buildings / Spells / Other; owned-only toggle; card-name search.
+- **Leaderboard ties:** Same displayed attack or defense value shares one dense rank; identical survival-hit counts use HP as a *sorting* tiebreaker, not as a secretly different score.
+
+### All levels and all available source fields
+
+Every card row opens a separate **All levels + full card stats** panel with HP/unit, damage/hit, DPS, hit interval, attack range, movement (raw units), air/ground/building targeting, splash radius, unit count, deploy time, attack preload, special-mechanics flag and configurable hit endurance. A horizontally scrollable table lists every available reference-level HP/damage/DPS/hit-endurance value. Unsupported levels display `—` rather than interpolated values. The collapsible **all available community source fields (JSON)** section exposes the underlying registry/unit/deployment/projectile data when the record exists.
+
+### Source accuracy / hard boundary
+
+**The official Supercell API provides current card identity, cost, icons, ownership and the player's recorded card levels; it does not publish a complete live all-level HP/damage table.** The numerical mechanics in this release are from independently maintained [RoyaleAPI/cr-api-data](https://github.com/RoyaleAPI/cr-api-data), which was last maintained in 2023 and is **not an authoritative 2026 balance-patch source**. New cards and mechanics introduced later can have no source stats; those cards remain visible with no numerical rank. No guessed damage, placeholder HP, level extrapolation, one-size-fits-all 10% scaling or external-site scraping is added. The application distinguishes source-update date from download date.
+
+These are comparisons of *available historical reference fields*, not verified current game values, individual one-shot outcomes under all effects, whole-swarm HP, exact live DPS for multi-stage effects, or a full combat simulation. Shields, buffs, abilities, spawn effects, charge damage and building decay require separate verified mechanics.
 
 ## Mechanics-first deck intelligence
 
@@ -46,7 +58,7 @@ The publicly available official API drives:
 
 - **Overview** — trophies, career record, currently equipped deck, chest cycle, challenge/ranked stats, badges, achievements, favourite card, tower troop and side-mode progress (where present in the API).
 - **Card collection** — all owned player cards and the current global catalog; evolution/hero mode is interpreted separately for ownership versus current deck/battle form.
-- **Deck Item** — ranked Attack (damage/hit or DPS) and Defense (HP or hits to defeat at user-selected incoming damage) comparisons, with transparent missing-data handling and player-level stat lookup.
+- **Deck Item** — full-catalog Attack / Defense rankings with global reference-level selection, actual player-level mode, all available historical stat levels, raw sourced fields and honest missing-data labels.
 - **Deck Lab and Analyzer** — evaluate actual owned cards, current levels and base composition; use a teammate's real selected deck by their public player tag for 2v2 role-complement advice.
 - **Matchup Lab** — fetch a real opponent's current deck by tag or import a deck link; also analyze recorded battle decks.
 - **Battle History** — show official recent battles, opponents and trophy changes, with mode filters; previously observed battles can be remembered on the same browser.
