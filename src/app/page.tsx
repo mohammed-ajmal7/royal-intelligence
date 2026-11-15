@@ -94,6 +94,13 @@ type ClanProfile = {
   warnings: string[];
   fetchedAt: string;
 };
+type RankingPlayer = { tag: string; name: string; [key: string]: unknown };
+type PublicRankings = {
+  ranked: RankingPlayer[];
+  trophyRoad: RankingPlayer[];
+  events: Record<string, unknown>[];
+  warnings: string[];
+};
 function publicNumber(source: unknown, field: string): number | null {
   if (!source || typeof source !== "object") return null;
   const n = (source as Record<string, unknown>)[field];
@@ -264,6 +271,9 @@ export default function App() {
     [clan, setClan] = useState<ClanProfile | null>(null),
     [clanLoading, setClanLoading] = useState(false),
     [clanError, setClanError] = useState(""),
+    [rankings, setRankings] = useState<PublicRankings | null>(null),
+    [rankingsLoading, setRankingsLoading] = useState(false),
+    [rankingsError, setRankingsError] = useState(""),
     [resource, setResource] = useState({ gold: 0, wildCards: 0, shards: 0 }),
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
@@ -348,6 +358,17 @@ export default function App() {
     return () => { cancelled = true; };
   }, [page, s]);
 
+  useEffect(() => {
+    if (page !== "Meta Insights" || rankings) return;
+    let active = true;
+    setRankingsLoading(true);
+    setRankingsError("");
+    request("/api/rankings")
+      .then((data: PublicRankings) => { if (active) setRankings(data); })
+      .catch((error: Error) => { if (active) setRankingsError(error.message); })
+      .finally(() => { if (active) setRankingsLoading(false); });
+    return () => { active = false; };
+  }, [page, rankings]);
   const go = (p: string) => {
     setPage(p);
     setMobile(false);
@@ -1871,19 +1892,27 @@ export default function App() {
           {page === "Meta Insights" && (
             <>
               <div className="two-col">
-                <Panel title="Competitive meta feed">
-                  <Empty>
-                    No representative global meta feed is connected. Global
-                    usage rates and win rates are not invented.
-                  </Empty>
-                  <a
-                    className="btn secondary"
-                    href="https://royaleapi.com/decks/popular"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Browse RoyaleAPI ↗
-                  </a>
+                <Panel title="Global Ranked leaders" kicker="OFFICIAL RANKING — NOT DECK WIN RATE">
+                  {rankingsLoading && <Empty>Loading the official global rankings…</Empty>}
+                  {rankingsError && <Notice>{rankingsError}</Notice>}
+                  {rankings?.ranked.slice(0, 10).map((player, i) => (
+                    <div className="fact" key={player.tag}>
+                      <span>
+                        #{publicNumber(player, "rank") ?? i + 1} · {player.name}
+                        <small> · {player.tag}</small>
+                      </span>
+                      <button className="text-btn" onClick={() => {
+                        setTag(player.tag); go("Overview"); void connect(player.tag);
+                      }}>
+                        {fmt(publicNumber(player, "eloRating") ?? publicNumber(player, "trophies"))} · View ↗
+                      </button>
+                    </div>
+                  ))}
+                  {rankings && rankings.ranked.length === 0 &&
+                    <Empty>No current global Ranked standings were returned.</Empty>}
+                  <p className="micro">Ranks and ratings are official API observations. These do not establish global card usage or matchup win probability.</p>
+                  <a className="text-btn" href="https://royaleapi.com/decks/popular"
+                    target="_blank" rel="noreferrer">Browse external community meta research ↗</a>
                 </Panel>
                 <Panel
                   title="Your observed opponent cards"
@@ -1915,6 +1944,36 @@ export default function App() {
                   <p className="micro">
                     Your encounters are not global usage rates.
                   </p>
+                </Panel>
+              </div>
+              <div className="two-col">
+                <Panel title="Global Trophy Road leaders" kicker="OFFICIAL RANKING">
+                  {rankingsLoading && <Empty>Loading the leaderboard…</Empty>}
+                  {rankings?.trophyRoad.slice(0, 12).map((player, i) => (
+                    <div className="fact" key={player.tag}>
+                      <span>#{publicNumber(player, "rank") ?? i + 1} · {player.name}</span>
+                      <button className="text-btn" onClick={() => {
+                        setTag(player.tag); go("Overview"); void connect(player.tag);
+                      }}>
+                        {fmt(publicNumber(player, "trophies"))} · View ↗
+                      </button>
+                    </div>
+                  ))}
+                  {rankings && !rankings.trophyRoad.length && <Empty>No current Trophy Road rankings returned.</Empty>}
+                  <p className="micro">Official player rankings may be empty early in a season.</p>
+                </Panel>
+                <Panel title="Current in-game events" kicker="OFFICIAL EVENT CATALOG">
+                  {rankingsLoading && <Empty>Loading active events…</Empty>}
+                  {rankings?.events.map((event, index) => (
+                    <div className="fact" key={String(event.eventTag ?? event.id ?? index)}>
+                      <span>{String(event.title ?? event.name ??
+                        (event.gameMode as {name?: string}|undefined)?.name ?? "In-game event")}</span>
+                      <strong>{String(event.gameMode ? (event.gameMode as {name?: string}).name ?? "Event" : "Event")}</strong>
+                    </div>
+                  ))}
+                  {rankings && !rankings.events.length && <Empty>No active events were returned.</Empty>}
+                  {rankings?.warnings.map((w) => <Notice key={w}>{w}</Notice>)}
+                  <p className="micro">Only events actually returned by the official API are listed.</p>
                 </Panel>
               </div>
               <Panel title="Patch-scoped reference records">
