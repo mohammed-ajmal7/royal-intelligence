@@ -2438,3 +2438,15 @@ footer p { color: #afcbe4; }
   .card-tile .art, .btn { transition: none; }
   .card-tile:hover .art, .btn:hover { transform: none; }
 }
+
+/* Override the desktop sidebar's nth-child separators inside the mobile dock. */
+@media (max-width: 950px) {
+  .mobile-bottom-nav .mobile-tab,
+  .mobile-bottom-nav .mobile-tab:nth-child(4) {
+    margin: 0;
+    padding: 7px 2px;
+    gap: 3px;
+    text-align: center;
+  }
+  .mobile-bottom-nav .mobile-tab.active::before { content: none; }
+}
