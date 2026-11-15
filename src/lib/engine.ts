@@ -1,4 +1,6 @@
 import { Card, Battle, roleGroups } from "./model";
+import type { MechanicsCatalog } from "./mechanics";
+import { scoreDeckMechanics } from "./mechanicsScoring";
 export const modes = [
   "Best overall",
   "Maximum defense",
@@ -170,7 +172,11 @@ export function deckAudit(cs: Card[]) {
     missing: checks.filter(c => !c.ok).map(c => c.label),
   };
 }
-export function evaluate(cs: Card[], q: Constraints = defaults) {
+export function evaluate(
+  cs: Card[],
+  q: Constraints = defaults,
+  mechanics?: MechanicsCatalog | null,
+) {
   const roles = Object.fromEntries(
     Object.keys(roleGroups).map((r) => [
       r,
@@ -315,8 +321,41 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
     features.reduce((sum, feature) => sum + feature.weight, 0);
   const penalty = audit.checks.reduce((sum, check) =>
     sum + (check.ok ? 0 : penaltyByCheck[check.id]), 0);
+
+  // Cards are scored FIRST from HP, DPS, hit interval, range, movement,
+  // actual target types and splash when available at the player's level.
+  // If coverage is incomplete, automatically redistribute that weight to
+  // the existing structural score. Do not treat an unknown stat as zero.
+  const mechanic = scoreDeckMechanics(cs,mechanics);
+  const statShare = mechanic.score === null ? 0 :
+    0.65 * Math.min(1, mechanic.coverage / 0.70);
+  const averageShare = 0.08;
+  const fourCardShare = 0.07;
+  const structuralShare = 1 - statShare - averageShare - fourCardShare;
+  const structuralFeatures = features.filter(f =>
+    f.name !== "Elixir efficiency" &&
+    f.name !== "Four-card cycle efficiency");
+  const structure = structuralFeatures.reduce((total,f)=>total+f.value*f.weight,0) /
+    structuralFeatures.reduce((total,f)=>total+f.weight,0);
+  const rawScore =
+    structure * structuralShare +
+    (mechanic.score ?? 0) * statShare +
+    efficiency * averageShare +
+    cycleEfficiency * fourCardShare;
+  // Role coverage still protects against obvious holes, but proven numerical
+  // stats can outweigh coarse labels. No value here is a win probability.
+  const appliedPenalty = penalty * (1 - statShare * 0.6);
+  const scoring = {
+    mechanics: Math.round(statShare * 1000) / 10,
+    structure: Math.round(structuralShare * 1000) / 10,
+    averageElixir: Math.round(averageShare * 1000) / 10,
+    fourCardCycle: Math.round(fourCardShare * 1000) / 10,
+    penalty: Math.round(appliedPenalty * 10) / 10,
+  };
   return {
-    score: Math.round(clamp(base - penalty) * 10) / 10,
+    score: Math.round(clamp(rawScore - appliedPenalty) * 10) / 10,
+    mechanic,
+    scoring,
     audit,
     avg,
     cycle,
@@ -340,6 +379,7 @@ export function generate(
   collection: Card[],
   q: Constraints,
   currentDeck: Card[] = [],
+  mechanics?: MechanicsCatalog | null,
 ) {
   if (
     q.include.length > 8 ||
@@ -372,7 +412,7 @@ export function generate(
     cs.some(c => hasRole(c, "Win condition")) &&
     cs.reduce((sum, c) => sum + (c.elixir ?? 0), 0) <= q.maxElixir * 8 + 1e-7
   );
-  const fitness = (cs: Card[]) => evaluate(cs, q).score;
+  const fitness = (cs: Card[]) => evaluate(cs, q, mechanics).score;
   const candidates = new Map<string, Card[]>();
   const addCandidate = (cs: Card[]) => {
     if (permitted(cs)) candidates.set(key(cs), cs);
@@ -513,7 +553,7 @@ export function generate(
   const ranked = [...optimized.values()]
     .filter(permitted)
     .map(cs => ({ cards: cs.map(c => ({ ...c, active: "base" })),
-      evaluation: evaluate(cs, q) }))
+      evaluation: evaluate(cs, q, mechanics) }))
     .sort((a,b) => b.evaluation.score - a.evaluation.score ||
       key(a.cards).localeCompare(key(b.cards)));
   const result: typeof ranked = [];

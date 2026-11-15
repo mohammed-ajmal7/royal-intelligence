@@ -50,6 +50,7 @@ import {
   Constraints,
 } from "../lib/engine";
 import { verifiedStats } from "../lib/references";
+import type { MechanicsCatalog } from "../lib/mechanics";
 const nav = [
   ["Overview", LayoutDashboard],
   ["My Collection", Layers3],
@@ -275,6 +276,9 @@ export default function App() {
     [rankings, setRankings] = useState<PublicRankings | null>(null),
     [rankingsLoading, setRankingsLoading] = useState(false),
     [rankingsError, setRankingsError] = useState(""),
+    [mechanics, setMechanics] = useState<MechanicsCatalog | null>(null),
+    [mechanicsLoading, setMechanicsLoading] = useState(true),
+    [mechanicsError, setMechanicsError] = useState(""),
     [resource, setResource] = useState({ gold: 0, wildCards: 0, shards: 0 }),
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
@@ -299,6 +303,21 @@ export default function App() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setStatus)
       .catch(() => {});
+    // Public, community-maintained combat stats. This is separate from the
+    // official player API and never exposes the server's Supercell credential.
+    fetch("/api/mechanics")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.cards))
+          throw new Error(data.error ?? "Community combat-stat feed is unavailable.");
+        return data as MechanicsCatalog;
+      })
+      .then((data) => {
+        setMechanics(data);
+        setCandidates([]);
+      })
+      .catch((error: Error) => setMechanicsError(error.message))
+      .finally(() => setMechanicsLoading(false));
     let requestedTag = new URLSearchParams(window.location.search).get("tag");
     if (!requestedTag) {
       try { requestedTag = localStorage.getItem("ri-last-player-tag"); } catch {}
@@ -400,8 +419,8 @@ export default function App() {
       (b) => modeFilter === "All modes" || b.mode === modeFilter,
     ),
     st = stats(battles),
-    ev = evaluate(deck, q),
-    current = evaluate(s.deck, { ...defaults, cap: s.cap });
+    ev = evaluate(deck, q, mechanics),
+    current = evaluate(s.deck, { ...defaults, cap: s.cap }, mechanics);
   const visible = s.catalog
     .filter(
       (c) =>
@@ -492,7 +511,7 @@ export default function App() {
     setError("");
     setTimeout(() => {
       try {
-        const cs = generate(s.cards, q, deck);
+        const cs = generate(s.cards, q, deck, mechanics);
         setCandidates(cs);
         if (cs.length) setDeck(cs[0].cards);
         else
@@ -530,7 +549,7 @@ export default function App() {
       observed: new Date().toISOString(),
       cards: deck.map((c) => c.id),
       mode: q.mode,
-      score: evaluate(deck, q).score,
+      score: evaluate(deck, q, mechanics).score,
     };
     let updated = mergeHistory(hist, {
       snapshots: [],
@@ -578,7 +597,7 @@ export default function App() {
     }
   }
   function answer(text: string) {
-    const e = evaluate(deck, q);
+    const e = evaluate(deck, q, mechanics);
     const a = /air|balloon|lava/i.test(text)
       ? `Your selected deck has ${e.air} sustained air-defense options. ${e.air < 2 ? "Add a second reliable air defender; cycle units alone are fragile." : "Avoid spending both air answers together before identifying the opponent’s win condition."} Protect your air defenders from spell value. This is role guidance, not a simulated matchup.`
       : /upgrade/i.test(text)
@@ -1333,10 +1352,11 @@ export default function App() {
                   ))}
                 </div>
                 <div className="actions">
-                  <button className="btn smart-find" disabled={busy || loading || s.cards.length < 8}
+                  <button className="btn smart-find" disabled={busy || loading || mechanicsLoading || s.cards.length < 8}
                     onClick={optimize}>
                     <Sparkles size={17} />
-                    {busy ? "Checking your collection…" : "Find my best decks"}
+                    {busy ? "Checking your collection…" : mechanicsLoading ?
+                      "Loading combat stats…" : "Find my best decks"}
                   </button>
                   <button className="btn secondary"
                     onClick={() => {
@@ -1383,6 +1403,29 @@ export default function App() {
                   <p className="micro smart-metric-explainer">
                     Cycle is the sum of the four cheapest cards, a best-case rotation measure—not
                     a guaranteed return cost for every card.
+                  </p>
+                  <div className="mechanics-headline" aria-label="Mechanics-first scoring disclosure">
+                    <div>
+                      <strong><Shield size={16}/> Card mechanics first</strong>
+                      <p>
+                        {mechanicsLoading ? "Checking community combat-stat data…" :
+                        mechanicsError ? "Combat stats unavailable. Structural fallback active." :
+                        mechanics ? "Community game-data snapshot · patch accuracy not guaranteed" :
+                        "Combat-stat feed unavailable."}
+                      </p>
+                    </div>
+                    <strong className="mechanics-share">{ev.scoring.mechanics.toFixed(1)}% <small>MECHANICS WEIGHT</small></strong>
+                  </div>
+                  <div className="mechanics-weight-grid">
+                    <div><small>HP · DAMAGE · DPS · TARGETS · SPEED · RANGE</small><strong>{ev.scoring.mechanics.toFixed(1)}%</strong></div>
+                    <div><small>DECK STRUCTURE · CARD LEVELS</small><strong>{ev.scoring.structure.toFixed(1)}%</strong></div>
+                    <div><small>AVERAGE ELIXIR</small><strong>{ev.scoring.averageElixir}%</strong></div>
+                    <div><small>FOUR-CARD CYCLE</small><strong>{ev.scoring.fourCardCycle}%</strong></div>
+                  </div>
+                  <p className="micro">
+                    Measured-field coverage: {Math.round(ev.mechanic.coverage * 100)}% across {deck.length} cards.
+                    When source fields are missing, that weight moves to structural analysis.
+                    Scores are relative heuristic ratings, never expected win rates.
                   </p>
                   <div className="smart-checks" aria-label="Deck coverage checklist">
                     {ev.audit.checks.map(check => (
@@ -1463,10 +1506,10 @@ export default function App() {
                       <button
                         className="btn"
                         onClick={optimize}
-                        disabled={busy}
+                        disabled={busy || mechanicsLoading}
                       >
                         <Sparkles size={16} />
-                        {busy ? "Evaluating…" : "Optimize my deck"}
+                        {busy ? "Evaluating…" : mechanicsLoading ? "Loading stats…" : "Optimize my deck"}
                       </button>
                       <button
                         className="btn secondary"
@@ -1735,6 +1778,51 @@ export default function App() {
                   </div>
                 </Panel>
               )}
+              <Panel title="Combat mechanics for your eight cards" kicker="HITPOINTS · DAMAGE · ATTACK SPEED · TARGETING · RANGE">
+                <p className="micro">
+                  Numeric combat stats are sourced separately from community game-data files and
+                  shown at the player's recorded card level only when an explicit level entry exists.
+                  Unknown means unavailable—not zero. The source may lag balance changes or
+                  special forms; this is not a complete combat simulator.
+                </p>
+                {mechanicsError && <Notice>{mechanicsError}</Notice>}
+                {mechanics?.warnings.map((warning) => <Notice key={warning}>{warning}</Notice>)}
+                <div className="mechanics-grid">
+                  {ev.mechanic.cardScores.map((m) => (
+                    <div className="mechanics-card" key={m.id}>
+                      <div className="mechanics-card-top">
+                        <strong>{m.name}</strong>
+                        <span>Stat coverage {Math.round(m.confidence * 100)}%</span>
+                      </div>
+                      <div className="mechanics-card-stats">
+                        <div><small>HP / UNIT</small><strong>{fmt(m.hp)}</strong></div>
+                        <div><small>DAMAGE/HIT</small><strong>{fmt(m.damage)}</strong></div>
+                        <div><small>DPS / UNIT</small><strong>{m.dps == null ? "—" : Math.round(m.dps).toLocaleString()}</strong></div>
+                        <div><small>HIT INTERVAL</small><strong>{m.hitSpeed == null ? "—" : m.hitSpeed.toFixed(2) + "s"}</strong></div>
+                        <div><small>RANGE</small><strong>{m.range == null ? "—" : m.range.toFixed(1) + " tiles"}</strong></div>
+                        <div><small>TARGETS</small><strong>{m.targets}</strong></div>
+                      </div>
+                      <details>
+                        <summary>More mechanics</summary>
+                        <div className="fact"><span>Movement speed</span><strong>{m.speedRaw ?? "—"} (raw data)</strong></div>
+                        <div className="fact"><span>Splash radius</span><strong>{m.splash == null ? "—" : m.splash.toFixed(1) + " tiles"}</strong></div>
+                        <div className="fact"><span>Unit count</span><strong>{m.unitCount ?? "—"}</strong></div>
+                        <div className="fact"><span>Deploy time</span><strong>{m.deployTime == null ? "—" : m.deployTime.toFixed(2) + "s"}</strong></div>
+                        <div className="fact"><span>Attack preload (raw)</span><strong>{m.firstHit == null ? "—" : m.firstHit.toFixed(2) + "s"}</strong></div>
+                        <div className="fact"><span>Derived card mechanics score</span><strong>{m.score == null ? "—" : m.score.toFixed(1) + "/100"}</strong></div>
+                      </details>
+                    </div>
+                  ))}
+                </div>
+                <p className="micro">
+                  Source: <a href="https://github.com/RoyaleAPI/cr-api-data"
+                    target="_blank" rel="noreferrer">RoyaleAPI community stat files ↗</a>.
+                  Last downloaded: {mechanics?.fetchedAt
+                    ? mechanics.fetchedAt.replace("T"," ").slice(0,16) + " UTC"
+                    : "unavailable"}.
+                  This timestamp is a retrieval time, not an official balance-patch date.
+                </p>
+              </Panel>
               <Panel
                 title="Why these eight?"
                 kicker="CARD-BY-CARD ROLE ANALYSIS"
