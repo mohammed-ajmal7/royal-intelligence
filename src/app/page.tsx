@@ -1617,10 +1617,10 @@ export default function App() {
                       </>
                     )}
                     <p className="micro">
-                      Approximate beam search plus editorial archetype seeds. It
-                      excludes Champions and does not optimize special forms,
-                      abilities or tower synergy. Ranked limits must be
-                      confirmed in-game.
+                      Full-collection role-aware search and bounded single-card swaps.
+                      It excludes Champions and does not optimize special forms,
+                      abilities or tower synergy. Scores are estimates, not
+                      win probabilities. Check Ranked rules in-game.
                     </p>
                   </Panel>
                 </div>
