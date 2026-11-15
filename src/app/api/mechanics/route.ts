@@ -34,6 +34,15 @@ async function readFile(name: string): Promise<unknown> {
   return result.json();
 }
 async function load(): Promise<MechanicsCatalog> {
+  const sourceDate = fetch("https://api.github.com/repos/RoyaleAPI/cr-api-data/commits?path=docs/json/cards_stats_characters.json&per_page=1", {
+    next: { revalidate: 86_400 }, signal: AbortSignal.timeout(2500),
+    headers: { accept: "application/vnd.github+json" },
+  }).then(async response => {
+    if (!response.ok) return null;
+    const entries = await response.json();
+    const value = entries?.[0]?.commit?.committer?.date;
+    return typeof value === "string" && Number.isFinite(Date.parse(value)) ? value : null;
+  }).catch(() => null);
   const fetched = await Promise.allSettled(
     (Object.keys(files) as SourceKey[]).map(async k => [k,await readFile(files[k])] as const),
   );
@@ -47,6 +56,9 @@ async function load(): Promise<MechanicsCatalog> {
     else warnings.push(key + " community stats feed was unavailable.");
   });
   const result = projectMechanics(inputs);
+  result.sourceUpdatedAt = await sourceDate;
+  if (result.sourceUpdatedAt && Date.now() - Date.parse(result.sourceUpdatedAt) > 90 * day)
+    warnings.push("The combat source was last updated " + result.sourceUpdatedAt.slice(0,10) + ". Treat these as historical stats, not verified current game values.");
   result.warnings.push(...warnings);
   if (!result.cards.length) throw new Error("No public combat-stat registry is available.");
   return result;

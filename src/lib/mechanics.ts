@@ -4,7 +4,8 @@
  * Source: https://github.com/RoyaleAPI/cr-api-data
  */
 export const MECHANICS_SOURCE = "https://github.com/RoyaleAPI/cr-api-data";
-export const MECHANICS_DATA_BASE = "https://royaleapi.github.io/cr-api-data/json";
+export const MECHANICS_DATA_BASE =
+  "https://royaleapi.github.io/cr-api-data/json";
 export type MechanicsKind = "Troop" | "Building" | "Spell" | "Other";
 
 export type MechanicsCard = {
@@ -26,10 +27,14 @@ export type MechanicsCard = {
   specialAbility: boolean;
   /** The data source may be behind current balance patches. */
   provenance: "royaleapi-community";
+  description?: string;
+  /** Public source records, kept separate to preserve units and provenance. */
+  sourceRecords?: Record<string, Record<string, unknown>>;
 };
 export type MechanicsCatalog = {
   source: string;
   fetchedAt: string;
+  sourceUpdatedAt?: string | null;
   cards: MechanicsCard[];
   warnings: string[];
 };
@@ -44,14 +49,15 @@ type StatInputs = {
 };
 const rows = (source: unknown): Row[] =>
   Array.isArray(source)
-    ? source.filter((r): r is Row => !!r && typeof r === "object" && !Array.isArray(r))
+    ? source.filter(
+        (r): r is Row => !!r && typeof r === "object" && !Array.isArray(r),
+      )
     : [];
-const clean = (v: unknown): string => typeof v === "string"
-  ? v.replace(/[^a-z0-9]/gi,"").toLowerCase() : "";
+const clean = (v: unknown): string =>
+  typeof v === "string" ? v.replace(/[^a-z0-9]/gi, "").toLowerCase() : "";
 const n = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
-const str = (v: unknown): string =>
-  typeof v === "string" ? v : "";
+const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const bool = (v: unknown): boolean | null =>
   typeof v === "boolean" ? v : null;
 const units = (v: unknown): number | null => {
@@ -63,17 +69,20 @@ const seconds = (v: unknown): number | null => {
   return x === null || x <= 0 ? null : x / 1000;
 };
 const leveled = (v: unknown): number[] | null =>
-  Array.isArray(v) && v.length >= 2 && v.every(x => typeof x === "number" && Number.isFinite(x) && x >= 0)
+  Array.isArray(v) &&
+  v.length >= 2 &&
+  v.every((x) => typeof x === "number" && Number.isFinite(x) && x >= 0)
     ? v.slice(0, 20)
     : null;
 const prefer = (...values: unknown[]): number[] | null => {
   for (const v of values) {
     const value = leveled(v);
-    if (value?.some(x => x > 0)) return value;
+    if (value?.some((x) => x > 0)) return value;
   }
   return null;
 };
-const has = (v: unknown): boolean => v != null && v !== false && v !== "" && v !== 0;
+const has = (v: unknown): boolean =>
+  v != null && v !== false && v !== "" && v !== 0;
 const firstByKey = (data: Row[]): Map<string, Row> => {
   const map = new Map<string, Row>();
   for (const item of data) {
@@ -84,7 +93,8 @@ const firstByKey = (data: Row[]): Map<string, Row> => {
   }
   return map;
 };
-const positive = (value: number | null): number | null => value !== null && value > 0 ? value : null;
+const positive = (value: number | null): number | null =>
+  value !== null && value > 0 ? value : null;
 const numberFrom = (...fields: unknown[]): number | null => {
   for (const value of fields) {
     const x = n(value);
@@ -115,68 +125,105 @@ export function projectMechanics(
   const spells = firstByKey(rows(source.spell));
   const projectiles = firstByKey(rows(source.projectile));
   const warnings: string[] = [];
-  if (!cards.length) warnings.push("The community card registry is unavailable.");
-  if (!chars.size) warnings.push("Character damage/HP and targeting statistics are unavailable.");
-  if (!buildings.size) warnings.push("Building combat statistics are unavailable.");
+  if (!cards.length)
+    warnings.push("The community card registry is unavailable.");
+  if (!chars.size)
+    warnings.push(
+      "Character damage/HP and targeting statistics are unavailable.",
+    );
+  if (!buildings.size)
+    warnings.push("Building combat statistics are unavailable.");
   if (!spells.size) warnings.push("Spell effect statistics are unavailable.");
   const result: MechanicsCard[] = [];
   for (const card of cards) {
     const id = n(card.id);
     if (!Number.isInteger(id) || id! <= 0) continue;
     const name = str(card.name);
-    const kind: MechanicsKind = ["Troop","Building","Spell"].includes(str(card.type))
-      ? card.type as MechanicsKind : "Other";
-    const idMatch = (source: unknown) =>
-      rows(source).find(x => x.id === id);
+    const kind: MechanicsKind = ["Troop", "Building", "Spell"].includes(
+      str(card.type),
+    )
+      ? (card.type as MechanicsKind)
+      : "Other";
+    const idMatch = (source: unknown) => rows(source).find((x) => x.id === id);
     const key = clean(card.key);
     const t = troops.get(key) ?? troops.get(clean(card.sc_key)) ?? {};
-    const building = buildings.get(key) ??
+    const building =
+      buildings.get(key) ??
       buildings.get(clean(card.sc_key)) ??
-      idMatch(source.building) ?? {};
-    const spell = spells.get(key) ??
+      idMatch(source.building) ??
+      {};
+    const spell =
+      spells.get(key) ??
       spells.get(clean(card.sc_key)) ??
-      idMatch(source.spell) ?? {};
-    const unitName = t.summon_character ?? t.spawn_character ??
-      building.summon_character ?? card.sc_key;
+      idMatch(source.spell) ??
+      {};
+    const unitName =
+      t.summon_character ??
+      t.spawn_character ??
+      building.summon_character ??
+      card.sc_key;
     const unit = chars.get(clean(unitName)) ?? chars.get(key) ?? {};
-    const main = kind === "Building" ? building :
-      kind === "Spell" ? spell : unit;
+    const main =
+      kind === "Building" ? building : kind === "Spell" ? spell : unit;
     // Some direct spells publish damage in a standalone projectile with a
     // *suffix* (FireballSpell / ArrowsSpell / RocketSpell). Only use exact
     // known naming forms; never fuzzy-match unrelated projectiles.
     const projectileName = clean(card.sc_key);
-    const rawProjectile = projectiles.get(clean(main.projectile)) ??
+    const rawProjectile =
+      projectiles.get(clean(main.projectile)) ??
       projectiles.get(clean(t.projectile)) ??
       projectiles.get(clean(spell.projectile)) ??
-      (kind === "Spell" ? (
-        projectiles.get(projectileName + "spell") ??
-        projectiles.get(projectileName + "projectilerolling") ??
-        projectiles.get(projectileName + "projectile")
-      ) : undefined) ?? {};
-    const hp = prefer(main.hitpoints_per_level, main.hitPointsPerLevel);
-    const damage = prefer(
-      main.damage_per_level,
-      rawProjectile.damage_per_level,
-      main.instant_damage_per_level,
-      t.damage_per_level,
-    );
-    const air = kind === "Spell"
-      ? boolFrom(main.hits_air, main.attacks_air, rawProjectile.attacks_air)
-      : boolFrom(main.attacks_air, rawProjectile.attacks_air);
-    const ground = kind === "Spell"
-      ? boolFrom(main.hits_ground, main.attacks_ground, rawProjectile.attacks_ground)
-      : boolFrom(main.attacks_ground, rawProjectile.attacks_ground);
+      (kind === "Spell"
+        ? (projectiles.get(projectileName + "spell") ??
+          projectiles.get(projectileName + "projectilerolling") ??
+          projectiles.get(projectileName + "projectile"))
+        : undefined) ??
+      {};
+    // Each row's rarity owns its level series (a summoned unit may differ
+    // from the card's rarity). Never apply the card offset twice.
+    const align = (series: number[] | null, owner: Row) => {
+      const rarity = str(owner.rarity || card.rarity).toLowerCase();
+      const start = ({ common: 1, rare: 3, epic: 6, legendary: 9, champion: 11 } as Record<string, number>)[rarity] ?? 1;
+      return series && [...Array(start - 1).fill(0), ...series];
+    };
+    const hp = align(prefer(main.hitpoints_per_level, main.hitPointsPerLevel), main);
+    const damageCandidates = [[main, main.damage_per_level], [rawProjectile, rawProjectile.damage_per_level], [main, main.instant_damage_per_level], [t, t.damage_per_level]] as const;
+    const candidate = damageCandidates.find(([, value]) => prefer(value) !== null);
+    const damage = candidate ? align(prefer(candidate[1]), candidate[0]) : null;
+    const air =
+      kind === "Spell"
+        ? boolFrom(main.hits_air, main.attacks_air, rawProjectile.attacks_air)
+        : boolFrom(main.attacks_air, rawProjectile.attacks_air);
+    const ground =
+      kind === "Spell"
+        ? boolFrom(
+            main.hits_ground,
+            main.attacks_ground,
+            rawProjectile.attacks_ground,
+          )
+        : boolFrom(main.attacks_ground, rawProjectile.attacks_ground);
     const hitsBuildings = boolFrom(main.target_only_buildings);
     const moveSpeed = kind === "Troop" ? positive(n(main.speed)) : null;
-    const range = kind === "Spell" ? null
-      : positive(units(main.range ?? unit.range ?? building.range));
-    const area = positive(units(
-      main.area_damage_radius ?? rawProjectile.area_damage_radius ??
-      main.radius ?? t.radius));
-    const count = kind === "Troop" ?
-      Math.max(1, Math.min(30, n(t.summon_number) ?? 1)) : null;
+    const range =
+      kind === "Spell"
+        ? null
+        : positive(units(main.range ?? unit.range ?? building.range));
+    const area = positive(
+      units(
+        main.area_damage_radius ??
+          rawProjectile.area_damage_radius ??
+          main.radius ??
+          t.radius,
+      ),
+    );
+    const count =
+      kind === "Troop"
+        ? Math.max(1, Math.min(30, n(t.summon_number) ?? 1))
+        : null;
     result.push({
-      id: id!, name, kind,
+      id: id!,
+      name,
+      kind,
       hpByLevel: hp,
       damageByLevel: damage,
       hitSpeedSeconds: seconds(main.hit_speed),
@@ -188,12 +235,25 @@ export function projectMechanics(
       areaRadiusTiles: area,
       unitCount: count,
       deploySeconds: seconds(main.deploy_time ?? t.custom_deploy_time),
-      firstHitSeconds: seconds(main.load_time),
-      specialAbility: has(main.ability) || has(t.hero_ability) ||
-        has(t.passive_ability) || has(main.charge_range) ||
-        has(main.spawn_character) || has(main.death_spawn_character) ||
+      firstHitSeconds: units(main.load_time),
+      specialAbility:
+        has(main.ability) ||
+        has(t.hero_ability) ||
+        has(t.passive_ability) ||
+        has(main.charge_range) ||
+        has(main.spawn_character) ||
+        has(main.death_spawn_character) ||
         (n(main.spawn_number) ?? 0) > 0,
       provenance: "royaleapi-community",
+      description: str(card.description),
+      sourceRecords: Object.fromEntries(
+        Object.entries({
+          registry: card,
+          deployment: t,
+          unit: main,
+          projectile: rawProjectile,
+        }).filter(([, value]) => Object.keys(value).length),
+      ),
     });
   }
   return { source: MECHANICS_SOURCE, fetchedAt, warnings, cards: result };
@@ -202,8 +262,14 @@ export function statForLevel(
   series: number[] | null,
   displayedLevel: number | null,
 ): number | null {
-  if (!series || displayedLevel === null || !Number.isInteger(displayedLevel) ||
-      displayedLevel < 1 || displayedLevel > series.length) return null;
+  if (
+    !series ||
+    displayedLevel === null ||
+    !Number.isInteger(displayedLevel) ||
+    displayedLevel < 1 ||
+    displayedLevel > series.length
+  )
+    return null;
   const value = series[displayedLevel - 1];
   return Number.isFinite(value) && value > 0 ? value : null;
 }
@@ -225,33 +291,55 @@ export type ResolvedMechanics = {
   specialAbility: boolean;
   completeness: number;
 };
-const mechanicsIndices = new WeakMap<MechanicsCatalog, Map<number, MechanicsCard>>();
+const mechanicsIndices = new WeakMap<
+  MechanicsCatalog,
+  Map<number, MechanicsCard>
+>();
 export function resolveMechanics(
-  card: {id:number; level:number|null},
+  card: { id: number; level: number | null },
   catalog?: MechanicsCatalog | null,
 ): ResolvedMechanics | null {
   if (!catalog) return null;
   let index = mechanicsIndices.get(catalog);
   if (!index) {
-    index = new Map(catalog.cards.map(c => [c.id,c]));
-    mechanicsIndices.set(catalog,index);
+    index = new Map(catalog.cards.map((c) => [c.id, c]));
+    mechanicsIndices.set(catalog, index);
   }
   const item = index.get(card.id);
   if (!item) return null;
-  const hitpoints = statForLevel(item.hpByLevel,card.level);
-  const damage = statForLevel(item.damageByLevel,card.level);
-  const dps = damage !== null && item.hitSpeedSeconds !== null &&
-    item.hitSpeedSeconds > 0 ? damage / item.hitSpeedSeconds : null;
-  const major = [hitpoints,damage,item.hitSpeedSeconds,item.rangeTiles,
-    item.moveSpeedRaw,item.targetsAir,item.targetsGround,item.areaRadiusTiles];
-  const completeness = major.filter(x=>x!==null).length / major.length;
+  const hitpoints = statForLevel(item.hpByLevel, card.level);
+  const damage = statForLevel(item.damageByLevel, card.level);
+  const dps =
+    damage !== null && item.hitSpeedSeconds !== null && item.hitSpeedSeconds > 0
+      ? damage / item.hitSpeedSeconds
+      : null;
+  const major = [
+    hitpoints,
+    damage,
+    item.hitSpeedSeconds,
+    item.rangeTiles,
+    item.moveSpeedRaw,
+    item.targetsAir,
+    item.targetsGround,
+    item.areaRadiusTiles,
+  ];
+  const completeness = major.filter((x) => x !== null).length / major.length;
   return {
-    hitpoints,damage,dps,hitSpeedSeconds:item.hitSpeedSeconds,
-    rangeTiles:item.rangeTiles,moveSpeedRaw:item.moveSpeedRaw,
-    targetsAir:item.targetsAir,targetsGround:item.targetsGround,
-    buildingsOnly:item.buildingsOnly,splashRadiusTiles:item.areaRadiusTiles,
-    unitCount:item.unitCount,deploySeconds:item.deploySeconds,
-    firstHitSeconds:item.firstHitSeconds,kind:item.kind,
-    specialAbility:item.specialAbility,completeness,
+    hitpoints,
+    damage,
+    dps,
+    hitSpeedSeconds: item.hitSpeedSeconds,
+    rangeTiles: item.rangeTiles,
+    moveSpeedRaw: item.moveSpeedRaw,
+    targetsAir: item.targetsAir,
+    targetsGround: item.targetsGround,
+    buildingsOnly: item.buildingsOnly,
+    splashRadiusTiles: item.areaRadiusTiles,
+    unitCount: item.unitCount,
+    deploySeconds: item.deploySeconds,
+    firstHitSeconds: item.firstHitSeconds,
+    kind: item.kind,
+    specialAbility: item.specialAbility,
+    completeness,
   };
 }

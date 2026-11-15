@@ -98,3 +98,9 @@ Sites provisions binding `DB` and applies `drizzle/` migrations. Run `node node_
 GitHub is the public source repository, and Vercel serves the shareable production site. The original ChatGPT Sites deployment is independent; pushing GitHub changes does not update it. No scheduled jobs or paid custom domain are required for this release.
 
 Unofficial fan content, not endorsed by Supercell. See https://supercell.com/en/fan-content-policy/ and `docs/RESEARCH.md` for research scope and provenance.
+
+### Card details and comparisons
+
+Tap a Deck Item (or collection card) for a shared card-detail sheet. Choose a second card to compare twelve numerical fields with paired bars and signed differences on both sides. Green/red describes favorable/unfavorable values for the metric; attack interval, deployment time and elixir favor lower numbers. Speed and unit count remain neutral. Equal values show `= 0`, and absent values show `Not comparable` rather than fabricated zeros.
+
+Use collection levels or enable the same-level selector (1–16). Unsupported levels remain unavailable. Per-level community arrays are aligned from each **source row's** rarity unlock level (Common 1, Rare 3, Epic 6, Legendary 9, Champion 11), including projectile rows. Raw registry, deployment, unit and projectile records are expandable separately; they retain source units and base-level semantics. The downloaded source includes historical mechanics and is **not a guarantee of current-patch data or complete Evolution/Hero mechanics**. The API now checks the source's combat-file commit date and displays a warning for old data; a fresh HTTP fetch is not a balance update.

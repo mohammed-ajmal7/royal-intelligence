@@ -47,11 +47,11 @@ import {
   key,
   deckLink,
   importLink,
-  combat,
   Constraints,
 } from "../lib/engine";
 import { verifiedStats } from "../lib/references";
 import type { MechanicsCatalog } from "../lib/mechanics";
+import { CardDetails } from "../components/CardDetails";
 import { DeckItemView } from "../components/DeckItemView";
 const nav = [
   ["Overview", LayoutDashboard],
@@ -287,13 +287,6 @@ export default function App() {
     [resource, setResource] = useState({ gold: 0, wildCards: 0, shards: 0 }),
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
-    [comparison, setComparison] = useState<number>(0),
-    [calc, setCalc] = useState({
-      hp: 1000,
-      damage: 200,
-      interval: 1.2,
-      delay: 0.5,
-    }),
     [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => {
     const change = () => {
@@ -2677,177 +2670,10 @@ export default function App() {
           </button>
         </div>
       )}
-      {selected && (
-        <div className="modal-backdrop" onClick={() => setSelected(null)}>
-          <section
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={selected.name}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close icon-btn"
-              aria-label="Close card details"
-              onClick={() => setSelected(null)}
-            >
-              <X />
-            </button>
-            <div className="modal-head">
-              <img src={selected.image} alt={selected.name} />
-              <div>
-                <Pill>{selected.rarity.toUpperCase()}</Pill>
-                <h2>{selected.name}</h2>
-                <p>
-                  Card #{selected.id} · Level {selected.level ?? "unknown"} ·{" "}
-                  {selected.elixir ?? "?"} elixir
-                </p>
-                <div className="tags">
-                  {selected.roles.map((r) => (
-                    <Pill key={r}>{r}</Pill>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="two-col">
-              <div className="fact">
-                <span>Evolution owned</span>
-                <strong>
-                  {selected.evo == null
-                    ? "Unknown"
-                    : selected.evo
-                      ? "Yes"
-                      : "No"}
-                </strong>
-              </div>
-              <div className="fact">
-                <span>Hero owned</span>
-                <strong>
-                  {selected.hero == null
-                    ? "Unknown"
-                    : selected.hero
-                      ? "Yes"
-                      : "No"}
-                </strong>
-              </div>
-            </div>
-            <p>
-              Active source form: {selected.active}. Boost state: not verified.
-            </p>
-            <h3>Verified reference specifications</h3>
-            {verifiedStats.some((v) => v.cardId === selected.id) ? (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Form / statistic</th>
-                      <th>Value</th>
-                      <th>Level / patch</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {verifiedStats
-                      .filter((v) => v.cardId === selected.id)
-                      .map((v, i) => (
-                        <tr key={i}>
-                          <td>
-                            <a
-                              href={v.sourceUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {v.form} · {v.statistic} ↗
-                            </a>
-                          </td>
-                          <td>
-                            {v.value} {v.unit}
-                          </td>
-                          <td>
-                            {v.level ?? "All"} · {v.patch}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <Notice>
-                HP, damage, DPS, range and ability costs are not verified for
-                this card in the reference dataset.
-              </Notice>
-            )}
-            <h3>Compare an alternative</h3>
-            <select
-              aria-label="Comparison card"
-              value={comparison}
-              onChange={(e) => setComparison(Number(e.target.value))}
-            >
-              <option value="0">Choose a card…</option>
-              {s.catalog
-                .filter((c) => c.id !== selected.id)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
-            {comparison > 0 && s.catalog.find((c) => c.id === comparison) && (
-              <p>
-                {s.catalog.find((c) => c.id === comparison)!.name}:{" "}
-                {s.catalog.find((c) => c.id === comparison)!.elixir ?? "?"}{" "}
-                elixir · level{" "}
-                {s.catalog.find((c) => c.id === comparison)!.level ?? "?"} ·{" "}
-                {s.catalog.find((c) => c.id === comparison)!.roles.join(", ")}.
-                Combat winner is not established.
-              </p>
-            )}
-            <details>
-              <summary>Simple combat calculator</summary>
-              <p>
-                Manual example inputs, not this card’s stats. Fixed
-                single-target hits only; no shields, spawn, projectile or other
-                mechanics.
-              </p>
-              <div className="form-grid">
-                {(["hp", "damage", "interval", "delay"] as const).map((k) => (
-                  <label key={k}>
-                    {k}
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={calc[k]}
-                      onChange={(e) =>
-                        setCalc({ ...calc, [k]: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-              <Notice>
-                {(() => {
-                  const r = combat(
-                    calc.hp,
-                    calc.damage,
-                    calc.interval,
-                    calc.delay,
-                  );
-                  return r
-                    ? `${r.hits} hits · ${r.dps.toFixed(2)} DPS · ${r.time.toFixed(2)} seconds including first-hit delay`
-                    : "Enter positive HP, damage and interval, and a nonnegative delay.";
-                })()}
-              </Notice>
-            </details>
-            <p className="micro">
-              {s.mode === "demo"
-                ? "Historical sample; synthetic ownership."
-                : "Official API snapshot."}{" "}
-              Roles are editorial. Reference values retain their original patch
-              and level.
-            </p>
-          </section>
-        </div>
-      )}
+      {selected && <CardDetails key={selected.id} card={selected} cards={s.catalog}
+        mechanics={mechanics} loading={mechanicsLoading} error={mechanicsError}
+        demo={s.mode === "demo"} onClose={() => setSelected(null)}/>}
+
     </div>
   );
 }
