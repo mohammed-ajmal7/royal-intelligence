@@ -3143,3 +3143,45 @@ footer p { color: #afcbe4; }
   .deck-item-stat strong { font-size: 13px; }
   .deck-item-level-table { min-width: 565px; }
 }
+
+/* Clarify updated 2026 card reference vs historical base-data calculations. */
+.deck-item-spawn-note,
+.deck-item-source-note {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 11px 12px;
+  margin: 0 0 13px;
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.deck-item-spawn-note {
+  border: 1px solid #d1a54f;
+  background: #554017;
+  color: #fff0c4;
+}
+.deck-item-spawn-note strong { color: #ffe38a; }
+.deck-item-source-note {
+  background: #0d4572;
+  border: 1px solid #61a6ce;
+  color: #d3edfa;
+}
+.deck-item-spawn-note svg,
+.deck-item-source-note svg { flex: 0 0 16px; margin-top: 2px; }
+.deck-item-source-note a { font-weight: 800; color: #ffe8a0; }
+.deck-item-source-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 750;
+  color: #ffe398;
+  line-height: 1.4;
+}
+@media (max-width: 650px) {
+  .deck-item-spawn-note, .deck-item-source-note {
+    font-size: 10px;
+    padding: 10px;
+  }
+  .deck-item-source-label { font-size: 9px; }
+}
