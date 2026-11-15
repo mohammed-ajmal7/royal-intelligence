@@ -19,3 +19,23 @@ test('combat timing counts first hit once',()=>{assert.deepEqual(combat(1000,200
 test('search respects ownership, exclusions, hard includes and cap',()=>{const inc=s.deck[2].id,exc=s.deck[1].id;const cs=generate(s.cards,{...defaults,include:[inc],exclude:[exc],maxElixir:4});assert.ok(cs.length);for(const c of cs){assert.ok(legal(c.cards));assert.ok(c.cards.some(x=>x.id===inc));assert.ok(!c.cards.some(x=>x.id===exc));assert.ok(c.evaluation.avg!<=4);}for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)assert.ok(cs[i].cards.filter(c=>cs[j].cards.some(d=>d.id===c.id)).length<=6);});
 test('impossible constraints produce no fabricated deck',()=>{assert.deepEqual(generate(s.cards,{...defaults,minLevel:99}),[]);assert.deepEqual(generate(s.cards,{...defaults,include:[1],exclude:[1]}),[]);});
 test('teammate scoring applies only to complete 2v2 decks',()=>{assert.ok(evaluate(s.deck,{...defaults,mode:'2v2 balanced',teammate:s.deck}).features.some(f=>f.name==='Teammate complement'));assert.ok(!evaluate(s.deck,{...defaults,teammate:s.deck}).features.some(f=>f.name==='Teammate complement'));});
+
+test('missing special form flag means ordinary base use while malformed flags stay unknown',()=>{
+  const missing={...raw,evolutionLevel:undefined};
+  const owned=card(missing,true);
+  const equipped=card(missing,true,true);
+  assert.equal(owned.evo,false);
+  assert.equal(owned.hero,false);
+  assert.equal(equipped.active,'base');
+  assert.equal(equipped.evo,null);
+  assert.equal(card({...missing,evolutionLevel:8},true).hero,null);
+});
+test('observed battle trophy changes and arena are source-backed',()=>{
+  const v={...b,arena:{name:'Test arena'},team:[
+    {...p('#VUYRP9GQL',3),trophyChange:25},p('#PYLQGR',3)]};
+  const battle=parseBattle(v,'#VUYRP9GQL');
+  assert.equal(battle.trophyChange,25);
+  assert.equal(battle.arena,'Test arena');
+  assert.equal(battle.battleType,'2v2');
+  assert.equal(parseBattle(v,'#YQLGRJ').trophyChange,null);
+});
