@@ -216,12 +216,18 @@ export type ResolvedMechanics = {
   specialAbility: boolean;
   completeness: number;
 };
+const mechanicsIndices = new WeakMap<MechanicsCatalog, Map<number, MechanicsCard>>();
 export function resolveMechanics(
   card: {id:number; level:number|null},
   catalog?: MechanicsCatalog | null,
 ): ResolvedMechanics | null {
   if (!catalog) return null;
-  const item = catalog.cards.find(x => x.id === card.id);
+  let index = mechanicsIndices.get(catalog);
+  if (!index) {
+    index = new Map(catalog.cards.map(c => [c.id,c]));
+    mechanicsIndices.set(catalog,index);
+  }
+  const item = index.get(card.id);
   if (!item) return null;
   const hitpoints = statForLevel(item.hpByLevel,card.level);
   const damage = statForLevel(item.damageByLevel,card.level);
