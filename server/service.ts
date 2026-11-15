@@ -121,6 +121,60 @@ export async function load(
     s.warnings.push("Upcoming chest refresh failed.");
   return s;
 }
+
+/** Fetch a player's public selected deck without requesting their battles or chests. */
+export async function scout(
+  tagInput: string,
+  env: Env,
+  fetcher: typeof fetch = fetch,
+) {
+  const playerTag = tag(tagInput);
+  const path = "/players/" + encodeURIComponent(playerTag);
+  const [profile, catalog] = await Promise.all([
+    upstream(path, env, fetcher),
+    upstream("/cards", env, fetcher),
+  ]);
+  const cap = Number(env.DISPLAY_LEVEL_CAP ?? 16);
+  const s = normalize(
+    profile.value,
+    catalog.value,
+    [],
+    {},
+    new Date(profile.at).toISOString(),
+    Number.isInteger(cap) && cap > 0 && cap <= 30 ? cap : 16,
+  );
+  return { tag: s.tag, name: s.name, trophies: s.trophies, deck: s.deck };
+}
+
+/** Public clan and roster information. A roster failure must not hide clan facts. */
+export async function clanInfo(
+  tagInput: string,
+  env: Env,
+  fetcher: typeof fetch = fetch,
+) {
+  const clanTag = tag(tagInput);
+  const path = "/clans/" + encodeURIComponent(clanTag);
+  const response = await upstream(path, env, fetcher);
+  const clan = z.object({
+    tag: z.string(),
+    name: z.string(),
+  }).passthrough().parse(response.value);
+  let members: Record<string, unknown>[] = [];
+  const warnings: string[] = [];
+  try {
+    const roster = await upstream(path + "/members", env, fetcher);
+    members = z.object({
+      items: z.array(z.object({
+        tag: z.string(),
+        name: z.string(),
+      }).passthrough()),
+    }).parse(roster.value).items.slice(0, 50);
+  } catch {
+    warnings.push("Clan roster is temporarily unavailable.");
+  }
+  return { clan, members, warnings, fetchedAt: new Date(response.at).toISOString() };
+}
+
 export async function history(db: DB | undefined, owner: string, t: string) {
   if (!db) return { snapshots: [], battles: [], choices: [] };
   const values = await Promise.all(
@@ -208,6 +262,12 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
       req.headers.get("x-app-access-key") === env.APP_ACCESS_KEY
         ? "personal"
         : null);
+    const forwarded =
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-vercel-forwarded-for") ??
+      "shared";
+    const publicBucket =
+      owner ?? "public:" + forwarded.split(",")[0].trim().slice(0, 80);
     if (
       req.method !== "GET" &&
       req.headers.get("origin") &&
@@ -216,13 +276,7 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
       throw new APIError(403, "Cross-origin write denied.");
     if (u.pathname === "/api/player" && req.method === "GET") {
       // Public read-only player lookups; private storage still requires identity.
-      // Prefer trusted hosting-provider IP headers for best-effort per-client limits.
-      const forwarded =
-        req.headers.get("cf-connecting-ip") ??
-        req.headers.get("x-vercel-forwarded-for") ??
-        "shared";
-      const bucket = owner ?? "public:" + forwarded.split(",")[0].trim().slice(0, 80);
-      await throttle(bucket, env);
+      await throttle(publicBucket, env);
       const t = tag(u.searchParams.get("tag") ?? "");
       try {
         const s = await load(t, env, fetcher);
@@ -254,6 +308,14 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
         }
         throw e;
       }
+    }
+    if (u.pathname === "/api/scout" && req.method === "GET") {
+      await throttle(publicBucket, env);
+      return json(await scout(u.searchParams.get("tag") ?? "", env, fetcher));
+    }
+    if (u.pathname === "/api/clan" && req.method === "GET") {
+      await throttle(publicBucket, env);
+      return json(await clanInfo(u.searchParams.get("tag") ?? "", env, fetcher));
     }
     if (!owner)
       throw new APIError(
