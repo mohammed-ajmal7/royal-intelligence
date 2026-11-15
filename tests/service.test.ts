@@ -13,3 +13,35 @@ test('partial API failure preserves player with warning',async()=>{clearCache();
 test('actual migration, deduplication, owner isolation, tracking and deletion',async()=>{const db=new Store(),s={...demo(),tag:'#VUYRP9GQL',mode:'live'};for(const o of ['a','b'])for(let i=0;i<2;i++)await db.prepare('INSERT OR IGNORE INTO ri_snapshots VALUES(?,?,?,?,?)').bind(o,s.tag,s.fetchedAt,s.fetchedAt,JSON.stringify(s)).run();assert.equal((await(await api(req('/api/history?tag=VUYRP9GQL'),{DB:db})).json()).snapshots.length,1);const r=await api(req('/api/choices','a',{method:'POST',body:JSON.stringify({tag:s.tag,cards:s.deck.map(c=>c.id),mode:'Best overall'})}),{DB:db});assert.equal(r.status,201);assert.equal((await(await api(req('/api/history?tag=VUYRP9GQL'),{DB:db})).json()).choices.length,1);await api(req('/api/history?tag=VUYRP9GQL','a',{method:'DELETE'}),{DB:db});assert.equal((await(await api(req('/api/history?tag=VUYRP9GQL'),{DB:db})).json()).snapshots.length,0);assert.equal((await(await api(req('/api/history?tag=VUYRP9GQL','b'),{DB:db})).json()).snapshots.length,1);db.raw.close();});
 test('stale fallback preserves timestamp',async()=>{const db=new Store(),s={...demo(),tag:'#VUYRP9GQL',mode:'live'};await db.prepare('INSERT INTO ri_snapshots VALUES(?,?,?,?,?)').bind('a',s.tag,s.fetchedAt,s.fetchedAt,JSON.stringify(s)).run();const r=await(await api(req('/api/player?tag=VUYRP9GQL'),{DB:db})).json();assert.equal(r.stale,true);assert.equal(r.fetchedAt,s.fetchedAt);db.raw.close();});
 test('D1 atomic limit stops request twenty-one',async()=>{const db=new Store();for(let i=0;i<20;i++)assert.equal((await api(req('/api/player?tag=VUYRP9GQL'),{DB:db})).status,503);assert.equal((await api(req('/api/player?tag=VUYRP9GQL'),{DB:db})).status,429);db.raw.close();});
+
+
+test('anonymous visitors can fetch any public player tag without reading saved history',async()=>{
+  clearCache();
+  const c={id:26000000,name:'Knight',level:13,maxLevel:16};
+  const fake:typeof fetch=async input=>{
+    const u=String(input);
+    if(u.endsWith('/cards'))return Response.json({items:[c]});
+    if(u.endsWith('/battlelog'))return Response.json([]);
+    if(u.endsWith('/upcomingchests'))return Response.json({items:[{name:'Gold Crate',index:0}]});
+    if(u.includes('/players/'))return Response.json({tag:'#VUYRP9GQL',name:'Live Player',trophies:1123,wins:15,losses:10,cards:[c],currentDeck:[c]});
+    return new Response('',{status:404});
+  };
+  const r=await api(new Request('https://test.example/api/player?tag=%23VUYRP9GQL'),{CLASH_API_TOKEN:'test'},fake);
+  assert.equal(r.status,200);
+  const player=await r.json();
+  assert.equal(player.name,'Live Player');
+  assert.equal(player.mode,'live');
+  assert.equal(player.raw.wins,15);
+  assert.equal(player.stored,undefined);
+  assert.equal((await api(new Request('https://test.example/api/history?tag=VUYRP9GQL'),{})).status,401);
+  assert.equal((await api(new Request('https://test.example/api/choices',{method:'POST'}),{})).status,401);
+});
+test('anonymous lookups do not fall back to another owner saved snapshots',async()=>{
+  clearCache();
+  const db=new Store(),s={...demo(),tag:'#VUYRP9GQL',mode:'live'};
+  await db.prepare('INSERT INTO ri_snapshots VALUES(?,?,?,?,?)').bind('a',s.tag,s.fetchedAt,s.fetchedAt,JSON.stringify(s)).run();
+  const r=await api(new Request('https://test.example/api/player?tag=VUYRP9GQL'),{DB:db});
+  assert.equal(r.status,503);
+  assert.equal((await r.json()).stale,undefined);
+  db.raw.close();
+});
