@@ -8,6 +8,12 @@ Use Node 24. Run `npm ci`, `npm run dev`, and open the local URL. Run `npm test`
 
 `npm run build` creates a Sites Worker bundle. For a conventional Next.js host such as Vercel, override the build command to `npm run build:vercel`; `npm start` serves that build. The repository contains no secret values or real player records.
 
+## Public player lookup
+
+Open `/?tag=VUYRP9GQL` to load a public profile by player tag. The new read-only `GET /api/player?tag=%23VUYRP9GQL` endpoint accepts any valid player tag without visitor authentication. Live lookup still requires `CLASH_API_TOKEN` configured **on the server**; visitors never enter or receive that key. Private `/api/history` and `/api/choices` still require authenticated workspace access, and anonymous lookups do not read or save another account's private snapshots.
+
+The overview displays lifetime wins, losses, total games, three-crown wins, donations, challenge stats and ranked fields where returned by the official API. These differ from recent battle-log statistics; unavailable fields show no estimate. Sharing a URL does not grant access to private history. This branch can be previewed on Vercel; deployment to Vercel does **not** automatically update the original ChatGPT Sites app.
+
 ## Live account setup
 
 Create a key at https://developer.clashroyale.com/ and configure `CLASH_API_TOKEN` as a server secret. The key needs a valid IP allowlist. Supported API bases are `https://api.clashroyale.com/v1` (default) and `https://proxy.royaleapi.dev/v1`. If deliberately using the RoyaleAPI proxy, follow https://docs.royaleapi.com/proxy to configure its allowlisted IP; the proxy receives your API key and requests. Set `CLASH_API_BASE` accordingly. Redeploy after changing hosted environment variables.
