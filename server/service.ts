@@ -185,7 +185,7 @@ async function throttle(owner: string, env: Env) {
       throw new APIError(429, "Too many requests. Try again in a minute.");
   }
 }
-export async function api(req: Request, env: Env) {
+export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch) {
   const json = (x: unknown, status = 200) =>
     Response.json(x, {
       status,
@@ -225,7 +225,7 @@ export async function api(req: Request, env: Env) {
       await throttle(bucket, env);
       const t = tag(u.searchParams.get("tag") ?? "");
       try {
-        const s = await load(t, env);
+        const s = await load(t, env, fetcher);
         if (owner && env.DB) {
           s.stored = true;
           try {
