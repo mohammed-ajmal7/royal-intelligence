@@ -1360,7 +1360,7 @@ export default function App() {
                       <div className="eyebrow">{candidates.length ? "TOP RECOMMENDATION" : "CURRENT SELECTED DECK"}</div>
                       <h3>{name(deck)}</h3>
                       <span className="muted">
-                        {deck.length}/8 cards · {ev.avg?.toFixed(2) ?? "?"} average elixir
+                        {deck.length}/8 cards · picked from {s.cards.length} owned base cards
                       </span>
                     </div>
                     <div className="smart-score">
@@ -1370,6 +1370,20 @@ export default function App() {
                     </div>
                   </div>
                   <Deck cards={deck} onClick={setSelected}/>
+                  <div className="smart-resource-metrics" aria-label="Elixir and rotation cost">
+                    <div className="smart-resource-metric">
+                      <span className="resource-gem"><Zap size={17}/></span>
+                      <div><small>AVG ELIXIR</small><strong>{ev.avg?.toFixed(2) ?? "—"}</strong></div>
+                    </div>
+                    <div className="smart-resource-metric">
+                      <span className="resource-gem"><RefreshCw size={17}/></span>
+                      <div><small>4-CARD CYCLE</small><strong>{ev.cycle ?? "—"} <em>elixir</em></strong></div>
+                    </div>
+                  </div>
+                  <p className="micro smart-metric-explainer">
+                    Cycle is the sum of the four cheapest cards, a best-case rotation measure—not
+                    a guaranteed return cost for every card.
+                  </p>
                   <div className="smart-checks" aria-label="Deck coverage checklist">
                     {ev.audit.checks.map(check => (
                       <div className={check.ok ? "smart-check ok" : "smart-check miss"} key={check.id}>
@@ -1701,8 +1715,9 @@ export default function App() {
                         <h4>{name(c.cards)}</h4>
                         <Deck cards={c.cards} onClick={setSelected} />
                         <p>
-                          {c.evaluation.avg?.toFixed(2)} average elixir ·{" "}
-                          {c.evaluation.air} reliable air defenders
+                          Avg {c.evaluation.avg?.toFixed(2) ?? "—"} elixir ·
+                          4-card cycle {c.evaluation.cycle ?? "—"} ·
+                          {" "}{c.evaluation.air} reliable air defenders
                         </p>
                         {c.evaluation.audit.missing.length > 0 && (
                           <p className="micro">
