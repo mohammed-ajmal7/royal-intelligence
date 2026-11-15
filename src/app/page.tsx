@@ -484,12 +484,12 @@ export default function App() {
     setError("");
     setTimeout(() => {
       try {
-        const cs = generate(s.cards, q);
+        const cs = generate(s.cards, q, deck);
         setCandidates(cs);
         if (cs.length) setDeck(cs[0].cards);
         else
           setError(
-            "No deck meets these constraints. Relax the level, elixir or include restrictions.",
+            "No eligible eight-card deck meets the current rules. In Advanced Options, lower the minimum level, raise the elixir limit, or remove locked/excluded cards.",
           );
       } catch (e) {
         setError((e as Error).message);
@@ -1286,24 +1286,100 @@ export default function App() {
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
-              <div className="mode-tabs">
-                {[
-                  "Best overall",
-                  "Maximum defense",
-                  "Maximum offense",
-                  "2v2 defensive support",
-                  "Fast cycle",
-                ].map((m) => (
-                  <button
-                    className={q.mode === m ? "active" : ""}
-                    key={m}
-                    onClick={() => setQ({ ...q, mode: m })}
-                  >
-                    {m}
+              <Panel title="Find your strongest decks" kicker="ONE-CLICK COLLECTION ANALYSIS">
+                <p className="smart-intro">
+                  Pick a playstyle, then find the strongest balanced teams we can
+                  build from {s.cards.filter(c => c.owned && !c.tower).length} cards
+                  in {s.name}'s collection. Every eligible owned card is
+                  considered, including lower-level counters.
+                </p>
+                <div className="mode-tabs smart-modes" aria-label="Choose deck playstyle">
+                  {[
+                    ["Best overall", "Balanced"],
+                    ["Maximum defense", "Strong defense"],
+                    ["Maximum offense", "Aggressive"],
+                    ["2v2 defensive support", "2v2 partner"],
+                    ["Fast cycle", "Fast cycle"],
+                  ].map(([mode, label]) => (
+                    <button
+                      className={q.mode === mode ? "active" : ""}
+                      key={mode}
+                      aria-pressed={q.mode === mode}
+                      onClick={() => setQ({ ...q, mode })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="actions">
+                  <button className="btn smart-find" disabled={busy || loading || s.cards.length < 8}
+                    onClick={optimize}>
+                    <Sparkles size={17} />
+                    {busy ? "Checking your collection…" : "Find my best decks"}
                   </button>
-                ))}
-              </div>
-              <div className="lab-grid">
+                  <button className="btn secondary"
+                    onClick={() => {
+                      setQ({ ...defaults, cap: s.cap, mode: q.mode });
+                      setCandidates([]);
+                      setDeck(s.deck);
+                      setError("");
+                    }}>
+                    Reset filters
+                  </button>
+                </div>
+                <p className="micro">
+                  Scores are transparent estimates from card roles, levels, elixir,
+                  synergy and defensive coverage—not proven win rates.
+                  No deck beats every possible opponent.
+                  {s.mode === "demo" ? " DEMO MODE: Load your real tag to optimize your actual collection." : ""}
+                </p>
+                <div className="smart-overview">
+                  <div className="smart-overview-head">
+                    <div>
+                      <div className="eyebrow">{candidates.length ? "TOP RECOMMENDATION" : "CURRENT SELECTED DECK"}</div>
+                      <h3>{name(deck)}</h3>
+                      <span className="muted">
+                        {deck.length}/8 cards · {ev.avg?.toFixed(2) ?? "?"} average elixir
+                      </span>
+                    </div>
+                    <div className="smart-score">
+                      <strong>{ev.score}</strong>
+                      <span>/100</span>
+                      <small>HEURISTIC SCORE</small>
+                    </div>
+                  </div>
+                  <Deck cards={deck} onClick={setSelected}/>
+                  <div className="smart-checks" aria-label="Deck coverage checklist">
+                    {ev.audit.checks.map(check => (
+                      <div className={check.ok ? "smart-check ok" : "smart-check miss"} key={check.id}>
+                        {check.ok ? <Check size={14}/> : <X size={14}/>}
+                        <span>{check.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="micro">
+                    {ev.audit.passed}/{ev.audit.total} defensive and offensive checks covered.
+                    Missing a check does not necessarily make a deck unusable.
+                  </p>
+                  <div className="actions">
+                    <button className="btn secondary" disabled={deck.length !== 8} onClick={copy}>
+                      <Copy size={14}/> Copy game deck link
+                    </button>
+                    {deck.length === 8 && <a className="btn secondary" href={deckLink(deck)}
+                      target="_blank" rel="noreferrer">Open in Clash Royale ↗</a>}
+                    <button className="btn secondary" disabled={s.mode === "demo" || deck.length !== 8}
+                      onClick={track}><History size={14}/> Track this deck</button>
+                  </div>
+                </div>
+              </Panel>
+              <details className="lab-advanced">
+                <summary>Advanced options · manually edit cards, lock choices, or set limits</summary>
+                <p className="micro">
+                  Optional. Lock required cards using "Must include", block bad fits
+                  with "Must exclude", or adjust limits. Leave these empty to search
+                  your entire eligible collection automatically.
+                </p>
+                <div className="lab-grid">
                 <Panel
                   title="Your arsenal"
                   action={<Pill>{s.cards.length}</Pill>}
@@ -1587,30 +1663,36 @@ export default function App() {
                     </p>
                   </details>
                 </Panel>
-              </div>
+                </div>
+              </details>
               {candidates.length > 0 && (
                 <Panel
-                  title="Your candidate shortlist"
-                  kicker="DIVERSE BASE-CARD COMPOSITIONS"
+                  title="Top alternative teams"
+                  kicker="DIVERSE REAL-COLLECTION COMPOSITIONS"
                 >
                   <div className="candidate-grid">
                     {candidates.map((c, i) => (
                       <div className="candidate" key={key(c.cards)}>
                         <div className="deck-meta">
                           <Pill>0{i + 1}</Pill>
-                          <strong>{c.evaluation.score}/100</strong>
+                          <strong>{c.evaluation.score}/100 · {c.evaluation.audit.passed}/{c.evaluation.audit.total} checks</strong>
                         </div>
                         <h4>{name(c.cards)}</h4>
                         <Deck cards={c.cards} onClick={setSelected} />
                         <p>
                           {c.evaluation.avg?.toFixed(2)} average elixir ·{" "}
-                          {c.evaluation.air} sustained air defenders
+                          {c.evaluation.air} reliable air defenders
                         </p>
+                        {c.evaluation.audit.missing.length > 0 && (
+                          <p className="micro">
+                            Trade-offs: {c.evaluation.audit.missing.join(", ")}.
+                          </p>
+                        )}
                         <button
                           className="btn secondary"
                           onClick={() => setDeck(c.cards)}
                         >
-                          Use this deck
+                          {key(deck) === key(c.cards) ? "Selected" : "Use this deck"}
                         </button>
                       </div>
                     ))}
