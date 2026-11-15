@@ -88,6 +88,14 @@ const blank = {
 };
 const pct = (n: number) => Math.round(n * 100) + "%";
 const fmt = (n: number | null) => (n == null ? "—" : n.toLocaleString("en-US"));
+function playerNumber(source: unknown, ...path: string[]): number | null {
+  let current: unknown = source;
+  for (const part of path) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) return null;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return typeof current === "number" && Number.isFinite(current) ? current : null;
+}
 function Panel({
   title,
   kicker,
@@ -260,6 +268,11 @@ export default function App() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setStatus)
       .catch(() => {});
+    const requestedTag = new URLSearchParams(window.location.search).get("tag");
+    if (requestedTag) {
+      setTag(requestedTag);
+      void connect(requestedTag);
+    }
     try {
       const p = JSON.parse(localStorage.getItem("ri-preferences") ?? "null");
       if (p?.version === 1 && p.resource) setResource(p.resource);
@@ -352,14 +365,21 @@ export default function App() {
     if (!r.ok) throw new Error(b.error ?? "Request failed");
     return b;
   }
-  async function connect() {
+  async function connect(searchTag = tagInput) {
     setError("");
     setLoading(true);
     try {
       const result: Snapshot = await request(
-        "/api/player?tag=" + encodeURIComponent(tagInput),
+        "/api/player?tag=" + encodeURIComponent(searchTag),
       );
       setS(result);
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname +
+          "?tag=" + encodeURIComponent(result.tag.replace(/^#/, "")) +
+          window.location.hash,
+      );
       setDeck(result.deck);
       setQ({ ...defaults, cap: result.cap });
       setCandidates([]);
@@ -376,7 +396,7 @@ export default function App() {
             : "Account synchronized.",
         );
       } catch {
-        setToast("Account loaded. Stored history could not be retrieved.");
+        setToast("Public profile loaded. Private history is unavailable.");
       }
     } catch (e) {
       setError((e as Error).message);
@@ -671,9 +691,9 @@ export default function App() {
                 onKeyDown={(e) => e.key === "Enter" && !loading && connect()}
               />
             </label>
-            <button className="btn" disabled={loading} onClick={connect}>
+            <button className="btn" disabled={loading} onClick={() => connect()}>
               <RefreshCw size={14} className={loading ? "spin" : ""} />
-              {loading ? "Connecting…" : "Connect account"}
+              {loading ? "Loading profile…" : "Search player"}
             </button>
             <div className="source-label">
               <Pill tone={s.mode === "demo" ? "gold" : "green"}>
@@ -918,6 +938,24 @@ export default function App() {
                   <p className="micro">
                     Positions in the returned cycle, not time estimates.
                   </p>
+                </Panel>
+              </div>
+              <div className="two-col">
+                <Panel title="Lifetime battle record" kicker="OFFICIAL PROFILE STATISTICS">
+                  <div className="fact"><span>Wins</span><strong>{fmt(playerNumber(s.raw, "wins"))}</strong></div>
+                  <div className="fact"><span>Losses</span><strong>{fmt(playerNumber(s.raw, "losses"))}</strong></div>
+                  <div className="fact"><span>Total games</span><strong>{fmt(playerNumber(s.raw, "battleCount"))}</strong></div>
+                  <div className="fact"><span>Three-crown wins</span><strong>{fmt(playerNumber(s.raw, "threeCrownWins"))}</strong></div>
+                  <div className="fact"><span>Total donations</span><strong>{fmt(playerNumber(s.raw, "totalDonations"))}</strong></div>
+                  <p className="micro">Lifetime values come from the profile endpoint and differ from recent-battle sample statistics. Missing values are not estimated.</p>
+                </Panel>
+                <Panel title="Challenges & ranked" kicker="OFFICIAL PROFILE STATISTICS">
+                  <div className="fact"><span>Challenge maximum wins</span><strong>{fmt(playerNumber(s.raw, "challengeMaxWins"))}</strong></div>
+                  <div className="fact"><span>Challenge cards won</span><strong>{fmt(playerNumber(s.raw, "challengeCardsWon"))}</strong></div>
+                  <div className="fact"><span>Tournament cards won</span><strong>{fmt(playerNumber(s.raw, "tournamentCardsWon"))}</strong></div>
+                  <div className="fact"><span>Current ranked trophies</span><strong>{fmt(playerNumber(s.raw, "leagueStatistics", "currentSeason", "trophies"))}</strong></div>
+                  <div className="fact"><span>Best season global rank</span><strong>{fmt(playerNumber(s.raw, "leagueStatistics", "bestSeason", "rank"))}</strong></div>
+                  <p className="micro">Ranked and challenge fields appear only when the official API returns them. Detailed historical charts need snapshots collected over time.</p>
                 </Panel>
               </div>
             </>
