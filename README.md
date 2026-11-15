@@ -8,17 +8,31 @@ Use Node 24. Run `npm ci`, `npm run dev`, and open the local URL. Run `npm test`
 
 `npm run build` creates a Sites Worker bundle. For a conventional Next.js host such as Vercel, override the build command to `npm run build:vercel`; `npm start` serves that build. The repository contains no secret values or real player records.
 
-## Public player lookup
+## Public, player-tag-driven workspace
 
-Open `/?tag=VUYRP9GQL` to load a public profile by player tag. The new read-only `GET /api/player?tag=%23VUYRP9GQL` endpoint accepts any valid player tag without visitor authentication. Live lookup still requires `CLASH_API_TOKEN` configured **on the server**; visitors never enter or receive that key. Private `/api/history` and `/api/choices` still require authenticated workspace access, and anonymous lookups do not read or save another account's private snapshots.
+Share `https://royal-intelligence.vercel.app/?tag=VUYRP9GQL`. Anyone can enter **their own** valid player tag. The owner must configure the **one** `CLASH_API_TOKEN` on the server; visitors never need Supercell credentials or API keys.
 
-The overview displays lifetime wins, losses, total games, three-crown wins, donations, challenge stats and ranked fields where returned by the official API. These differ from recent battle-log statistics; unavailable fields show no estimate. Sharing a URL does not grant access to private history. This branch can be previewed on Vercel; deployment to Vercel does **not** automatically update the original ChatGPT Sites app.
+The publicly available official API drives:
+
+- **Overview** — trophies, career record, currently equipped deck, chest cycle, challenge/ranked stats, badges, achievements, favourite card, tower troop and side-mode progress (where present in the API).
+- **Card collection** — all owned player cards and the current global catalog; evolution/hero mode is interpreted separately for ownership versus current deck/battle form.
+- **Deck Lab and Analyzer** — evaluate actual owned cards, current levels and base composition; use a teammate's real selected deck by their public player tag for 2v2 role-complement advice.
+- **Matchup Lab** — fetch a real opponent's current deck by tag or import a deck link; also analyze recorded battle decks.
+- **Battle History** — show official recent battles, opponents and trophy changes, with mode filters; previously observed battles can be remembered on the same browser.
+- **Clan Intelligence** — public clan summary, roster, member profile navigation and current River Race data, only when available.
+- **Meta Insights** — publicly returned global Ranked / Trophy Road leaderboard positions and active in-game events. These are *not* global deck win rates.
+- **Upgrade Planner and AI Coach** — deterministic, explainable heuristics over actual loaded cards, levels and battles, not fabricated upgrade costs, win probabilities or replay analysis.
+- **Privacy and export** — browser-local, per-tag snapshots and tracked deck choices, export and deletion.
+
+Public read-only endpoints: `GET /api/player?tag=...`, `GET /api/scout?tag=...`, `GET /api/clan?tag=...` and `GET /api/rankings`. A tag is a public player identifier, **not an authentication credential**. Private `/api/history` and `/api/choices` still require trusted Sites identity or explicit administrator credentials, and never leak records to public visitors. New browser-local tracking works without access to private D1.
+
+Browser-local persistence is scoped to the current device/browser and the player tag, capped at 90 compact trophy snapshots, 200 remembered battles and 100 tracked deck choices. It does not synchronize across devices, run scheduled refreshes, or collect battles while the page is closed. Local-storage clearing deletes it. Only an observed live API response is treated as live data; demo data stays explicitly synthetic.
 
 ## Live account setup
 
 Create a key at https://developer.clashroyale.com/ and configure `CLASH_API_TOKEN` as a server secret. The key needs a valid IP allowlist. Supported API bases are `https://api.clashroyale.com/v1` (default) and `https://proxy.royaleapi.dev/v1`. If deliberately using the RoyaleAPI proxy, follow https://docs.royaleapi.com/proxy to configure its allowlisted IP; the proxy receives your API key and requests. Set `CLASH_API_BASE` accordingly. Redeploy after changing hosted environment variables.
 
-The private Sites deployment uses the signed-in visitor identity and a D1 database. Native Next.js routes strip Sites identity headers and use the server's `APP_ACCESS_KEY`; enter its matching value in Settings, held in memory only. Standalone deployments without a D1 binding provide session data but no durable history. Do not expose the Worker directly outside the trusted Sites dispatch boundary.
+The private Sites deployment uses the signed-in visitor identity and a D1 database. Native Next.js routes strip Sites identity headers and use the server's `APP_ACCESS_KEY`; enter its matching value in Settings, held in memory only. Standalone deployments without D1 use browser-local per-tag tracking and keep server-side private D1 endpoints protected. Do not expose the Worker directly outside the trusted Sites dispatch boundary.
 
 ## Included
 
@@ -34,9 +48,9 @@ The private Sites deployment uses the signed-in visitor identity and a D1 databa
 
 This is version 0.1, not the complete advanced analytics specification. There is no comprehensive combat simulator, automatic special-form/tower optimization, Champion slot validator, representative global meta feed, predictive matchup probability, replay analysis, cost-aware upgrade optimizer, LLM integration or scheduled background refresh. Unknown data remains unknown. Automatic search excludes Champions. Configure special forms and Tower Troop in-game.
 
-Demo ownership and player statistics are synthetic. The 49-card demo catalog is historical and incomplete; live `/cards` replaces it. Live API execution requires a valid token and was not verified without one. Display levels use `raw level + reference cap - raw maxLevel`, with configurable `DISPLAY_LEVEL_CAP=16`; confirm against the current game. Form ownership uses an observed bitmask convention and is separate from active form.
+Demo ownership and player statistics are synthetic. The 49-card demo catalog is historical and incomplete; live `/cards` replaces it. Live API execution requires a valid, non-revoked token in Vercel environment variables and a matching IP allowlist. A passing mock-based test or successful build does not prove the live API can reach Supercell. Display levels use `raw level + reference cap - raw maxLevel`, with configurable `DISPLAY_LEVEL_CAP=16`; confirm against the current game. Form ownership uses an observed bitmask convention and is separate from active form.
 
-Export includes only loaded data (up to 200 snapshots, 1,000 battles, 100 choices). Deletion removes all records for the selected owner/tag. Browser localStorage holds only manual resource preferences. The public repository and private hosted app have independent access settings.
+Export includes the current loaded player snapshot and the browser's bounded per-tag tracking (90 compact snapshots, 200 battles, 100 choices). Browser-local history, choice tracking and manual resources can be deleted for that tag. Private D1 records are independently protected by workspace authentication. The public repository and private hosted app have independent access settings.
 
 ## Architecture and scoring
 
@@ -50,6 +64,6 @@ The fixed-damage calculator uses ceil(HP/damage) hits and first-hit delay + (hit
 
 Sites provisions binding `DB` and applies `drizzle/` migrations. Run `node node_modules/drizzle-kit/bin.cjs generate` after schema changes. No runtime schema mutations occur. Static assets are embedded in the Worker; move large media to an asset service before expanding substantially. D1 rate limiting is atomic per owner, while standalone limiting is process-local.
 
-GitHub is the public source backup. The Sites source repository separately stores the exact deployable commit. Keep both synchronized for future releases. No scheduled jobs or paid custom domain are required for this release.
+GitHub is the public source repository, and Vercel serves the shareable production site. The original ChatGPT Sites deployment is independent; pushing GitHub changes does not update it. No scheduled jobs or paid custom domain are required for this release.
 
 Unofficial fan content, not endorsed by Supercell. See https://supercell.com/en/fan-content-policy/ and `docs/RESEARCH.md` for research scope and provenance.

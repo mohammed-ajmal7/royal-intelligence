@@ -30,6 +30,14 @@ import {
 import { Card, Snapshot, Battle, roleGroups } from "../lib/model";
 import { demo } from "../lib/demo";
 import {
+  emptyHistory,
+  mergeHistory,
+  withSnapshot,
+  readLocalHistory,
+  writeLocalHistory,
+  clearLocalHistory,
+} from "../lib/localHistory";
+import {
   defaults,
   evaluate,
   generate,
@@ -50,6 +58,7 @@ const nav = [
   ["Deck Analyzer", ScanLine],
   ["Matchup Lab", Swords],
   ["Battle History", History],
+  ["Clan Intelligence", Shield],
   ["Upgrade Planner", TrendingUp],
   ["Meta Insights", Globe2],
   ["AI Coach", Sparkles],
@@ -60,6 +69,7 @@ const titles: Record<string, string> = {
   "Deck Laboratory": "Build with intelligence.",
   "My Collection": "Every card. Every possibility.",
   "Battle History": "Find the pattern.",
+  "Clan Intelligence": "Understand the clan.",
   "AI Coach": "Think one move ahead.",
 };
 const descriptions: Record<string, string> = {
@@ -70,22 +80,33 @@ const descriptions: Record<string, string> = {
   "Deck Analyzer": "Understand your deck’s strengths, gaps, and roles.",
   "Matchup Lab": "Know the threats. Preserve the right answers.",
   "Battle History": "Learn from the matches available in your battle log.",
+  "Clan Intelligence": "Live clan profile, members, and standings from Supercell.",
   "Upgrade Planner": "Invest in the cards that support your next climb.",
   "Meta Insights": "Separate current evidence from assumptions.",
   "AI Coach": "Grounded explanations, without invented statistics.",
   Settings: "Manage your connection, data, and preferences.",
 };
-const blank = {
-  snapshots: [] as Snapshot[],
-  battles: [] as Battle[],
-  choices: [] as {
-    id: string;
-    observed: string;
-    cards: number[];
-    mode: string;
-    score: number;
-  }[],
+const blank = emptyHistory();
+type ScoutedPlayer = { tag: string; name: string; trophies: number | null; deck: Card[] };
+type ClanProfile = {
+  clan: { tag: string; name: string; [key: string]: unknown };
+  members: { tag: string; name: string; [key: string]: unknown }[];
+  riverRace: { clan?: { tag?: string; name?: string; [key: string]: unknown }; [key: string]: unknown } | null;
+  warnings: string[];
+  fetchedAt: string;
 };
+type RankingPlayer = { tag: string; name: string; [key: string]: unknown };
+type PublicRankings = {
+  ranked: RankingPlayer[];
+  trophyRoad: RankingPlayer[];
+  events: Record<string, unknown>[];
+  warnings: string[];
+};
+function publicNumber(source: unknown, field: string): number | null {
+  if (!source || typeof source !== "object") return null;
+  const n = (source as Record<string, unknown>)[field];
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
 const pct = (n: number) => Math.round(n * 100) + "%";
 const fmt = (n: number | null) => (n == null ? "—" : n.toLocaleString("en-US"));
 function playerNumber(source: unknown, ...path: string[]): number | null {
@@ -224,7 +245,7 @@ export default function App() {
     [mobile, setMobile] = useState(false),
     [s, setS] = useState<Snapshot>(demo),
     [deck, setDeck] = useState<Card[]>(() => demo().deck),
-    [tagInput, setTag] = useState("VUYRP9GQL"),
+    [tagInput, setTag] = useState(""),
     [search, setSearch] = useState(""),
     [filter, setFilter] = useState("All cards"),
     [sort, setSort] = useState("Level"),
@@ -244,6 +265,16 @@ export default function App() {
     [openBattle, setOpenBattle] = useState(""),
     [enemy, setEnemy] = useState<Card[]>([]),
     [link, setLink] = useState(""),
+    [opponentTag, setOpponentTag] = useState(""),
+    [teammateTag, setTeammateTag] = useState(""),
+    [scouting, setScouting] = useState<"" | "opponent" | "teammate">(""),
+    [scouted, setScouted] = useState<ScoutedPlayer | null>(null),
+    [clan, setClan] = useState<ClanProfile | null>(null),
+    [clanLoading, setClanLoading] = useState(false),
+    [clanError, setClanError] = useState(""),
+    [rankings, setRankings] = useState<PublicRankings | null>(null),
+    [rankingsLoading, setRankingsLoading] = useState(false),
+    [rankingsError, setRankingsError] = useState(""),
     [resource, setResource] = useState({ gold: 0, wildCards: 0, shards: 0 }),
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
@@ -268,15 +299,14 @@ export default function App() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setStatus)
       .catch(() => {});
-    const requestedTag = new URLSearchParams(window.location.search).get("tag");
+    let requestedTag = new URLSearchParams(window.location.search).get("tag");
+    if (!requestedTag) {
+      try { requestedTag = localStorage.getItem("ri-last-player-tag"); } catch {}
+    }
     if (requestedTag) {
       setTag(requestedTag);
       void connect(requestedTag);
     }
-    try {
-      const p = JSON.parse(localStorage.getItem("ri-preferences") ?? "null");
-      if (p?.version === 1 && p.resource) setResource(p.resource);
-    } catch {}
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
@@ -309,6 +339,37 @@ export default function App() {
       prev?.focus();
     };
   }, [selected]);
+  useEffect(() => {
+    if (page !== "Clan Intelligence" || s.mode !== "live") return;
+    const raw = s.raw as { clan?: { tag?: string } } | null;
+    const clanTag = raw?.clan?.tag;
+    if (!clanTag) {
+      setClan(null);
+      setClanError("This player is not currently in a clan.");
+      return;
+    }
+    let cancelled = false;
+    setClanLoading(true);
+    setClanError("");
+    setClan(null);
+    request("/api/clan?tag=" + encodeURIComponent(clanTag))
+      .then((value: ClanProfile) => { if (!cancelled) setClan(value); })
+      .catch((error: Error) => { if (!cancelled) setClanError(error.message); })
+      .finally(() => { if (!cancelled) setClanLoading(false); });
+    return () => { cancelled = true; };
+  }, [page, s]);
+
+  useEffect(() => {
+    if (page !== "Meta Insights" || rankings) return;
+    let active = true;
+    setRankingsLoading(true);
+    setRankingsError("");
+    request("/api/rankings")
+      .then((data: PublicRankings) => { if (active) setRankings(data); })
+      .catch((error: Error) => { if (active) setRankingsError(error.message); })
+      .finally(() => { if (active) setRankingsLoading(false); });
+    return () => { active = false; };
+  }, [page, rankings]);
   const go = (p: string) => {
     setPage(p);
     setMobile(false);
@@ -373,6 +434,15 @@ export default function App() {
         "/api/player?tag=" + encodeURIComponent(searchTag),
       );
       setS(result);
+      setClan(null);
+      setClanError("");
+      try {
+        localStorage.setItem("ri-last-player-tag", result.tag.replace(/^#/, ""));
+        const storedResources = JSON.parse(localStorage.getItem("ri-preferences:" + result.tag) ?? "null");
+        setResource(storedResources?.version === 1 ? storedResources.resource : { gold: 0, wildCards: 0, shards: 0 });
+      } catch {
+        setResource({ gold: 0, wildCards: 0, shards: 0 });
+      }
       window.history.replaceState(
         null,
         "",
@@ -384,20 +454,25 @@ export default function App() {
       setQ({ ...defaults, cap: result.cap });
       setCandidates([]);
       setEnemy([]);
-      setHist(blank);
+      setScouted(null);
+      setOpponentTag("");
+      setTeammateTag("");
+      setAnswers([]);
       setModeFilter("All modes");
+      let local = withSnapshot(readLocalHistory(result.tag), result);
       try {
-        setHist(
-          await request("/api/history?tag=" + encodeURIComponent(result.tag)),
-        );
-        setToast(
-          result.stale
-            ? "Showing last saved snapshot."
-            : "Account synchronized.",
-        );
+        const privateHistory = await request("/api/history?tag=" + encodeURIComponent(result.tag));
+        local = mergeHistory(local, privateHistory);
       } catch {
-        setToast("Public profile loaded. Private history is unavailable.");
+        // Public visitors use their own browser history, never another owner's D1 records.
       }
+      setHist(local);
+      const saved = writeLocalHistory(result.tag, local);
+      setToast(result.stale
+        ? "Showing last stored snapshot."
+        : saved
+          ? "Real player profile loaded. Battle history saved on this device."
+          : "Real player profile loaded. Device storage is unavailable.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -441,20 +516,57 @@ export default function App() {
     }
   }
   async function track() {
+    if (s.mode !== "live" || deck.length !== 8) return;
+    const choice = {
+      id: crypto.randomUUID(),
+      observed: new Date().toISOString(),
+      cards: deck.map((c) => c.id),
+      mode: q.mode,
+      score: evaluate(deck, q).score,
+    };
+    let updated = mergeHistory(hist, {
+      snapshots: [],
+      battles: [],
+      choices: [choice],
+    });
+    // Sites can additionally persist choices in its authenticated database.
+    if (status?.database || access) {
+      try {
+        const savedChoice = await request("/api/choices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tag: s.tag, cards: choice.cards, mode: choice.mode }),
+        });
+        updated = mergeHistory(hist, { snapshots: [], battles: [], choices: [savedChoice] });
+      } catch {
+        // Browser-local tracking remains functional on public standalone hosting.
+      }
+    }
+    setHist(updated);
+    setToast(writeLocalHistory(s.tag, updated)
+      ? "Tracked on this device. Refresh later to compare new battles."
+      : "Tracked for this session only; browser storage is unavailable.");
+  }
+  async function scoutPlayer(kind: "opponent" | "teammate") {
+    const tagToSearch = kind === "opponent" ? opponentTag : teammateTag;
+    setScouting(kind);
+    setError("");
     try {
-      await request("/api/choices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tag: s.tag,
-          cards: deck.map((c) => c.id),
-          mode: q.mode,
-        }),
-      });
-      setHist(await request("/api/history?tag=" + encodeURIComponent(s.tag)));
-      setToast("Base composition tracked for future observed battles.");
+      const player: ScoutedPlayer = await request(
+        "/api/scout?tag=" + encodeURIComponent(tagToSearch),
+      );
+      if (player.deck.length !== 8) throw new Error("This player's selected eight-card deck is unavailable.");
+      if (kind === "opponent") {
+        setScouted(player);
+        setEnemy(player.deck);
+      } else {
+        setQ((old) => ({ ...old, teammate: player.deck }));
+      }
+      setToast(player.name + "'s real selected deck loaded.");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setScouting("");
     }
   }
   function answer(text: string) {
@@ -469,6 +581,17 @@ export default function App() {
     setAnswers([...answers, { q: text, a }]);
     setQuestion("");
   }
+  const publicProfile = s.raw && typeof s.raw === "object" && !Array.isArray(s.raw)
+    ? s.raw as Record<string, unknown> : {};
+  const profileBadges = Array.isArray(publicProfile.badges)
+    ? publicProfile.badges.filter((v): v is Record<string, unknown> =>
+        !!v && typeof v === "object" && !Array.isArray(v)) : [];
+  const profileAchievements = Array.isArray(publicProfile.achievements)
+    ? publicProfile.achievements.filter((v): v is Record<string, unknown> =>
+        !!v && typeof v === "object" && !Array.isArray(v)) : [];
+  const profileProgress = publicProfile.progress && typeof publicProfile.progress === "object"
+    && !Array.isArray(publicProfile.progress)
+    ? Object.entries(publicProfile.progress as Record<string, unknown>) : [];
   const upgrades = s.cards
     .filter((c) => c.level != null && c.level < s.cap)
     .map((c) => ({
@@ -491,6 +614,7 @@ export default function App() {
             <strong>{b.opponent.map((p) => p.name).join(" & ")}</strong>
             <small>
               {b.mode} · {b.time.slice(0, 10)}
+              {b.trophyChange == null ? "" : " · " + (b.trophyChange > 0 ? "+" : "") + b.trophyChange + " trophies"}
             </small>
           </span>
           <span className="mini-deck">
@@ -520,6 +644,21 @@ export default function App() {
                   {i < b.team.length ? "Team" : "Opponent"} · {p.name}
                 </h4>
                 <Deck cards={p.cards} onClick={setSelected} />
+                <div className="actions">
+                  <button type="button" className="text-btn"
+                    disabled={!p.tag.startsWith("#")}
+                    onClick={() => { setTag(p.tag); go("Overview"); void connect(p.tag); }}>
+                    View public player ↗
+                  </button>
+                  {p.cards.length === 8 && (
+                    <button type="button" className="text-btn"
+                      onClick={() => {
+                        setEnemy(p.cards);
+                        setScouted(null);
+                        go("Matchup Lab");
+                      }}>Analyze this battle deck ↗</button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -686,6 +825,7 @@ export default function App() {
               <span>#</span>
               <input
                 aria-label="Player tag"
+                placeholder="Enter any CR player tag"
                 value={tagInput.replace(/^#/, "")}
                 onChange={(e) => setTag(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !loading && connect()}
@@ -906,8 +1046,8 @@ export default function App() {
                     </strong>
                   </div>
                   <div className="fact">
-                    <span>Persistent history</span>
-                    <strong>{s.stored ? "Saved" : "Session only"}</strong>
+                    <span>Observed history</span>
+                    <strong>{s.stored ? "Private workspace" : hist.snapshots.length ? "Saved on this device" : "Not yet saved"}</strong>
                   </div>
                   <details>
                     <summary>Inspect all returned profile fields</summary>
@@ -958,6 +1098,146 @@ export default function App() {
                   <p className="micro">Ranked and challenge fields appear only when the official API returns them. Detailed historical charts need snapshots collected over time.</p>
                 </Panel>
               </div>
+              <div className="two-col">
+                <Panel title="Ranked / Path of Legend" kicker="OFFICIAL PROFILE · SEASON RESULTS">
+                  <div className="fact"><span>Current league number</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <div className="fact"><span>Current Ranked trophies</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "trophies"))}</strong></div>
+                  <div className="fact"><span>Current global rank</span><strong>{fmt(playerNumber(s.raw, "currentPathOfLegendSeasonResult", "rank"))}</strong></div>
+                  <div className="fact"><span>Previous league number</span><strong>{fmt(playerNumber(s.raw, "lastPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <div className="fact"><span>Best Ranked league number</span><strong>{fmt(playerNumber(s.raw, "bestPathOfLegendSeasonResult", "leagueNumber"))}</strong></div>
+                  <p className="micro">These values are separate from Trophy Road. No ranking is inferred when Supercell returns null.</p>
+                </Panel>
+                <Panel title="Favorites and active tower" kicker="PUBLIC PLAYER PROFILE">
+                  <div className="fact"><span>Favorite card</span><strong>{String((publicProfile.currentFavouriteCard as {name?: string}|undefined)?.name ?? "—")}</strong></div>
+                  <div className="fact"><span>Current Tower Troop</span><strong>{
+                    Array.isArray(publicProfile.currentDeckSupportCards)
+                      ? publicProfile.currentDeckSupportCards.map((v) =>
+                          String((v as {name?: string})?.name ?? "Unknown")).join(", ") || "—"
+                      : "—"
+                  }</strong></div>
+                  <div className="fact"><span>Legacy Trophy Road high score</span><strong>{fmt(playerNumber(s.raw, "legacyTrophyRoadHighScore"))}</strong></div>
+                  <div className="fact"><span>Current win/loss streak</span><strong>{fmt(playerNumber(s.raw, "currentWinLoseStreak"))}</strong></div>
+                  <p className="micro">Tower Troops and special-form deployment are reported independently of ordinary card ownership.</p>
+                </Panel>
+              </div>
+              <div className="two-col">
+                <Panel title="Player achievements" kicker="OFFICIAL PLAYER PROFILE">
+                  {profileAchievements.slice(0, 20).map((achievement, i) => (
+                    <div className="fact" key={String(achievement.name ?? i)}>
+                      <span>{String(achievement.name ?? "Achievement")}</span>
+                      <strong>{fmt(publicNumber(achievement,"stars"))} stars</strong>
+                    </div>
+                  ))}
+                  {!profileAchievements.length && <Empty>No achievements returned for this player.</Empty>}
+                </Panel>
+                <Panel title="Public badges" kicker="OFFICIAL PLAYER PROFILE">
+                  {profileBadges.slice(0, 20).map((badge, i) => (
+                    <div className="fact" key={String(badge.name ?? i)}>
+                      <span>{String(badge.name ?? "Badge")}</span>
+                      <strong>{publicNumber(badge,"level") != null
+                        ? "Level " + fmt(publicNumber(badge, "level"))
+                        : publicNumber(badge,"progress") != null
+                          ? fmt(publicNumber(badge,"progress")) + " progress"
+                          : "Earned"}</strong>
+                    </div>
+                  ))}
+                  {!profileBadges.length && <Empty>No badges returned for this player.</Empty>}
+                  <p className="micro">Badge names and progression are supplied by the official API.</p>
+                </Panel>
+              </div>
+              <Panel title="Side-mode progress" kicker="OFFICIAL PROFILE · MODE SEASON KEYS">
+                {profileProgress.slice(0, 20).map(([mode, value]) => (
+                  <div className="fact" key={mode}>
+                    <span>{mode || "Legacy / default mode"} · {String((value as {arena?:{name?:string}}|null)?.arena?.name ?? "Unspecified arena")}</span>
+                    <strong>{fmt(publicNumber(value,"trophies"))} / best {fmt(publicNumber(value,"bestTrophies"))}</strong>
+                  </div>
+                ))}
+                {!profileProgress.length && <Empty>No extra mode progression returned.</Empty>}
+                <p className="micro">Mode-season keys are treated as source identifiers; they are not renamed or inferred.</p>
+              </Panel>
+            </>
+          )}
+          {page === "Clan Intelligence" && (
+            <>
+              {s.mode === "demo" ? (
+                <Notice>Search for a real player's tag to load their clan from the official API.</Notice>
+              ) : clanLoading ? (
+                <Empty>Loading the live clan profile and member roster…</Empty>
+              ) : clanError ? (
+                <Notice>{clanError}</Notice>
+              ) : clan ? (
+                <>
+                  <section className="hero">
+                    <div className="crest"><Shield size={40} /><small>CLAN</small></div>
+                    <div className="hero-name">
+                      <Pill>OFFICIAL CLAN PROFILE</Pill>
+                      <h2>{clan.clan.name} <small>{clan.clan.tag}</small></h2>
+                      <p>{String((clan.clan.location as { name?: string } | undefined)?.name ?? "Location unavailable")}</p>
+                    </div>
+                    <div className="trophy">
+                      <Trophy size={27} />
+                      <div><strong>{fmt(publicNumber(clan.clan, "clanScore"))}</strong><small>CLAN SCORE</small></div>
+                      <span><small>War trophies</small>{fmt(publicNumber(clan.clan, "clanWarTrophies"))}</span>
+                    </div>
+                  </section>
+                  <div className="collection-summary">
+                    <div><strong>{fmt(publicNumber(clan.clan, "members"))}</strong><small>REPORTED MEMBERS</small></div>
+                    <div><strong>{fmt(publicNumber(clan.clan, "requiredTrophies"))}</strong><small>REQUIRED TROPHIES</small></div>
+                    <div><strong>{clan.members.length}</strong><small>ROSTER RETURNED</small></div>
+                    <div><strong>{String(clan.clan.type ?? "—")}</strong><small>CLAN TYPE</small></div>
+                  </div>
+                  <div className="two-col">
+                    <Panel title="Clan description" kicker="PUBLIC CLAN DATA">
+                      <p style={{ whiteSpace: "pre-wrap" }}>{String(clan.clan.description ?? "No description returned.")}</p>
+                      <div className="fact"><span>Clan tag</span><strong>{clan.clan.tag}</strong></div>
+                      <div className="fact"><span>Fetched</span><strong>{clan.fetchedAt.slice(0, 16).replace("T", " ")} UTC</strong></div>
+                      <p className="micro">These are official, read-only clan details. Membership and trophies can change.</p>
+                    </Panel>
+                    <Panel title="Clan participation" kicker="PUBLIC ROSTER">
+                      <div className="fact"><span>Donations by listed members</span><strong>{
+                        clan.members.some((m) => publicNumber(m, "donations") != null)
+                          ? fmt(clan.members.reduce((total, m) => total + (publicNumber(m, "donations") ?? 0), 0))
+                          : "—"
+                      }</strong></div>
+                      <div className="fact"><span>Co-leaders</span><strong>{clan.members.filter((m) => m.role === "coLeader").length}</strong></div>
+                      <div className="fact"><span>Elders</span><strong>{clan.members.filter((m) => m.role === "elder").length}</strong></div>
+                      <p className="micro">Only fields returned for this clan are shown. Donations are a sum of roster values, not an all-time total.</p>
+                    </Panel>
+                  </div>
+                  <Panel title="Current Clan River Race" kicker="OFFICIAL CURRENT CLAN WAR DATA">
+                    {clan.riverRace?.clan ? (
+                      <>
+                        <div className="fact"><span>River Race phase</span><strong>{String(clan.riverRace.periodType ?? "—")}</strong></div>
+                        <div className="fact"><span>Clan fame</span><strong>{fmt(publicNumber(clan.riverRace.clan, "fame"))}</strong></div>
+                        <div className="fact"><span>Boat attacks</span><strong>{fmt(publicNumber(clan.riverRace.clan, "boatAttacks"))}</strong></div>
+                        <div className="fact"><span>Participating members reported</span><strong>{
+                          Array.isArray(clan.riverRace.clan.participants) ? clan.riverRace.clan.participants.length : "—"
+                        }</strong></div>
+                        <p className="micro">These are official values for the current river race when returned. Historic wars are not inferred.</p>
+                      </>
+                    ) : <Empty>No current River Race data was returned.</Empty>}
+                  </Panel>
+                  <Panel title="Clan member roster" kicker="CLICK A MEMBER TO INSPECT THEIR PUBLIC PLAYER DATA">
+                    {clan.members.length ? (
+                      <div className="table-wrap">
+                        <table>
+                          <thead><tr><th>Member</th><th>Role</th><th>Trophies</th><th>Donations</th><th>Profile</th></tr></thead>
+                          <tbody>{[...clan.members].sort((a,b)=>(publicNumber(b,"trophies")??0)-(publicNumber(a,"trophies")??0)).map((member) => (
+                            <tr key={member.tag}>
+                              <td><strong>{member.name}</strong><div className="micro">{member.tag}</div></td>
+                              <td>{String(member.role ?? "Member")}</td>
+                              <td>{fmt(publicNumber(member, "trophies"))}</td>
+                              <td>{fmt(publicNumber(member, "donations"))}</td>
+                              <td><button className="text-btn" onClick={() => { setTag(member.tag); go("Overview"); void connect(member.tag); }}>View profile ↗</button></td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
+                      </div>
+                    ) : <Empty>The member roster is not available.</Empty>}
+                    {clan.warnings.map((w) => <Notice key={w}>{w}</Notice>)}
+                  </Panel>
+                </>
+              ) : <Empty>Clan data is not available for this player.</Empty>}
             </>
           )}
           {["My Collection", "Card Encyclopedia"].includes(page) && (
@@ -1212,6 +1492,21 @@ export default function App() {
                       ))}
                     </div>
                     {q.mode.includes("2v2") && (
+                      <>
+                      <label>
+                        Teammate's player tag
+                        <div className="inline">
+                          <input aria-label="Teammate player tag" value={teammateTag}
+                            onChange={(e) => setTeammateTag(e.target.value)}
+                            placeholder="#PLAYER_TAG"/>
+                          <button className="btn secondary" type="button"
+                            disabled={scouting !== "" || !teammateTag.trim()}
+                            onClick={() => void scoutPlayer("teammate")}>
+                            {scouting === "teammate" ? "Loading…" : "Load real deck"}
+                          </button>
+                        </div>
+                        <small>Loads your teammate's real selected deck. Edit it below if necessary.</small>
+                      </label>
                       <label>
                         Teammate’s eight cards
                         <select
@@ -1243,6 +1538,7 @@ export default function App() {
                           applies only with all eight.
                         </small>
                       </label>
+                      </>
                     )}
                     <p className="micro">
                       Approximate beam search plus editorial archetype seeds. It
@@ -1374,6 +1670,27 @@ export default function App() {
             <>
               <Panel title="Compare an opponent">
                 <label>
+                  Opponent's player tag
+                  <div className="inline">
+                    <input aria-label="Opponent player tag" placeholder="#PLAYER_TAG"
+                      value={opponentTag} onChange={(e) => setOpponentTag(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && scouting === "") void scoutPlayer("opponent"); }}/>
+                    <button type="button" className="btn"
+                      disabled={scouting !== "" || !opponentTag.trim()}
+                      onClick={() => void scoutPlayer("opponent")}>
+                      <Search size={15} />
+                      {scouting === "opponent" ? "Loading…" : "Load real deck"}
+                    </button>
+                  </div>
+                  <small>Uses the opponent's currently selected public deck, which may differ from past battle decks.</small>
+                </label>
+                {scouted && (
+                  <div className="fact">
+                    <span>{scouted.name} · {scouted.tag}</span>
+                    <strong>{fmt(scouted.trophies)} trophies</strong>
+                  </div>
+                )}
+                <label>
                   Official deck link
                   <div className="inline">
                     <input
@@ -1386,6 +1703,7 @@ export default function App() {
                       onClick={() => {
                         try {
                           setEnemy(importLink(link, s.catalog));
+                          setScouted(null);
                           setError("");
                         } catch (e) {
                           setError((e as Error).message);
@@ -1405,8 +1723,10 @@ export default function App() {
                       const ids = Array.from(e.target.selectedOptions).map(
                         (o) => Number(o.value),
                       );
-                      if (ids.length <= 8)
+                      if (ids.length <= 8) {
                         setEnemy(s.catalog.filter((c) => ids.includes(c.id)));
+                        setScouted(null);
+                      }
                     }}
                   >
                     {s.catalog
@@ -1508,6 +1828,21 @@ export default function App() {
                   crowns are shared, never summed.
                 </small>
               </Panel>
+              {s.mode === "live" && (
+                <Panel title="Trophy history" kicker="SAMPLED SNAPSHOTS STORED ON THIS DEVICE">
+                  {hist.snapshots.length > 1 ? hist.snapshots.slice(0, 20).map((snap, index) => {
+                    const next = hist.snapshots[index + 1];
+                    const delta = snap.trophies != null && next?.trophies != null ? snap.trophies - next.trophies : null;
+                    return (
+                      <div className="fact" key={snap.fetchedAt}>
+                        <span>{snap.fetchedAt.replace("T"," ").slice(0,16)} UTC</span>
+                        <strong>{fmt(snap.trophies)} {delta == null ? "" : delta > 0 ? "(+" + delta + ")" : "(" + delta + ")"}</strong>
+                      </div>
+                    );
+                  }) : <Empty>Refresh this player again later to build a real trophy timeline.</Empty>}
+                  <p className="micro">Only sampled points are available. No trophies are inferred between visits.</p>
+                </Panel>
+              )}
               <Panel title="Battle log">
                 {battles.map(battleRow)}
                 {!battles.length && (
@@ -1548,9 +1883,10 @@ export default function App() {
                   </Empty>
                 )}
                 <p className="micro">
-                  Matches base card IDs after the choice was saved; ignores form
-                  and tower differences. Descriptive results do not prove
-                  causation.
+                  Public player tracking is saved on this device. Refresh the player
+                  later to accumulate newer battles. Matching uses base card IDs
+                  after each choice and ignores special forms and towers.
+                  Observed results do not prove causation.
                 </p>
               </Panel>
               <Notice>
@@ -1586,7 +1922,7 @@ export default function App() {
                     onClick={() => {
                       try {
                         localStorage.setItem(
-                          "ri-preferences",
+                          "ri-preferences:" + s.tag,
                           JSON.stringify({ version: 1, resource }),
                         );
                         setToast("Manual resources saved on this device.");
@@ -1658,19 +1994,27 @@ export default function App() {
           {page === "Meta Insights" && (
             <>
               <div className="two-col">
-                <Panel title="Competitive meta feed">
-                  <Empty>
-                    No representative global meta feed is connected. Global
-                    usage rates and win rates are not invented.
-                  </Empty>
-                  <a
-                    className="btn secondary"
-                    href="https://royaleapi.com/decks/popular"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Browse RoyaleAPI ↗
-                  </a>
+                <Panel title="Global Ranked leaders" kicker="OFFICIAL RANKING — NOT DECK WIN RATE">
+                  {rankingsLoading && <Empty>Loading the official global rankings…</Empty>}
+                  {rankingsError && <Notice>{rankingsError}</Notice>}
+                  {rankings?.ranked.slice(0, 10).map((player, i) => (
+                    <div className="fact" key={player.tag}>
+                      <span>
+                        #{publicNumber(player, "rank") ?? i + 1} · {player.name}
+                        <small> · {player.tag}</small>
+                      </span>
+                      <button className="text-btn" onClick={() => {
+                        setTag(player.tag); go("Overview"); void connect(player.tag);
+                      }}>
+                        {fmt(publicNumber(player, "eloRating") ?? publicNumber(player, "trophies"))} · View ↗
+                      </button>
+                    </div>
+                  ))}
+                  {rankings && rankings.ranked.length === 0 &&
+                    <Empty>No current global Ranked standings were returned.</Empty>}
+                  <p className="micro">Ranks and ratings are official API observations. These do not establish global card usage or matchup win probability.</p>
+                  <a className="text-btn" href="https://royaleapi.com/decks/popular"
+                    target="_blank" rel="noreferrer">Browse external community meta research ↗</a>
                 </Panel>
                 <Panel
                   title="Your observed opponent cards"
@@ -1702,6 +2046,36 @@ export default function App() {
                   <p className="micro">
                     Your encounters are not global usage rates.
                   </p>
+                </Panel>
+              </div>
+              <div className="two-col">
+                <Panel title="Global Trophy Road leaders" kicker="OFFICIAL RANKING">
+                  {rankingsLoading && <Empty>Loading the leaderboard…</Empty>}
+                  {rankings?.trophyRoad.slice(0, 12).map((player, i) => (
+                    <div className="fact" key={player.tag}>
+                      <span>#{publicNumber(player, "rank") ?? i + 1} · {player.name}</span>
+                      <button className="text-btn" onClick={() => {
+                        setTag(player.tag); go("Overview"); void connect(player.tag);
+                      }}>
+                        {fmt(publicNumber(player, "trophies"))} · View ↗
+                      </button>
+                    </div>
+                  ))}
+                  {rankings && !rankings.trophyRoad.length && <Empty>No current Trophy Road rankings returned.</Empty>}
+                  <p className="micro">Official player rankings may be empty early in a season.</p>
+                </Panel>
+                <Panel title="Current in-game events" kicker="OFFICIAL EVENT CATALOG">
+                  {rankingsLoading && <Empty>Loading active events…</Empty>}
+                  {rankings?.events.map((event, index) => (
+                    <div className="fact" key={String(event.eventTag ?? event.id ?? index)}>
+                      <span>{String(event.title ?? event.name ??
+                        (event.gameMode as {name?: string}|undefined)?.name ?? "In-game event")}</span>
+                      <strong>{String(event.gameMode ? (event.gameMode as {name?: string}).name ?? "Event" : "Event")}</strong>
+                    </div>
+                  ))}
+                  {rankings && !rankings.events.length && <Empty>No active events were returned.</Empty>}
+                  {rankings?.warnings.map((w) => <Notice key={w}>{w}</Notice>)}
+                  <p className="micro">Only events actually returned by the official API are listed.</p>
                 </Panel>
               </div>
               <Panel title="Patch-scoped reference records">
@@ -1820,9 +2194,9 @@ export default function App() {
                     </Pill>
                   </div>
                   <div className="fact">
-                    <span>Persistent database</span>
-                    <Pill tone={status?.database ? "green" : "gold"}>
-                      {status?.database ? "Configured" : "Unavailable"}
+                    <span>Private database (not required for visitors)</span>
+                    <Pill tone={status?.database ? "green" : ""}>
+                      {status?.database ? "Configured" : "Local browser tracking"}
                     </Pill>
                   </div>
                   <div className="fact">
@@ -1845,60 +2219,46 @@ export default function App() {
                     Check configuration
                   </button>
                 </Panel>
-                <Panel title="Connect your real account">
-                  <ol className="steps">
-                    <li>
-                      Create an official API key at{" "}
-                      <a
-                        href="https://developer.clashroyale.com/"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        developer.clashroyale.com
-                      </a>
-                      .
-                    </li>
-                    <li>
-                      Configure <code>CLASH_API_TOKEN</code> as a server secret.
-                    </li>
-                    <li>
-                      For serverless hosting, the{" "}
-                      <a
-                        href="https://docs.royaleapi.com/proxy"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        documented RoyaleAPI proxy
-                      </a>{" "}
-                      is an option. It receives the API key and requests; follow
-                      its IP-allowlist instructions.
-                    </li>
-                    <li>
-                      Set <code>CLASH_API_BASE</code> to the chosen supported
-                      endpoint, redeploy, then connect your tag.
-                    </li>
-                  </ol>
-                  <p className="micro">
-                    Never enter your Supercell password or API token in the
-                    player-tag field.
+                <Panel title="Use any Clash Royale player tag">
+                  <p>
+                    Enter a valid player tag at the top of the page or share
+                    a link containing <code>?tag=PLAYER_TAG</code>.
+                    Anyone can search available public player information.
+                    No Supercell login, developer key, or Vercel account is needed.
                   </p>
+                  <p className="micro">
+                    The website operator configures the official Supercell API
+                    key privately on Vercel. Visitors should never enter API tokens.
+                  </p>
+                  <details>
+                    <summary>Server administrator setup</summary>
+                    <p>Generate a key at <a href="https://developer.clashroyale.com/"
+                      target="_blank" rel="noreferrer">Supercell Developer Portal ↗</a>.
+                      Set <code>CLASH_API_TOKEN</code> in server environment variables.
+                      Choose an authorized API base; for dynamic hosting, follow the
+                      <a href="https://docs.royaleapi.com/proxy"
+                        target="_blank" rel="noreferrer"> RoyaleAPI proxy instructions ↗</a>,
+                      then redeploy. Never publish real tokens in GitHub.</p>
+                  </details>
                 </Panel>
               </div>
-              <Panel title="Standalone hosting access">
+              <Panel title="Public visitor data and privacy">
                 <p>
-                  Sites uses your signed-in identity. On a standalone Next.js
-                  deployment, configure APP_ACCESS_KEY on the server and enter
-                  the matching key here. It stays in memory.
+                  Profiles come from the official API. Recent battles, sampled trophy history,
+                  tracked compositions and manually entered resources are stored in this browser
+                  separately by searched player tag; they do not sync between devices.
                 </p>
-                <label>
-                  Application access key
-                  <input
-                    type="password"
-                    value={access}
-                    autoComplete="off"
-                    onChange={(e) => setAccess(e.target.value)}
-                  />
-                </label>
+                <div className="fact"><span>Recorded snapshots</span><strong>{hist.snapshots.length}</strong></div>
+                <div className="fact"><span>Remembered battles</span><strong>{hist.battles.length}</strong></div>
+                <div className="fact"><span>Tracked deck choices</span><strong>{hist.choices.length}</strong></div>
+                <details>
+                  <summary>Optional private workspace access (administrators only)</summary>
+                  <p className="micro">Public visitors do not need an API key or password. Administrators of a private Sites/D1 deployment may use their separate APP_ACCESS_KEY here.</p>
+                  <label>Application access key
+                    <input type="password" value={access} autoComplete="off"
+                      onChange={(e) => setAccess(e.target.value)} />
+                  </label>
+                </details>
               </Panel>
               <Panel title="Your data, your control">
                 <div className="actions">
@@ -1951,9 +2311,9 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Export includes loaded data only: up to 200 snapshots, 1,000
-                  battles and 100 tracked choices. Preferences stay on this
-                  device.
+                  Export includes your current official profile, up to 90 browser-saved
+                  snapshots, 200 remembered battles, and 100 tracked deck choices.
+                  Resources and history stay on this device per player tag.
                 </p>
                 {confirmDelete && (
                   <div className="delete-confirm">
@@ -1965,13 +2325,22 @@ export default function App() {
                       className="btn"
                       onClick={async () => {
                         try {
-                          await request(
-                            "/api/history?tag=" + encodeURIComponent(s.tag),
-                            { method: "DELETE" },
-                          );
-                          setHist(blank);
+                          const removed = clearLocalHistory(s.tag);
+                          try { localStorage.removeItem("ri-preferences:" + s.tag); } catch {}
+                          if (status?.database || access) {
+                            try {
+                              await request(
+                                "/api/history?tag=" + encodeURIComponent(s.tag),
+                                { method: "DELETE" },
+                              );
+                            } catch {
+                              // Browser history is independently deletable.
+                            }
+                          }
+                          setHist(emptyHistory());
+                          setResource({ gold: 0, wildCards: 0, shards: 0 });
                           setConfirmDelete(false);
-                          setToast("Stored history deleted.");
+                          setToast(removed ? "Local history for this player deleted." : "History cleared from this session; browser storage is unavailable.");
                         } catch (e) {
                           setError((e as Error).message);
                         }
@@ -1990,16 +2359,21 @@ export default function App() {
               </Panel>
               <Panel title="Release scope">
                 <p>
-                  Implemented: player sync, catalog browsing, base-deck
-                  generation, role analysis, matchup notes, battle history,
-                  database snapshots and tracked choices, heuristic upgrade
-                  priorities, manual resources, export and deletion.
+                  Implemented: public tag lookup and shareable profiles,
+                  official player/deck/cards/chests and observed battle data,
+                  badges, achievements, Ranked and side-mode progression,
+                  clan rosters and current River Race, opponent and teammate
+                  tag scouting, official global leaderboards and in-game events,
+                  browser-local history and tracked choices, explainable deck
+                  generation, upgrade priorities, matchup notes, export and deletion.
                 </p>
                 <Notice>
-                  Not implemented: full combat simulation, automatic
-                  special-form/tower optimization, representative global meta,
-                  calibrated matchup predictions, replay analysis, cost-aware
-                  upgrades or background refresh scheduling.
+                  Not available from the public API alone: complete lifetime
+                  battle logs, replay or placement analysis, definitive card
+                  damage at every level, global deck matchup/win rates, private
+                  inventories, calibrated matchup predictions, automated in-game
+                  upgrades or historical data before the browser first tracked
+                  a player. The local coach is deterministic, not an LLM.
                 </Notice>
                 <p className="micro">
                   Source is public on{" "}
