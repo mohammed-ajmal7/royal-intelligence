@@ -141,6 +141,35 @@ export function legal(cs: Card[]) {
   );
 }
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
+const heavySpellNames = new Set([
+  "Fireball", "Poison", "Lightning", "Rocket", "Earthquake", "Void",
+]);
+const cheapSpellNames = new Set([
+  "Arrows", "Zap", "The Log", "Giant Snowball", "Barbarian Barrel",
+  "Royal Delivery", "Tornado", "Rage",
+]);
+const hasRole = (c: Card, role: string) => c.roles.includes(role);
+const reliableAir = (c: Card) =>
+  hasRole(c, "Air defense") && !hasRole(c, "Cycle");
+
+export function deckAudit(cs: Card[]) {
+  const count = (fn: (c: Card) => boolean) => cs.filter(fn).length;
+  const checks = [
+    { id: "win", label: "Tower-damage win condition", ok: count(c => hasRole(c, "Win condition")) >= 1 },
+    { id: "air", label: "Two reliable air defenders", ok: count(reliableAir) >= 2 },
+    { id: "tank", label: "Dedicated tank stopper", ok: count(c => hasRole(c, "Tank killer")) >= 1 },
+    { id: "ground", label: "Ground-defense response", ok: count(c => hasRole(c, "Ground defense")) >= 1 },
+    { id: "splash", label: "Swarm and splash response", ok: count(c => hasRole(c, "Swarm control")) >= 1 },
+    { id: "bigspell", label: "Heavy spell / spell pressure", ok: count(c => heavySpellNames.has(c.name)) >= 1 },
+    { id: "smallspell", label: "Cheap control spell", ok: count(c => cheapSpellNames.has(c.name)) >= 1 },
+  ];
+  return {
+    checks,
+    passed: checks.filter(c => c.ok).length,
+    total: checks.length,
+    missing: checks.filter(c => !c.ok).map(c => c.label),
+  };
+}
 export function evaluate(cs: Card[], q: Constraints = defaults) {
   const roles = Object.fromEntries(
     Object.keys(roleGroups).map((r) => [
@@ -264,13 +293,21 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
     warnings.push(
       "Champion slot legality must be checked in-game. Automatic search excludes Champions.",
     );
+  const audit = deckAudit(cs);
+  // Apply a visible coverage penalty so a few overlevelled cards cannot
+  // outweigh missing core answers. This is an editorial score, not win odds.
+  const penaltyByCheck: Record<string, number> = {
+    win: 18, air: 12, tank: 10, ground: 7,
+    splash: 6, bigspell: 9, smallspell: 7,
+  };
+  const base = features.reduce((sum, feature) =>
+    sum + feature.value * feature.weight, 0) /
+    features.reduce((sum, feature) => sum + feature.weight, 0);
+  const penalty = audit.checks.reduce((sum, check) =>
+    sum + (check.ok ? 0 : penaltyByCheck[check.id]), 0);
   return {
-    score:
-      Math.round(
-        (features.reduce((s, f) => s + f.value * f.weight, 0) /
-          features.reduce((s, f) => s + f.weight, 0)) *
-          10,
-      ) / 10,
+    score: Math.round(clamp(base - penalty) * 10) / 10,
+    audit,
     avg,
     cycle,
     roles,
@@ -283,82 +320,200 @@ export function evaluate(cs: Card[], q: Constraints = defaults) {
     warnings,
   };
 }
-export function generate(collection: Card[], q: Constraints) {
+/** Deterministic bounded multistart search.
+ * Every eligible owned card is considered: no arbitrary top-40 cutoff.
+ * Archetype + role-aware seeds are improved through all-card swaps.
+ * Results are heuristic and cannot guarantee wins against unknown decks.
+ */
+export function generate(
+  collection: Card[],
+  q: Constraints,
+  currentDeck: Card[] = [],
+) {
   if (
     q.include.length > 8 ||
     new Set(q.include).size !== q.include.length ||
-    q.include.some((id) => q.exclude.includes(id))
-  )
+    q.include.some(id => q.exclude.includes(id)) ||
+    !Number.isFinite(q.maxElixir) || q.maxElixir <= 0
+  ) return [];
+
+  const pool = [...new Map(collection
+    .filter(c =>
+      c.owned && !c.tower && c.rarity !== "champion" &&
+      c.level != null && c.level >= q.minLevel &&
+      c.elixir != null && Number.isFinite(c.elixir) &&
+      !q.exclude.includes(c.id)
+    ).map(c => [c.id, c])).values()];
+  const byId = new Map(pool.map(c => [c.id, c]));
+  const forced = q.include.map(id => byId.get(id));
+  if (pool.length < 8 || forced.some(c => !c)) return [];
+  const locked = new Set(q.include);
+  const forcedCards = forced as Card[];
+  const winCards = pool.filter(c => hasRole(c, "Win condition"));
+  if (!winCards.length && !forcedCards.some(c => hasRole(c, "Win condition")))
     return [];
-  const pool = collection.filter(
-    (c) =>
-      c.owned &&
-      !c.tower &&
-      c.rarity !== "champion" &&
-      c.level != null &&
-      c.level >= q.minLevel &&
-      c.elixir != null &&
-      !q.exclude.includes(c.id),
+
+  const permitted = (cs: Card[]) => (
+    cs.length === 8 &&
+    legal(cs) &&
+    locked.size <= cs.length &&
+    [...locked].every(id => cs.some(c => c.id === id)) &&
+    cs.some(c => hasRole(c, "Win condition")) &&
+    cs.reduce((sum, c) => sum + (c.elixir ?? 0), 0) <= q.maxElixir * 8 + 1e-7
   );
-  const forced = q.include.map((id) => pool.find((c) => c.id === id));
-  if (forced.some((c) => !c) || pool.length < 8) return [];
-  const choices = [...pool].sort((a, b) => b.level! - a.level!).slice(0, 40);
-  let beam: Card[][] = [forced as Card[]];
-  for (let d = forced.length; d < 8; d++) {
-    const next = new Map<string, { cards: Card[]; score: number }>();
-    for (const cs of beam)
-      for (const c of choices) {
-        if (cs.some((x) => x.id === c.id)) continue;
-        const cards = [...cs, { ...c, active: "base" }];
-        if (cards.reduce((s, c) => s + c.elixir!, 0) > q.maxElixir * 8)
-          continue;
-        const k = key(cards);
-        if (next.has(k)) continue;
-        const e = evaluate(cards, q);
-        next.set(k, {
-          cards,
-          score:
-            e.score +
-            e.coverage * 0.15 -
-            Math.max(0, e.roles["Win condition"] - 2) * 8,
-        });
+  const fitness = (cs: Card[]) => evaluate(cs, q).score;
+  const candidates = new Map<string, Card[]>();
+  const addCandidate = (cs: Card[]) => {
+    if (permitted(cs)) candidates.set(key(cs), cs);
+  };
+
+  // Each pattern explicitly looks for win pressure, anti-air, ground answers,
+  // a tank stopper and both spell classes. The full pool remains eligible.
+  const patterns: string[][] = [
+    ["win", "bigspell", "air", "tank", "smallspell", "air", "ground", "splash"],
+    ["win", "air", "tank", "ground", "bigspell", "smallspell", "air", "cycle"],
+    ["win", "bigspell", "smallspell", "tank", "air", "splash", "air", "cycle"],
+    ["win", "air", "air", "tank", "splash", "bigspell", "smallspell", "ground"],
+  ];
+  const roleTest: Record<string, (c: Card) => boolean> = {
+    win: c => hasRole(c, "Win condition"),
+    air: reliableAir,
+    tank: c => hasRole(c, "Tank killer"),
+    ground: c => hasRole(c, "Ground defense"),
+    splash: c => hasRole(c, "Swarm control"),
+    bigspell: c => heavySpellNames.has(c.name),
+    smallspell: c => cheapSpellNames.has(c.name),
+    cycle: c => hasRole(c, "Cycle"),
+  };
+  const weightedLevel = (c: Card) =>
+    (c.level ?? 0) / Math.max(1, q.cap) * 28;
+  const seed = (anchor: Card | undefined, pattern: string[]) => {
+    const cs = [...forcedCards];
+    if (anchor && !cs.some(c => c.id === anchor.id)) cs.push(anchor);
+    if (cs.length > 8) return;
+    const taken = new Set(cs.map(c => c.id));
+    const used = new Set<string>();
+    for (const slot of pattern) {
+      if (cs.length === 8) break;
+      // A dedicated second defender must actually be a second card;
+      // other roles can be covered by cards occupying multiple roles.
+      const requested = slot === "air" && used.has("air")
+        ? 2 : 1;
+      used.add(slot);
+      if (cs.filter(roleTest[slot]).length >= requested) continue;
+      const available = pool.filter(c =>
+        !taken.has(c.id) && roleTest[slot](c) &&
+        cs.reduce((sum, v) => sum + (v.elixir ?? 0), c.elixir ?? 0)
+          <= q.maxElixir * 8 + 1e-7
+      );
+      const ranked = available.sort((a, b) => {
+        const grade = (c: Card) =>
+          weightedLevel(c) +
+          deckAudit([...cs, c]).passed * 7 -
+          (c.elixir ?? 0) * (q.mode === "Fast cycle" ? 5 : 1.2) +
+          (c.roles.length * 0.5);
+        return grade(b) - grade(a) || a.id - b.id;
+      });
+      const pick = ranked[0];
+      if (pick) { cs.push(pick); taken.add(pick.id); }
+    }
+    while (cs.length < 8) {
+      const available = pool.filter(c =>
+        !taken.has(c.id) &&
+        cs.reduce((sum, v) => sum + (v.elixir ?? 0), c.elixir ?? 0)
+          <= q.maxElixir * 8 + 1e-7
+      );
+      if (!available.length) return;
+      available.sort((a, b) => {
+        const grade = (c: Card) =>
+          weightedLevel(c) +
+          (deckAudit([...cs, c]).passed - deckAudit(cs).passed) * 15 +
+          c.roles.length * 0.8 -
+          (c.elixir ?? 0) * (q.mode === "Fast cycle" ? 5 : 1.3);
+        return grade(b) - grade(a) || a.id - b.id;
+      });
+      const pick = available[0];
+      cs.push(pick);
+      taken.add(pick.id);
+    }
+    addCandidate(cs);
+  };
+
+  const sortedWin = winCards.sort((a,b) =>
+    weightedLevel(b) - weightedLevel(a) || a.id-b.id);
+  for (const anchor of sortedWin) {
+    for (const pattern of patterns) seed(anchor, pattern);
+  }
+  // Retain an existing player's real deck as a legitimate baseline.
+  addCandidate(currentDeck.map(c => byId.get(c.id)).filter((c): c is Card => !!c));
+  for (const names of templates) {
+    const cs = names.map(n => pool.find(c => c.name === n));
+    if (cs.every((c): c is Card => !!c)) addCandidate(cs as Card[]);
+  }
+  // Forced cards might already provide the win condition.
+  if (forcedCards.some(c => hasRole(c, "Win condition")))
+    for (const pattern of patterns) seed(undefined, pattern);
+
+  const seeds = [...candidates.values()]
+    .sort((a,b) => fitness(b) - fitness(a) || key(a).localeCompare(key(b)));
+  // Make sure alternative win conditions get explored, not just the most
+  // overlevelled archetype.
+  const diverse = new Map<number, Card[]>();
+  for (const cs of seeds) {
+    const win = cs.find(c => hasRole(c, "Win condition"));
+    if (win && !diverse.has(win.id)) diverse.set(win.id, cs);
+  }
+  const sampled = [...new Map(
+    [...seeds.slice(0, 16), ...[...diverse.values()].slice(0, 14)]
+      .map(cs => [key(cs), cs])
+  ).values()].slice(0, 30);
+  const optimized = new Map<string, Card[]>();
+  for (const start of sampled) {
+    let best = [...start];
+    let bestScore = fitness(best);
+    // Single-card swaps inspect every owned, eligible card; preserve hard
+    // includes and the elixir cap. Bounded passes keep the UI responsive.
+    for (let pass = 0; pass < 3; pass++) {
+      let winner: Card[] | null = null;
+      let winnerScore = bestScore;
+      for (let position = 0; position < 8; position++) {
+        if (locked.has(best[position].id)) continue;
+        for (const card of pool) {
+          if (best.some((c, i) => i !== position && c.id === card.id)) continue;
+          if (card.id === best[position].id) continue;
+          const trial = [...best];
+          trial[position] = card;
+          if (!permitted(trial)) continue;
+          const score = fitness(trial);
+          if (score > winnerScore + 1e-7) {
+            winner = trial;
+            winnerScore = score;
+          }
+        }
       }
-    beam = [...next.values()]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 75)
-      .map((x) => x.cards);
+      if (!winner) break;
+      best = winner;
+      bestScore = winnerScore;
+    }
+    optimized.set(key(best), best);
   }
-  for (const t of templates) {
-    const cs = t.map((n) => pool.find((c) => c.name === n));
-    if (
-      cs.every((c): c is Card => !!c) &&
-      q.include.every((id) => cs.some((c) => c.id === id))
-    )
-      beam.push(cs);
-  }
-  const ranked = beam
-    .filter(
-      (cs) =>
-        legal(cs) &&
-        cs.some((c) => c.roles.includes("Win condition")) &&
-        evaluate(cs, q).avg! <= q.maxElixir,
-    )
-    .map((cs) => ({
-      cards: cs.map((c) => ({ ...c, active: "base" })),
-      evaluation: evaluate(cs, q),
-    }))
-    .sort((a, b) => b.evaluation.score - a.evaluation.score);
+  // Include exact seeds as alternative options if local optima collapse.
+  for (const cs of seeds) optimized.set(key(cs), cs);
+  const ranked = [...optimized.values()]
+    .filter(permitted)
+    .map(cs => ({ cards: cs.map(c => ({ ...c, active: "base" })),
+      evaluation: evaluate(cs, q) }))
+    .sort((a,b) => b.evaluation.score - a.evaluation.score ||
+      key(a.cards).localeCompare(key(b.cards)));
   const result: typeof ranked = [];
-  for (const d of ranked)
-    if (
-      result.every(
-        (x) =>
-          d.cards.filter((c) => x.cards.some((a) => a.id === c.id)).length <= 6,
-      )
-    ) {
-      result.push(d);
+  for (const choice of ranked) {
+    if (result.every(existing =>
+      choice.cards.filter(c => existing.cards.some(e => e.id === c.id)).length <= 6
+    )) {
+      result.push(choice);
       if (result.length === 5) break;
     }
+  }
   return result;
 }
 export function deckLink(cs: Card[]) {
