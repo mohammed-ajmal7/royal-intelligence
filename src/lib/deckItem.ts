@@ -186,7 +186,12 @@ export function rankDeckItems(
     const chosen = selectedItemLevel(card, options);
     const m = resolveMechanics({ id: card.id, level: chosen.level }, catalog);
     const classified = classifyCard(card, m);
-    if (options.kind !== "all" && classified.kind !== options.kind) continue;
+    if (
+      options.kind !== "all" &&
+      !(options.kind === "Other"
+        ? classified.kind === null || classified.kind === "Other"
+        : classified.kind === options.kind)
+    ) continue;
     const hp = m?.hitpoints ?? null;
     const damage = m?.damage ?? null;
     const dps = m?.dps ?? null;
