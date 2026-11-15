@@ -310,6 +310,14 @@ export default function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
+    if (!mobile) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobile(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobile]);
+  useEffect(() => {
     if (!selected) return;
     const prev = document.activeElement as HTMLElement;
     const el = document.querySelector<HTMLElement>("[role=dialog]");
@@ -713,9 +721,9 @@ export default function App() {
     );
   }
   return (
-    <div>
-      <aside className={mobile ? "sidebar open" : "sidebar"}>
-        <a className="brand" href="#Overview">
+    <div className="royal-app">
+      <aside className={mobile ? "sidebar open" : "sidebar"} aria-label="All workspace sections">
+        <a className="brand" href="#Overview" onClick={() => setMobile(false)}>
           <span className="brand-icon">
             <Crown />
           </span>
@@ -724,7 +732,10 @@ export default function App() {
           </span>
         </a>
         <div className="nav-kicker">
-          PLAYER WORKSPACE <small>v0.1</small>
+          PLAYER WORKSPACE <small>ARENA DESK</small>
+          <button type="button" className="drawer-close icon-btn"
+            aria-label="Close navigation"
+            onClick={() => setMobile(false)}><X size={21}/></button>
         </div>
         <nav>
           {nav.map(([p, Icon]) => (
@@ -766,7 +777,7 @@ export default function App() {
       {mobile && (
         <button
           className="scrim"
-          aria-label="Close menu"
+          aria-label="Close navigation drawer"
           onClick={() => setMobile(false)}
         />
       )}
@@ -774,14 +785,24 @@ export default function App() {
         <header className="topbar">
           <button
             className="mobile-toggle icon-btn"
-            aria-label="Open menu"
+            aria-label="Open all sections"
             onClick={() => setMobile(true)}
           >
-            <Menu />
+            <Menu size={22} />
           </button>
-          <span>Workspace</span>
-          <ChevronRight size={14} />
-          <strong>{page}</strong>
+          <div className="mobile-brand" aria-label="Royal Intelligence">
+            <span className="mobile-crown"><Crown size={24} /></span>
+            <span className="mobile-brand-wordmark">ROYAL<small>INTELLIGENCE</small></span>
+          </div>
+          <div className="desktop-breadcrumb">
+            <span>Workspace</span>
+            <ChevronRight size={14} />
+            <strong>{page}</strong>
+          </div>
+          <div className="mobile-live-status" aria-label={s.mode === "live" ? "Live player loaded" : "Demo player"}>
+            <span className={s.mode === "live" ? "live-dot active" : "live-dot"} />
+            {s.mode === "live" ? "LIVE" : "DEMO"}
+          </div>
           <div className="top-right">
             <span className="dot" />
             Transparent by design
@@ -796,30 +817,6 @@ export default function App() {
           </div>
         </header>
         <main>
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                <i />
-                ROYAL INTELLIGENCE / {page.toUpperCase()}
-              </div>
-              <h1>{titles[page] ?? page}</h1>
-              <p>{descriptions[page]}</p>
-            </div>
-            <button
-              className="btn secondary"
-              onClick={() =>
-                go(
-                  page === "Deck Laboratory"
-                    ? "My Collection"
-                    : "Deck Laboratory",
-                )
-              }
-            >
-              <FlaskConical size={16} />
-              {page === "Deck Laboratory" ? "View collection" : "Open Deck Lab"}
-              <ArrowUpRight size={15} />
-            </button>
-          </div>
           <div className="account-bar">
             <label className="tag-input">
               <span>#</span>
@@ -849,6 +846,30 @@ export default function App() {
                   : s.fetchedAt.replace("T", " ").slice(0, 19) + " UTC"}
               </small>
             </div>
+          </div>
+          <div className="page-heading">
+            <div>
+              <div className="eyebrow">
+                <i />
+                ROYAL INTELLIGENCE / {page.toUpperCase()}
+              </div>
+              <h1>{titles[page] ?? page}</h1>
+              <p>{descriptions[page]}</p>
+            </div>
+            <button
+              className="btn secondary"
+              onClick={() =>
+                go(
+                  page === "Deck Laboratory"
+                    ? "My Collection"
+                    : "Deck Laboratory",
+                )
+              }
+            >
+              <FlaskConical size={16} />
+              {page === "Deck Laboratory" ? "View collection" : "Open Deck Lab"}
+              <ArrowUpRight size={15} />
+            </button>
           </div>
           {s.mode === "demo" && (
             <div className="demo-banner">
@@ -2490,6 +2511,33 @@ export default function App() {
           </footer>
         </main>
       </div>
+      <nav className="mobile-bottom-nav" aria-label="Mobile primary navigation">
+        {([
+          ["Overview", LayoutDashboard, "Home"],
+          ["My Collection", Layers3, "Cards"],
+          ["Deck Laboratory", FlaskConical, "Build"],
+          ["Battle History", Swords, "Battles"],
+        ] as const).map(([p, Icon, label]) => (
+          <button
+            key={p}
+            className={page === p ? "mobile-tab active" : "mobile-tab"}
+            aria-current={page === p ? "page" : undefined}
+            onClick={() => go(p)}
+          >
+            <span className="mobile-tab-icon"><Icon size={22} /></span>
+            <span>{label}</span>
+          </button>
+        ))}
+        <button
+          className={["Overview","My Collection","Deck Laboratory","Battle History"].includes(page) ? "mobile-tab" : "mobile-tab active"}
+          aria-label="More sections"
+          aria-expanded={mobile}
+          onClick={() => setMobile(true)}
+        >
+          <span className="mobile-tab-icon"><Menu size={22} /></span>
+          <span>More</span>
+        </button>
+      </nav>
       {toast && (
         <div className="toast" role="status">
           <Check size={17} />
