@@ -1369,6 +1369,21 @@ export default function App() {
                       ))}
                     </div>
                     {q.mode.includes("2v2") && (
+                      <>
+                      <label>
+                        Teammate's player tag
+                        <div className="inline">
+                          <input aria-label="Teammate player tag" value={teammateTag}
+                            onChange={(e) => setTeammateTag(e.target.value)}
+                            placeholder="#PLAYER_TAG"/>
+                          <button className="btn secondary" type="button"
+                            disabled={scouting !== "" || !teammateTag.trim()}
+                            onClick={() => void scoutPlayer("teammate")}>
+                            {scouting === "teammate" ? "Loading…" : "Load real deck"}
+                          </button>
+                        </div>
+                        <small>Loads your teammate's real selected deck. Edit it below if necessary.</small>
+                      </label>
                       <label>
                         Teammate’s eight cards
                         <select
@@ -1400,6 +1415,7 @@ export default function App() {
                           applies only with all eight.
                         </small>
                       </label>
+                      </>
                     )}
                     <p className="micro">
                       Approximate beam search plus editorial archetype seeds. It
@@ -1531,6 +1547,27 @@ export default function App() {
             <>
               <Panel title="Compare an opponent">
                 <label>
+                  Opponent's player tag
+                  <div className="inline">
+                    <input aria-label="Opponent player tag" placeholder="#PLAYER_TAG"
+                      value={opponentTag} onChange={(e) => setOpponentTag(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && scouting === "") void scoutPlayer("opponent"); }}/>
+                    <button type="button" className="btn"
+                      disabled={scouting !== "" || !opponentTag.trim()}
+                      onClick={() => void scoutPlayer("opponent")}>
+                      <Search size={15} />
+                      {scouting === "opponent" ? "Loading…" : "Load real deck"}
+                    </button>
+                  </div>
+                  <small>Uses the opponent's currently selected public deck, which may differ from past battle decks.</small>
+                </label>
+                {scouted && (
+                  <div className="fact">
+                    <span>{scouted.name} · {scouted.tag}</span>
+                    <strong>{fmt(scouted.trophies)} trophies</strong>
+                  </div>
+                )}
+                <label>
                   Official deck link
                   <div className="inline">
                     <input
@@ -1543,6 +1580,7 @@ export default function App() {
                       onClick={() => {
                         try {
                           setEnemy(importLink(link, s.catalog));
+                          setScouted(null);
                           setError("");
                         } catch (e) {
                           setError((e as Error).message);
@@ -1562,8 +1600,10 @@ export default function App() {
                       const ids = Array.from(e.target.selectedOptions).map(
                         (o) => Number(o.value),
                       );
-                      if (ids.length <= 8)
+                      if (ids.length <= 8) {
                         setEnemy(s.catalog.filter((c) => ids.includes(c.id)));
+                        setScouted(null);
+                      }
                     }}
                   >
                     {s.catalog
