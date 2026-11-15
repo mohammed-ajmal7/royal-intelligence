@@ -89,7 +89,7 @@ const records: Record<string, Omit<MechanicsCard, "id">> = {
     targetsAir: false,
     targetsGround: true,
     buildingsOnly: false,
-    areaRadiusTiles: 1.5, // Barrel landing radius, not a splash-damage radius.
+    areaRadiusTiles: null, // No direct splash damage from the barrel.
     unitCount: 3,
     deploySeconds: 1,
     firstHitSeconds: 0.3,
@@ -110,6 +110,7 @@ const records: Record<string, Omit<MechanicsCard, "id">> = {
         summonedUnit: "Goblin",
         summonedUnitCount: 3,
         directBarrelDamage: 0,
+        landingRadiusTiles: 1.5,
         calculation: "per-Goblin damage per hit; derived per-Goblin DPS = damage / 1.1 seconds",
         note: "Evolution's Decoy Goblins have separate stats; not included in the base-card leaderboard.",
       },
