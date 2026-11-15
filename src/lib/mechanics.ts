@@ -141,9 +141,18 @@ export function projectMechanics(
     const unit = chars.get(clean(unitName)) ?? chars.get(key) ?? {};
     const main = kind === "Building" ? building :
       kind === "Spell" ? spell : unit;
+    // Some direct spells publish damage in a standalone projectile with a
+    // *suffix* (FireballSpell / ArrowsSpell / RocketSpell). Only use exact
+    // known naming forms; never fuzzy-match unrelated projectiles.
+    const projectileName = clean(card.sc_key);
     const rawProjectile = projectiles.get(clean(main.projectile)) ??
       projectiles.get(clean(t.projectile)) ??
-      projectiles.get(clean(spell.projectile)) ?? {};
+      projectiles.get(clean(spell.projectile)) ??
+      (kind === "Spell" ? (
+        projectiles.get(projectileName + "spell") ??
+        projectiles.get(projectileName + "projectilerolling") ??
+        projectiles.get(projectileName + "projectile")
+      ) : undefined) ?? {};
     const hp = prefer(main.hitpoints_per_level, main.hitPointsPerLevel);
     const damage = prefer(
       main.damage_per_level,
