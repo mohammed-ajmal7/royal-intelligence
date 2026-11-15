@@ -1352,10 +1352,11 @@ export default function App() {
                   ))}
                 </div>
                 <div className="actions">
-                  <button className="btn smart-find" disabled={busy || loading || s.cards.length < 8}
+                  <button className="btn smart-find" disabled={busy || loading || mechanicsLoading || s.cards.length < 8}
                     onClick={optimize}>
                     <Sparkles size={17} />
-                    {busy ? "Checking your collection…" : "Find my best decks"}
+                    {busy ? "Checking your collection…" : mechanicsLoading ?
+                      "Loading combat stats…" : "Find my best decks"}
                   </button>
                   <button className="btn secondary"
                     onClick={() => {
@@ -1505,10 +1506,10 @@ export default function App() {
                       <button
                         className="btn"
                         onClick={optimize}
-                        disabled={busy}
+                        disabled={busy || mechanicsLoading}
                       >
                         <Sparkles size={16} />
-                        {busy ? "Evaluating…" : "Optimize my deck"}
+                        {busy ? "Evaluating…" : mechanicsLoading ? "Loading stats…" : "Optimize my deck"}
                       </button>
                       <button
                         className="btn secondary"
