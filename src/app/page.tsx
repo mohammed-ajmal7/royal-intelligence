@@ -30,6 +30,14 @@ import {
 import { Card, Snapshot, Battle, roleGroups } from "../lib/model";
 import { demo } from "../lib/demo";
 import {
+  emptyHistory,
+  mergeHistory,
+  withSnapshot,
+  readLocalHistory,
+  writeLocalHistory,
+  clearLocalHistory,
+} from "../lib/localHistory";
+import {
   defaults,
   evaluate,
   generate,
@@ -50,6 +58,7 @@ const nav = [
   ["Deck Analyzer", ScanLine],
   ["Matchup Lab", Swords],
   ["Battle History", History],
+  ["Clan Intelligence", Shield],
   ["Upgrade Planner", TrendingUp],
   ["Meta Insights", Globe2],
   ["AI Coach", Sparkles],
@@ -60,6 +69,7 @@ const titles: Record<string, string> = {
   "Deck Laboratory": "Build with intelligence.",
   "My Collection": "Every card. Every possibility.",
   "Battle History": "Find the pattern.",
+  "Clan Intelligence": "Understand the clan.",
   "AI Coach": "Think one move ahead.",
 };
 const descriptions: Record<string, string> = {
@@ -70,22 +80,25 @@ const descriptions: Record<string, string> = {
   "Deck Analyzer": "Understand your deck’s strengths, gaps, and roles.",
   "Matchup Lab": "Know the threats. Preserve the right answers.",
   "Battle History": "Learn from the matches available in your battle log.",
+  "Clan Intelligence": "Live clan profile, members, and standings from Supercell.",
   "Upgrade Planner": "Invest in the cards that support your next climb.",
   "Meta Insights": "Separate current evidence from assumptions.",
   "AI Coach": "Grounded explanations, without invented statistics.",
   Settings: "Manage your connection, data, and preferences.",
 };
-const blank = {
-  snapshots: [] as Snapshot[],
-  battles: [] as Battle[],
-  choices: [] as {
-    id: string;
-    observed: string;
-    cards: number[];
-    mode: string;
-    score: number;
-  }[],
+const blank = emptyHistory();
+type ScoutedPlayer = { tag: string; name: string; trophies: number | null; deck: Card[] };
+type ClanProfile = {
+  clan: { tag: string; name: string; [key: string]: unknown };
+  members: { tag: string; name: string; [key: string]: unknown }[];
+  warnings: string[];
+  fetchedAt: string;
 };
+function publicNumber(source: unknown, field: string): number | null {
+  if (!source || typeof source !== "object") return null;
+  const n = (source as Record<string, unknown>)[field];
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
 const pct = (n: number) => Math.round(n * 100) + "%";
 const fmt = (n: number | null) => (n == null ? "—" : n.toLocaleString("en-US"));
 function playerNumber(source: unknown, ...path: string[]): number | null {
@@ -224,7 +237,7 @@ export default function App() {
     [mobile, setMobile] = useState(false),
     [s, setS] = useState<Snapshot>(demo),
     [deck, setDeck] = useState<Card[]>(() => demo().deck),
-    [tagInput, setTag] = useState("VUYRP9GQL"),
+    [tagInput, setTag] = useState(""),
     [search, setSearch] = useState(""),
     [filter, setFilter] = useState("All cards"),
     [sort, setSort] = useState("Level"),
@@ -244,6 +257,13 @@ export default function App() {
     [openBattle, setOpenBattle] = useState(""),
     [enemy, setEnemy] = useState<Card[]>([]),
     [link, setLink] = useState(""),
+    [opponentTag, setOpponentTag] = useState(""),
+    [teammateTag, setTeammateTag] = useState(""),
+    [scouting, setScouting] = useState<"" | "opponent" | "teammate">(""),
+    [scouted, setScouted] = useState<ScoutedPlayer | null>(null),
+    [clan, setClan] = useState<ClanProfile | null>(null),
+    [clanLoading, setClanLoading] = useState(false),
+    [clanError, setClanError] = useState(""),
     [resource, setResource] = useState({ gold: 0, wildCards: 0, shards: 0 }),
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
@@ -268,15 +288,14 @@ export default function App() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setStatus)
       .catch(() => {});
-    const requestedTag = new URLSearchParams(window.location.search).get("tag");
+    let requestedTag = new URLSearchParams(window.location.search).get("tag");
+    if (!requestedTag) {
+      try { requestedTag = localStorage.getItem("ri-last-player-tag"); } catch {}
+    }
     if (requestedTag) {
       setTag(requestedTag);
       void connect(requestedTag);
     }
-    try {
-      const p = JSON.parse(localStorage.getItem("ri-preferences") ?? "null");
-      if (p?.version === 1 && p.resource) setResource(p.resource);
-    } catch {}
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
@@ -309,6 +328,26 @@ export default function App() {
       prev?.focus();
     };
   }, [selected]);
+  useEffect(() => {
+    if (page !== "Clan Intelligence" || s.mode !== "live") return;
+    const raw = s.raw as { clan?: { tag?: string } } | null;
+    const clanTag = raw?.clan?.tag;
+    if (!clanTag) {
+      setClan(null);
+      setClanError("This player is not currently in a clan.");
+      return;
+    }
+    let cancelled = false;
+    setClanLoading(true);
+    setClanError("");
+    setClan(null);
+    request("/api/clan?tag=" + encodeURIComponent(clanTag))
+      .then((value: ClanProfile) => { if (!cancelled) setClan(value); })
+      .catch((error: Error) => { if (!cancelled) setClanError(error.message); })
+      .finally(() => { if (!cancelled) setClanLoading(false); });
+    return () => { cancelled = true; };
+  }, [page, s]);
+
   const go = (p: string) => {
     setPage(p);
     setMobile(false);
@@ -373,6 +412,15 @@ export default function App() {
         "/api/player?tag=" + encodeURIComponent(searchTag),
       );
       setS(result);
+      setClan(null);
+      setClanError("");
+      try {
+        localStorage.setItem("ri-last-player-tag", result.tag.replace(/^#/, ""));
+        const storedResources = JSON.parse(localStorage.getItem("ri-preferences:" + result.tag) ?? "null");
+        setResource(storedResources?.version === 1 ? storedResources.resource : { gold: 0, wildCards: 0, shards: 0 });
+      } catch {
+        setResource({ gold: 0, wildCards: 0, shards: 0 });
+      }
       window.history.replaceState(
         null,
         "",
@@ -384,20 +432,21 @@ export default function App() {
       setQ({ ...defaults, cap: result.cap });
       setCandidates([]);
       setEnemy([]);
-      setHist(blank);
       setModeFilter("All modes");
+      let local = withSnapshot(readLocalHistory(result.tag), result);
       try {
-        setHist(
-          await request("/api/history?tag=" + encodeURIComponent(result.tag)),
-        );
-        setToast(
-          result.stale
-            ? "Showing last saved snapshot."
-            : "Account synchronized.",
-        );
+        const privateHistory = await request("/api/history?tag=" + encodeURIComponent(result.tag));
+        local = mergeHistory(local, privateHistory);
       } catch {
-        setToast("Public profile loaded. Private history is unavailable.");
+        // Public visitors use their own browser history, never another owner's D1 records.
       }
+      setHist(local);
+      const saved = writeLocalHistory(result.tag, local);
+      setToast(result.stale
+        ? "Showing last stored snapshot."
+        : saved
+          ? "Real player profile loaded. Battle history saved on this device."
+          : "Real player profile loaded. Device storage is unavailable.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -441,20 +490,57 @@ export default function App() {
     }
   }
   async function track() {
+    if (s.mode !== "live" || deck.length !== 8) return;
+    const choice = {
+      id: crypto.randomUUID(),
+      observed: new Date().toISOString(),
+      cards: deck.map((c) => c.id),
+      mode: q.mode,
+      score: evaluate(deck, q).score,
+    };
+    let updated = mergeHistory(hist, {
+      snapshots: [],
+      battles: [],
+      choices: [choice],
+    });
+    // Sites can additionally persist choices in its authenticated database.
+    if (status?.database || access) {
+      try {
+        const savedChoice = await request("/api/choices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tag: s.tag, cards: choice.cards, mode: choice.mode }),
+        });
+        updated = mergeHistory(hist, { snapshots: [], battles: [], choices: [savedChoice] });
+      } catch {
+        // Browser-local tracking remains functional on public standalone hosting.
+      }
+    }
+    setHist(updated);
+    setToast(writeLocalHistory(s.tag, updated)
+      ? "Tracked on this device. Refresh later to compare new battles."
+      : "Tracked for this session only; browser storage is unavailable.");
+  }
+  async function scoutPlayer(kind: "opponent" | "teammate") {
+    const tagToSearch = kind === "opponent" ? opponentTag : teammateTag;
+    setScouting(kind);
+    setError("");
     try {
-      await request("/api/choices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tag: s.tag,
-          cards: deck.map((c) => c.id),
-          mode: q.mode,
-        }),
-      });
-      setHist(await request("/api/history?tag=" + encodeURIComponent(s.tag)));
-      setToast("Base composition tracked for future observed battles.");
+      const player: ScoutedPlayer = await request(
+        "/api/scout?tag=" + encodeURIComponent(tagToSearch),
+      );
+      if (player.deck.length !== 8) throw new Error("This player's selected eight-card deck is unavailable.");
+      if (kind === "opponent") {
+        setScouted(player);
+        setEnemy(player.deck);
+      } else {
+        setQ((old) => ({ ...old, teammate: player.deck }));
+      }
+      setToast(player.name + "'s real selected deck loaded.");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setScouting("");
     }
   }
   function answer(text: string) {
@@ -686,6 +772,7 @@ export default function App() {
               <span>#</span>
               <input
                 aria-label="Player tag"
+                placeholder="Enter any CR player tag"
                 value={tagInput.replace(/^#/, "")}
                 onChange={(e) => setTag(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !loading && connect()}
