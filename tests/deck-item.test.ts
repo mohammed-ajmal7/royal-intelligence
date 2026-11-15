@@ -54,7 +54,7 @@ test("hits-to-defeat is real HP divided by incoming damage, rounded UP",()=>{
 });
 
 test("defense rankings sort by real hits endured, highest first, not arbitrary labels",()=>{
-  const result=rankDeckItems(cards,stats,options());
+  const result=rankDeckItems(cards,stats,options({category:"defense",ownedOnly:true}));
   assert.deepEqual(result.filter(x=>x.rank!==null).map(x=>x.card.name),[
     "Giant","Knight","Skeleton Army",
   ]);
@@ -71,23 +71,23 @@ test("defense rankings sort by real hits endured, highest first, not arbitrary l
 });
 
 test("changing reference damage changes defense hit counts and rank explanations",()=>{
-  const result=rankDeckItems(cards,stats,options({incomingDamage:700}));
+  const result=rankDeckItems(cards,stats,options({category:"defense",ownedOnly:true,incomingDamage:700}));
   assert.equal(result.find(x=>x.card.id===tank.id)?.hitsToDefeat,4);
   assert.equal(result.find(x=>x.card.id===mini.id)?.hitsToDefeat,3);
   assert.equal(result.find(x=>x.card.id===swarm.id)?.hitsToDefeat,2);
-  const invalid=rankDeckItems(cards,stats,options({incomingDamage:NaN}));
+  const invalid=rankDeckItems(cards,stats,options({category:"defense",ownedOnly:true,incomingDamage:NaN}));
   assert.ok(invalid.every(x=>x.value===null && x.rank===null));
-  const health=rankDeckItems(cards,stats,options({defenseMetric:"hp",incomingDamage:NaN}));
+  const health=rankDeckItems(cards,stats,options({category:"defense",ownedOnly:true,defenseMetric:"hp",incomingDamage:NaN}));
   assert.deepEqual(health.filter(x=>x.available).map(x=>x.value),[2400,1600,1000]);
 });
 
 test("attack options correctly rank per-hit damage or DPS independently",()=>{
-  const byHit=rankDeckItems(cards,stats,options({category:"attack"}));
+  const byHit=rankDeckItems(cards,stats,options({category:"attack",ownedOnly:true}));
   assert.deepEqual(byHit.filter(x=>x.available).map(x=>x.card.name),[
     "Fireball","Skeleton Army","Knight","Giant",
   ]);
   assert.deepEqual(byHit.filter(x=>x.available).map(x=>x.value),[600,300,220,130]);
-  const byDps=rankDeckItems(cards,stats,options({category:"attack",attackMetric:"dps"}));
+  const byDps=rankDeckItems(cards,stats,options({category:"attack",attackMetric:"dps",ownedOnly:true}));
   assert.deepEqual(byDps.filter(x=>x.available).map(x=>x.card.name),[
     "Skeleton Army","Knight","Giant",
   ]);
@@ -101,8 +101,12 @@ test("filters distinguish troops, spells, missing source and unowned cards",()=>
   }));
   assert.deepEqual(spellOnly.map(x=>x.card.name),["Fireball"]);
   const all=rankDeckItems(cards,stats,options({category:"attack",ownedOnly:false}));
-  assert.equal(all.find(x=>x.card.id===notOwned.id)?.rank,null,
-    "Public non-owned card level cannot be assumed, even if community stats exist");
+  const referenceCard=all.find(x=>x.card.id===notOwned.id);
+  assert.equal(referenceCard?.value,1000,
+    "Unowned catalog cards can use a clearly labeled, selected comparison level");
+  assert.equal(referenceCard?.levelOrigin,"reference");
+  assert.equal(referenceCard?.level,11);
+  assert.equal(referenceCard?.card.owned,false);
   const noSource=rankDeckItems(cards,null,options());
   assert.ok(noSource.every(x=>x.value===null && x.rank===null));
   const allFiltered=rankDeckItems(cards,stats,options({kind:"Building"}));
@@ -118,6 +122,8 @@ test("page exposes Deck Item from sidebar and collection",()=>{
   assert.match(component,/Choose ranking category/);
   assert.match(component,/Choose defense measurement/);
   assert.match(component,/Choose attack measurement/);
-  assert.match(component,/Enemy damage per hit/);
-  assert.match(component,/No ranks have been invented/);
+  assert.match(component,/Incoming damage per hit/);
+  assert.match(component,/Rankings are not fabricated/);
+  assert.match(component,/Select reference level/);
+  assert.match(component,/All levels \+ full card stats/);
 });
