@@ -1047,6 +1047,76 @@ export default function App() {
               </div>
             </>
           )}
+          {page === "Clan Intelligence" && (
+            <>
+              {s.mode === "demo" ? (
+                <Notice>Search for a real player's tag to load their clan from the official API.</Notice>
+              ) : clanLoading ? (
+                <Empty>Loading the live clan profile and member roster…</Empty>
+              ) : clanError ? (
+                <Notice>{clanError}</Notice>
+              ) : clan ? (
+                <>
+                  <section className="hero">
+                    <div className="crest"><Shield size={40} /><small>CLAN</small></div>
+                    <div className="hero-name">
+                      <Pill>OFFICIAL CLAN PROFILE</Pill>
+                      <h2>{clan.clan.name} <small>{clan.clan.tag}</small></h2>
+                      <p>{String((clan.clan.location as { name?: string } | undefined)?.name ?? "Location unavailable")}</p>
+                    </div>
+                    <div className="trophy">
+                      <Trophy size={27} />
+                      <div><strong>{fmt(publicNumber(clan.clan, "clanScore"))}</strong><small>CLAN SCORE</small></div>
+                      <span><small>War trophies</small>{fmt(publicNumber(clan.clan, "clanWarTrophies"))}</span>
+                    </div>
+                  </section>
+                  <div className="collection-summary">
+                    <div><strong>{fmt(publicNumber(clan.clan, "members"))}</strong><small>REPORTED MEMBERS</small></div>
+                    <div><strong>{fmt(publicNumber(clan.clan, "requiredTrophies"))}</strong><small>REQUIRED TROPHIES</small></div>
+                    <div><strong>{clan.members.length}</strong><small>ROSTER RETURNED</small></div>
+                    <div><strong>{String(clan.clan.type ?? "—")}</strong><small>CLAN TYPE</small></div>
+                  </div>
+                  <div className="two-col">
+                    <Panel title="Clan description" kicker="PUBLIC CLAN DATA">
+                      <p style={{ whiteSpace: "pre-wrap" }}>{String(clan.clan.description ?? "No description returned.")}</p>
+                      <div className="fact"><span>Clan tag</span><strong>{clan.clan.tag}</strong></div>
+                      <div className="fact"><span>Fetched</span><strong>{clan.fetchedAt.slice(0, 16).replace("T", " ")} UTC</strong></div>
+                      <p className="micro">These are official, read-only clan details. Membership and trophies can change.</p>
+                    </Panel>
+                    <Panel title="Clan participation" kicker="PUBLIC ROSTER">
+                      <div className="fact"><span>Donations by listed members</span><strong>{
+                        clan.members.some((m) => publicNumber(m, "donations") != null)
+                          ? fmt(clan.members.reduce((total, m) => total + (publicNumber(m, "donations") ?? 0), 0))
+                          : "—"
+                      }</strong></div>
+                      <div className="fact"><span>Co-leaders</span><strong>{clan.members.filter((m) => m.role === "coLeader").length}</strong></div>
+                      <div className="fact"><span>Elders</span><strong>{clan.members.filter((m) => m.role === "elder").length}</strong></div>
+                      <p className="micro">Only fields returned for this clan are shown. Donations are a sum of roster values, not an all-time total.</p>
+                    </Panel>
+                  </div>
+                  <Panel title="Clan member roster" kicker="CLICK A MEMBER TO INSPECT THEIR PUBLIC PLAYER DATA">
+                    {clan.members.length ? (
+                      <div className="table-wrap">
+                        <table>
+                          <thead><tr><th>Member</th><th>Role</th><th>Trophies</th><th>Donations</th><th>Profile</th></tr></thead>
+                          <tbody>{[...clan.members].sort((a,b)=>(publicNumber(b,"trophies")??0)-(publicNumber(a,"trophies")??0)).map((member) => (
+                            <tr key={member.tag}>
+                              <td><strong>{member.name}</strong><div className="micro">{member.tag}</div></td>
+                              <td>{String(member.role ?? "Member")}</td>
+                              <td>{fmt(publicNumber(member, "trophies"))}</td>
+                              <td>{fmt(publicNumber(member, "donations"))}</td>
+                              <td><button className="text-btn" onClick={() => { setTag(member.tag); go("Overview"); void connect(member.tag); }}>View profile ↗</button></td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
+                      </div>
+                    ) : <Empty>The member roster is not available.</Empty>}
+                    {clan.warnings.map((w) => <Notice key={w}>{w}</Notice>)}
+                  </Panel>
+                </>
+              ) : <Empty>Clan data is not available for this player.</Empty>}
+            </>
+          )}
           {["My Collection", "Card Encyclopedia"].includes(page) && (
             <>
               <div className="collection-summary">
