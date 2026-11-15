@@ -310,6 +310,14 @@ export default function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
+    if (!mobile) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobile(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobile]);
+  useEffect(() => {
     if (!selected) return;
     const prev = document.activeElement as HTMLElement;
     const el = document.querySelector<HTMLElement>("[role=dialog]");
@@ -713,9 +721,9 @@ export default function App() {
     );
   }
   return (
-    <div>
-      <aside className={mobile ? "sidebar open" : "sidebar"}>
-        <a className="brand" href="#Overview">
+    <div className="royal-app">
+      <aside className={mobile ? "sidebar open" : "sidebar"} aria-label="All workspace sections">
+        <a className="brand" href="#Overview" onClick={() => setMobile(false)}>
           <span className="brand-icon">
             <Crown />
           </span>
@@ -724,7 +732,10 @@ export default function App() {
           </span>
         </a>
         <div className="nav-kicker">
-          PLAYER WORKSPACE <small>v0.1</small>
+          PLAYER WORKSPACE <small>ARENA DESK</small>
+          <button type="button" className="drawer-close icon-btn"
+            aria-label="Close navigation"
+            onClick={() => setMobile(false)}><X size={21}/></button>
         </div>
         <nav>
           {nav.map(([p, Icon]) => (
@@ -766,7 +777,7 @@ export default function App() {
       {mobile && (
         <button
           className="scrim"
-          aria-label="Close menu"
+          aria-label="Close navigation drawer"
           onClick={() => setMobile(false)}
         />
       )}
@@ -774,14 +785,24 @@ export default function App() {
         <header className="topbar">
           <button
             className="mobile-toggle icon-btn"
-            aria-label="Open menu"
+            aria-label="Open all sections"
             onClick={() => setMobile(true)}
           >
-            <Menu />
+            <Menu size={22} />
           </button>
-          <span>Workspace</span>
-          <ChevronRight size={14} />
-          <strong>{page}</strong>
+          <div className="mobile-brand" aria-label="Royal Intelligence">
+            <span className="mobile-crown"><Crown size={24} /></span>
+            <span className="mobile-brand-wordmark">ROYAL<small>INTELLIGENCE</small></span>
+          </div>
+          <div className="desktop-breadcrumb">
+            <span>Workspace</span>
+            <ChevronRight size={14} />
+            <strong>{page}</strong>
+          </div>
+          <div className="mobile-live-status" aria-label={s.mode === "live" ? "Live player loaded" : "Demo player"}>
+            <span className={s.mode === "live" ? "live-dot active" : "live-dot"} />
+            {s.mode === "live" ? "LIVE" : "DEMO"}
+          </div>
           <div className="top-right">
             <span className="dot" />
             Transparent by design
@@ -796,30 +817,6 @@ export default function App() {
           </div>
         </header>
         <main>
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                <i />
-                ROYAL INTELLIGENCE / {page.toUpperCase()}
-              </div>
-              <h1>{titles[page] ?? page}</h1>
-              <p>{descriptions[page]}</p>
-            </div>
-            <button
-              className="btn secondary"
-              onClick={() =>
-                go(
-                  page === "Deck Laboratory"
-                    ? "My Collection"
-                    : "Deck Laboratory",
-                )
-              }
-            >
-              <FlaskConical size={16} />
-              {page === "Deck Laboratory" ? "View collection" : "Open Deck Lab"}
-              <ArrowUpRight size={15} />
-            </button>
-          </div>
           <div className="account-bar">
             <label className="tag-input">
               <span>#</span>
@@ -849,6 +846,30 @@ export default function App() {
                   : s.fetchedAt.replace("T", " ").slice(0, 19) + " UTC"}
               </small>
             </div>
+          </div>
+          <div className="page-heading">
+            <div>
+              <div className="eyebrow">
+                <i />
+                ROYAL INTELLIGENCE / {page.toUpperCase()}
+              </div>
+              <h1>{titles[page] ?? page}</h1>
+              <p>{descriptions[page]}</p>
+            </div>
+            <button
+              className="btn secondary"
+              onClick={() =>
+                go(
+                  page === "Deck Laboratory"
+                    ? "My Collection"
+                    : "Deck Laboratory",
+                )
+              }
+            >
+              <FlaskConical size={16} />
+              {page === "Deck Laboratory" ? "View collection" : "Open Deck Lab"}
+              <ArrowUpRight size={15} />
+            </button>
           </div>
           {s.mode === "demo" && (
             <div className="demo-banner">
@@ -1339,7 +1360,7 @@ export default function App() {
                       <div className="eyebrow">{candidates.length ? "TOP RECOMMENDATION" : "CURRENT SELECTED DECK"}</div>
                       <h3>{name(deck)}</h3>
                       <span className="muted">
-                        {deck.length}/8 cards · {ev.avg?.toFixed(2) ?? "?"} average elixir
+                        {deck.length}/8 cards · picked from {s.cards.length} owned base cards
                       </span>
                     </div>
                     <div className="smart-score">
@@ -1349,6 +1370,20 @@ export default function App() {
                     </div>
                   </div>
                   <Deck cards={deck} onClick={setSelected}/>
+                  <div className="smart-resource-metrics" aria-label="Elixir and rotation cost">
+                    <div className="smart-resource-metric">
+                      <span className="resource-gem"><Zap size={17}/></span>
+                      <div><small>AVG ELIXIR</small><strong>{ev.avg?.toFixed(2) ?? "—"}</strong></div>
+                    </div>
+                    <div className="smart-resource-metric">
+                      <span className="resource-gem"><RefreshCw size={17}/></span>
+                      <div><small>4-CARD CYCLE</small><strong>{ev.cycle ?? "—"} <em>elixir</em></strong></div>
+                    </div>
+                  </div>
+                  <p className="micro smart-metric-explainer">
+                    Cycle is the sum of the four cheapest cards, a best-case rotation measure—not
+                    a guaranteed return cost for every card.
+                  </p>
                   <div className="smart-checks" aria-label="Deck coverage checklist">
                     {ev.audit.checks.map(check => (
                       <div className={check.ok ? "smart-check ok" : "smart-check miss"} key={check.id}>
@@ -1680,8 +1715,9 @@ export default function App() {
                         <h4>{name(c.cards)}</h4>
                         <Deck cards={c.cards} onClick={setSelected} />
                         <p>
-                          {c.evaluation.avg?.toFixed(2)} average elixir ·{" "}
-                          {c.evaluation.air} reliable air defenders
+                          Avg {c.evaluation.avg?.toFixed(2) ?? "—"} elixir ·
+                          4-card cycle {c.evaluation.cycle ?? "—"} ·
+                          {" "}{c.evaluation.air} reliable air defenders
                         </p>
                         {c.evaluation.audit.missing.length > 0 && (
                           <p className="micro">
@@ -2490,6 +2526,33 @@ export default function App() {
           </footer>
         </main>
       </div>
+      <nav className="mobile-bottom-nav" aria-label="Mobile primary navigation">
+        {([
+          ["Overview", LayoutDashboard, "Home"],
+          ["My Collection", Layers3, "Cards"],
+          ["Deck Laboratory", FlaskConical, "Build"],
+          ["Battle History", Swords, "Battles"],
+        ] as const).map(([p, Icon, label]) => (
+          <button
+            key={p}
+            className={page === p ? "mobile-tab active" : "mobile-tab"}
+            aria-current={page === p ? "page" : undefined}
+            onClick={() => go(p)}
+          >
+            <span className="mobile-tab-icon"><Icon size={22} /></span>
+            <span>{label}</span>
+          </button>
+        ))}
+        <button
+          className={["Overview","My Collection","Deck Laboratory","Battle History"].includes(page) ? "mobile-tab" : "mobile-tab active"}
+          aria-label="More sections"
+          aria-expanded={mobile}
+          onClick={() => setMobile(true)}
+        >
+          <span className="mobile-tab-icon"><Menu size={22} /></span>
+          <span>More</span>
+        </button>
+      </nav>
       {toast && (
         <div className="toast" role="status">
           <Check size={17} />
