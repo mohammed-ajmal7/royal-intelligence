@@ -184,7 +184,14 @@ export function DeckItemView({
       card.hpByLevel?.length ?? 0,
       card.damageByLevel?.length ?? 0,
     )) ?? []),
-  )), [mechanics, player.cap]);
+    ...player.catalog.map(card=>{
+      const reference = getMechanicsRecord(card, mechanics);
+      return Math.max(
+        reference?.hpByLevel?.length ?? 0,
+        reference?.damageByLevel?.length ?? 0,
+      );
+    }),
+  )), [mechanics, player.cap, player.catalog]);
   const rankedCount = rows.filter(item=>item.available).length;
   const first = rows.find(item=>item.available);
   const isDefense = options.category === "defense";
