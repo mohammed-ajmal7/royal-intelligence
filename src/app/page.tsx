@@ -1705,6 +1705,21 @@ export default function App() {
                   crowns are shared, never summed.
                 </small>
               </Panel>
+              {s.mode === "live" && (
+                <Panel title="Trophy history" kicker="SAMPLED SNAPSHOTS STORED ON THIS DEVICE">
+                  {hist.snapshots.length > 1 ? hist.snapshots.slice(0, 20).map((snap, index) => {
+                    const next = hist.snapshots[index + 1];
+                    const delta = snap.trophies != null && next?.trophies != null ? snap.trophies - next.trophies : null;
+                    return (
+                      <div className="fact" key={snap.fetchedAt}>
+                        <span>{snap.fetchedAt.replace("T"," ").slice(0,16)} UTC</span>
+                        <strong>{fmt(snap.trophies)} {delta == null ? "" : delta > 0 ? "(+" + delta + ")" : "(" + delta + ")"}</strong>
+                      </div>
+                    );
+                  }) : <Empty>Refresh this player again later to build a real trophy timeline.</Empty>}
+                  <p className="micro">Only sampled points are available. No trophies are inferred between visits.</p>
+                </Panel>
+              )}
               <Panel title="Battle log">
                 {battles.map(battleRow)}
                 {!battles.length && (
@@ -1745,9 +1760,10 @@ export default function App() {
                   </Empty>
                 )}
                 <p className="micro">
-                  Matches base card IDs after the choice was saved; ignores form
-                  and tower differences. Descriptive results do not prove
-                  causation.
+                  Public player tracking is saved on this device. Refresh the player
+                  later to accumulate newer battles. Matching uses base card IDs
+                  after each choice and ignores special forms and towers.
+                  Observed results do not prove causation.
                 </p>
               </Panel>
               <Notice>
@@ -1783,7 +1799,7 @@ export default function App() {
                     onClick={() => {
                       try {
                         localStorage.setItem(
-                          "ri-preferences",
+                          "ri-preferences:" + s.tag,
                           JSON.stringify({ version: 1, resource }),
                         );
                         setToast("Manual resources saved on this device.");
@@ -2081,21 +2097,23 @@ export default function App() {
                   </p>
                 </Panel>
               </div>
-              <Panel title="Standalone hosting access">
+              <Panel title="Public visitor data and privacy">
                 <p>
-                  Sites uses your signed-in identity. On a standalone Next.js
-                  deployment, configure APP_ACCESS_KEY on the server and enter
-                  the matching key here. It stays in memory.
+                  Profiles come from the official API. Recent battles, sampled trophy history,
+                  tracked compositions and manually entered resources are stored in this browser
+                  separately by searched player tag; they do not sync between devices.
                 </p>
-                <label>
-                  Application access key
-                  <input
-                    type="password"
-                    value={access}
-                    autoComplete="off"
-                    onChange={(e) => setAccess(e.target.value)}
-                  />
-                </label>
+                <div className="fact"><span>Recorded snapshots</span><strong>{hist.snapshots.length}</strong></div>
+                <div className="fact"><span>Remembered battles</span><strong>{hist.battles.length}</strong></div>
+                <div className="fact"><span>Tracked deck choices</span><strong>{hist.choices.length}</strong></div>
+                <details>
+                  <summary>Optional private workspace access (administrators only)</summary>
+                  <p className="micro">Public visitors do not need an API key or password. Administrators of a private Sites/D1 deployment may use their separate APP_ACCESS_KEY here.</p>
+                  <label>Application access key
+                    <input type="password" value={access} autoComplete="off"
+                      onChange={(e) => setAccess(e.target.value)} />
+                  </label>
+                </details>
               </Panel>
               <Panel title="Your data, your control">
                 <div className="actions">
@@ -2148,9 +2166,9 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Export includes loaded data only: up to 200 snapshots, 1,000
-                  battles and 100 tracked choices. Preferences stay on this
-                  device.
+                  Export includes your current official profile, up to 90 browser-saved
+                  snapshots, 200 remembered battles, and 100 tracked deck choices.
+                  Resources and history stay on this device per player tag.
                 </p>
                 {confirmDelete && (
                   <div className="delete-confirm">
@@ -2162,13 +2180,22 @@ export default function App() {
                       className="btn"
                       onClick={async () => {
                         try {
-                          await request(
-                            "/api/history?tag=" + encodeURIComponent(s.tag),
-                            { method: "DELETE" },
-                          );
-                          setHist(blank);
+                          const removed = clearLocalHistory(s.tag);
+                          try { localStorage.removeItem("ri-preferences:" + s.tag); } catch {}
+                          if (status?.database || access) {
+                            try {
+                              await request(
+                                "/api/history?tag=" + encodeURIComponent(s.tag),
+                                { method: "DELETE" },
+                              );
+                            } catch {
+                              // Browser history is independently deletable.
+                            }
+                          }
+                          setHist(emptyHistory());
+                          setResource({ gold: 0, wildCards: 0, shards: 0 });
                           setConfirmDelete(false);
-                          setToast("Stored history deleted.");
+                          setToast(removed ? "Local history for this player deleted." : "History cleared from this session; browser storage is unavailable.");
                         } catch (e) {
                           setError((e as Error).message);
                         }
