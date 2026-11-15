@@ -1,3 +1,4 @@
+import "./prepare.mjs";
 import {
   mkdir,
   rename,
