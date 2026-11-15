@@ -1795,9 +1795,9 @@ export default function App() {
                         <span>Stat coverage {Math.round(m.confidence * 100)}%</span>
                       </div>
                       <div className="mechanics-card-stats">
-                        <div><small>HP</small><strong>{fmt(m.hp)}</strong></div>
+                        <div><small>HP / UNIT</small><strong>{fmt(m.hp)}</strong></div>
                         <div><small>DAMAGE/HIT</small><strong>{fmt(m.damage)}</strong></div>
-                        <div><small>DPS</small><strong>{m.dps == null ? "—" : Math.round(m.dps).toLocaleString()}</strong></div>
+                        <div><small>DPS / UNIT</small><strong>{m.dps == null ? "—" : Math.round(m.dps).toLocaleString()}</strong></div>
                         <div><small>HIT INTERVAL</small><strong>{m.hitSpeed == null ? "—" : m.hitSpeed.toFixed(2) + "s"}</strong></div>
                         <div><small>RANGE</small><strong>{m.range == null ? "—" : m.range.toFixed(1) + " tiles"}</strong></div>
                         <div><small>TARGETS</small><strong>{m.targets}</strong></div>
@@ -1808,7 +1808,7 @@ export default function App() {
                         <div className="fact"><span>Splash radius</span><strong>{m.splash == null ? "—" : m.splash.toFixed(1) + " tiles"}</strong></div>
                         <div className="fact"><span>Unit count</span><strong>{m.unitCount ?? "—"}</strong></div>
                         <div className="fact"><span>Deploy time</span><strong>{m.deployTime == null ? "—" : m.deployTime.toFixed(2) + "s"}</strong></div>
-                        <div className="fact"><span>First hit delay</span><strong>{m.firstHit == null ? "—" : m.firstHit.toFixed(2) + "s"}</strong></div>
+                        <div className="fact"><span>Attack preload (raw)</span><strong>{m.firstHit == null ? "—" : m.firstHit.toFixed(2) + "s"}</strong></div>
                         <div className="fact"><span>Derived card mechanics score</span><strong>{m.score == null ? "—" : m.score.toFixed(1) + "/100"}</strong></div>
                       </details>
                     </div>
