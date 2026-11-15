@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Layers3,
   BookOpen,
+  ListOrdered,
   FlaskConical,
   ScanLine,
   Swords,
@@ -51,9 +52,11 @@ import {
 } from "../lib/engine";
 import { verifiedStats } from "../lib/references";
 import type { MechanicsCatalog } from "../lib/mechanics";
+import { DeckItemView } from "../components/DeckItemView";
 const nav = [
   ["Overview", LayoutDashboard],
   ["My Collection", Layers3],
+  ["Deck Item", ListOrdered],
   ["Card Encyclopedia", BookOpen],
   ["Deck Laboratory", FlaskConical],
   ["Deck Analyzer", ScanLine],
@@ -69,6 +72,7 @@ const titles: Record<string, string> = {
   Overview: "Your competitive edge.",
   "Deck Laboratory": "Build with intelligence.",
   "My Collection": "Every card. Every possibility.",
+  "Deck Item": "The strongest cards, ranked by actual numbers.",
   "Battle History": "Find the pattern.",
   "Clan Intelligence": "Understand the clan.",
   "AI Coach": "Think one move ahead.",
@@ -77,6 +81,7 @@ const descriptions: Record<string, string> = {
   Overview: "Understand your account. Build smarter decks. Play with purpose.",
   "My Collection": "Your cards, your levels, your possibilities.",
   "Card Encyclopedia": "Inspect the evidence behind every card.",
+  "Deck Item": "Sort your collection by hits survived, HP, damage or DPS.",
   "Deck Laboratory": "Find the right eight cards for the way you play.",
   "Deck Analyzer": "Understand your deck’s strengths, gaps, and roles.",
   "Matchup Lab": "Know the threats. Preserve the right answers.",
@@ -1302,6 +1307,15 @@ export default function App() {
                   <small>HEROES OWNED</small>
                 </div>
               </div>
+              <button
+                type="button"
+                className="btn deck-item-entry"
+                onClick={() => go("Deck Item")}
+              >
+                <ListOrdered size={18}/>
+                Rank my cards by Attack or Defense
+                <ArrowUpRight size={17}/>
+              </button>
               {filters()}
               <div className="section-note">
                 <span>{visible.length} cards shown</span>
@@ -1323,6 +1337,15 @@ export default function App() {
                 </Notice>
               )}
             </>
+          )}
+          {page === "Deck Item" && (
+            <DeckItemView
+              player={s}
+              mechanics={mechanics}
+              mechanicsLoading={mechanicsLoading}
+              mechanicsError={mechanicsError}
+              onSelect={setSelected}
+            />
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
