@@ -42,6 +42,10 @@ test("public clan lookup loads verified clan data and member roster", async () =
     if (u.endsWith("/members")) return Response.json({ items: [
       { tag: "#VUYRP9GQL", name: "aju", trophies: 2000, role: "member" },
     ] });
+    if (u.endsWith("/currentriverrace")) return Response.json({
+      periodType: "warDay",
+      clan: { tag: "#PYC98Q", name: "Team", fame: 1800, participants: [] },
+    });
     if (u.includes("/clans/")) return Response.json({
       tag: "#PYC98Q", name: "Team", clanScore: 12345, members: 1,
     });
@@ -52,6 +56,7 @@ test("public clan lookup loads verified clan data and member roster", async () =
   const body = await r.json();
   assert.equal(body.clan.name, "Team");
   assert.equal(body.members[0].tag, "#VUYRP9GQL");
+  assert.equal(body.riverRace.clan.fame, 1800);
   assert.deepEqual(body.warnings, []);
 });
 test("clan profile still loads when members endpoint fails", async () => {
@@ -59,7 +64,9 @@ test("clan profile still loads when members endpoint fails", async () => {
   const mock: typeof fetch = async (input) =>
     String(input).endsWith("/members")
       ? new Response("", { status: 503 })
-      : Response.json({ tag: "#PYC98Q", name: "Team" });
+      : String(input).endsWith("/currentriverrace")
+        ? Response.json({ clan: { tag: "#PYC98Q", name: "Team", fame: 500 } })
+        : Response.json({ tag: "#PYC98Q", name: "Team" });
   const r = await api(new Request("https://x.test/api/clan?tag=PYC98Q"), apiEnv, mock);
   assert.equal(r.status, 200);
   const body = await r.json();
@@ -98,5 +105,42 @@ test("browser records are bounded, deduplicated and isolated by player tag", () 
   } finally {
     if (previous) Object.defineProperty(globalThis, "localStorage", previous);
     else Reflect.deleteProperty(globalThis, "localStorage");
+  }
+});
+
+test("global leaderboard and events stay read-only, source-backed and recover partially", async () => {
+  clearCache();
+  const mock: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.endsWith("/events")) return Response.json([
+      { title: "Classic Challenge", gameMode: { name: "Classic" } },
+    ]);
+    if (url.includes("/pathoflegend/players")) return Response.json({
+      items: [{ rank: 1, tag: "#VUYRP9GQL", name: "aju", eloRating: 2300 }],
+    });
+    if (url.includes("/rankings/players")) return Response.json({ items: [] });
+    return new Response("", { status: 404 });
+  };
+  const r = await api(new Request("https://x.test/api/rankings"), apiEnv, mock);
+  assert.equal(r.status, 200);
+  const body = await r.json();
+  assert.equal(body.ranked[0].name, "aju");
+  assert.equal(body.events[0].title, "Classic Challenge");
+  assert.equal(body.trophyRoad.length, 0);
+  assert.deepEqual(body.warnings, []);
+  assert.ok(!JSON.stringify(body).includes(apiEnv.CLASH_API_TOKEN));
+});
+test("public scouting and clans do not bypass missing API credentials", async () => {
+  for (const path of ["/api/scout?tag=VUYRP9GQL", "/api/clan?tag=PYC98Q", "/api/rankings"]) {
+    clearCache();
+    const response = await api(new Request("https://x.test" + path), {});
+    // Rankings can report source failures as warnings rather than fabricated entries.
+    if (path.includes("rankings")) {
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.ranked.length, 0);
+      assert.equal(data.trophyRoad.length, 0);
+      assert.equal(data.events.length, 0);
+    } else assert.equal(response.status, 503);
   }
 });
