@@ -26,6 +26,10 @@ export type Battle = {
   team: Person[];
   opponent: Person[];
   outcome: "win" | "loss" | "unknown";
+  /** Actual trophy change for this player, when supplied by the battle log. */
+  trophyChange?: number | null;
+  arena?: string;
+  battleType?: string;
 };
 export type Snapshot = {
   mode: "demo" | "live";
@@ -304,16 +308,12 @@ export function card(
     elixir: c.elixirCost ?? null,
     owned,
     image: c.iconUrls?.medium,
-    evo: valid ? !!(flag! & 1) : null,
-    hero: valid ? !!(flag! & 2) : null,
+    // The collection omits evolutionLevel when no special form is unlocked.
+    // Battle/deck entries omit it when the base form is equipped or played.
+    evo: valid ? !!(flag! & 1) : owned && !active ? false : null,
+    hero: valid ? !!(flag! & 2) : owned && !active ? false : null,
     active: active
-      ? flag === 0
-        ? "base"
-        : flag === 1
-          ? "evolution"
-          : flag === 2
-            ? "hero"
-            : "unknown"
+      ? flag === 1 ? "evolution" : flag === 2 ? "hero" : flag === 3 ? "unknown" : "base"
       : "unknown",
     tower,
     roles: rolesFor(c.name),
@@ -353,6 +353,9 @@ export function parseBattle(input: unknown, owner: string, cap = 16): Battle {
     "$1-$2-$3T$4:$5:$6Z",
   );
   const mode = String(obj(b.gameMode).name ?? b.type ?? "Unknown");
+  const rawTeam = (Array.isArray(b.team) ? b.team : [])
+    .concat(Array.isArray(b.opponent) ? b.opponent : []);
+  const own = obj(rawTeam.find((p) => obj(p).tag === owner));
   return {
     id: JSON.stringify([
       b.battleTime,
@@ -370,6 +373,9 @@ export function parseBattle(input: unknown, owner: string, cap = 16): Battle {
     mode,
     team,
     opponent,
+    trophyChange: num(own.trophyChange),
+    arena: String(obj(b.arena).name ?? ""),
+    battleType: String(b.type ?? ""),
     outcome:
       consistent && a! > c!
         ? "win"
