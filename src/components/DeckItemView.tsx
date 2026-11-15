@@ -6,7 +6,7 @@ import {
   ChevronUp, Layers3, SlidersHorizontal, BookOpen,
 } from "lucide-react";
 import type { Card, Snapshot } from "../lib/model";
-import type { MechanicsCatalog } from "../lib/mechanics";
+import { getMechanicsRecord, type MechanicsCatalog } from "../lib/mechanics";
 import {
   defaultItemOptions,
   hitsToDefeat,
@@ -45,7 +45,7 @@ function ItemLevelDetails({
   cap: number;
   onSelect: (card: Card) => void;
 }) {
-  const raw = catalog?.cards.find(x => x.id === item.card.id);
+  const raw = getMechanicsRecord(item.card, catalog);
   const levels = itemLevelRows(item.card, catalog, incomingDamage, cap);
   const known = levels.filter(level => level.hasNumericalStats).length;
   return (
@@ -63,11 +63,30 @@ function ItemLevelDetails({
           <BookOpen size={15}/> Card details
         </button>
       </div>
+      {item.statSubject === "spawned-unit" && (
+        <p className="deck-item-spawn-note">
+          <Info size={16}/>
+          This card summons {item.unitCount ?? "multiple"} {item.statSubjectLabel ?? "units"}s.
+          Hitpoints, damage, DPS, targeting and hit endurance below describe
+          <strong> one spawned {item.statSubjectLabel ?? "unit"}</strong>,
+          not the barrel or the combined damage of every spawned unit.
+          Goblin Barrel deals no direct impact damage.
+        </p>
+      )}
+      {item.sourceUrl && (
+        <p className="deck-item-source-note">
+          <BookOpen size={15}/>
+          Game-data reference updated {item.sourceUpdatedAt ?? "date unavailable"}.
+          <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+            View sourced level table ↗
+          </a>
+        </p>
+      )}
       <div className="deck-item-full-stats">
         {[
-          ["HP / unit", fmt(item.hp)],
-          ["Damage / hit", fmt(item.damage)],
-          ["DPS / unit", fmt(item.dps, 1)],
+          [item.statSubject === "spawned-unit" ? "HP / summoned " + (item.statSubjectLabel ?? "unit") : "HP / unit", fmt(item.hp)],
+          [item.statSubject === "spawned-unit" ? "Damage / " + (item.statSubjectLabel ?? "unit") + " hit" : "Damage / hit", fmt(item.damage)],
+          [item.statSubject === "spawned-unit" ? "DPS / " + (item.statSubjectLabel ?? "unit") : "DPS / unit", fmt(item.dps, 1)],
           ["Hit interval", item.attackInterval === null ? "—" : fmt(item.attackInterval, 2) + " s"],
           ["Range", item.rangeTiles === null ? "—" : fmt(item.rangeTiles, 2) + " tiles"],
           ["Movement", item.moveSpeedRaw === null ? "—" : fmt(item.moveSpeedRaw) + " (raw)"],
@@ -130,9 +149,9 @@ function ItemLevelDetails({
       )}
       {raw?.sourceRecords && (
         <details className="deck-item-raw">
-          <summary>All available community source fields (JSON)</summary>
-          <p>Raw fields may be internal game values, historical, or unscaled.
-            They are not all player-facing statistics.</p>
+          <summary>Available source metadata and fields (JSON)</summary>
+          <p>Reference fields are independently maintained, may be historical,
+            and are not a guarantee of in-game performance.</p>
           <pre>{JSON.stringify(raw.sourceRecords,null,2)}</pre>
         </details>
       )}
@@ -371,14 +390,20 @@ export function DeckItemView({
                         {item.value===null
                           ? item.missingReason ?? "Numeric value unavailable"
                           : isDefense
-                            ? "HP "+fmt(item.hp)+
+                            ? (item.statSubject === "spawned-unit" ? "HP per " + (item.statSubjectLabel ?? "unit") + " " : "HP ") + fmt(item.hp)+
                               (item.hitsSurvived!==null
                                 ?" · "+fmt(item.hitsSurvived)+" full hits survived":"")
-                            : "Hit "+fmt(item.damage)+
+                            : (item.statSubject === "spawned-unit" ? (item.statSubjectLabel ?? "Unit") + " hit " : "Hit ") + fmt(item.damage)+
                               (item.dps!==null?" · DPS "+fmt(item.dps,1):"")}
                         {item.unitCount!==null && item.unitCount>1
                           ?" · "+item.unitCount+" units per card":""}
                       </span>
+                      {item.sourceUrl && (
+                        <span className="deck-item-source-label">
+                          Game data {item.sourceUpdatedAt ?? "undated"}
+                          {item.statSubject === "spawned-unit" ? " · per spawned unit" : ""}
+                        </span>
+                      )}
                       <span className="deck-item-owned-label">
                         {item.card.owned
                           ? "Owned · actual Lv "+(item.card.level??"unknown")
@@ -426,8 +451,10 @@ export function DeckItemView({
               Supercell provides the live card catalog, icons, elixir cost,
               ownership and player levels. The normal official public API
               does not supply a complete live combat-stat table for every level.
-              HP, damage and related fields come from the separate
-              community-maintained game-data reference.
+              HP, damage and related fields come from independently maintained
+              game-data references. Minion Giant and Goblin Barrel have
+              dated November 2026 reference values; older cards may use
+              an earlier community snapshot.
             </p>
             <p>
               Reference numbers are not certified current balance-patch values.
