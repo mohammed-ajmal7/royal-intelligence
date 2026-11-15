@@ -37,7 +37,7 @@ The private Sites deployment uses the signed-in visitor identity and a D1 databa
 ## Included
 
 - Account summary, full returned profile inspection, card collection and encyclopedia.
-- Ten search modes, base-card deck builder, hard include/exclude constraints, elixir and level limits, five diverse candidates and deck share links.
+- One-click balanced/defensive/offensive/2v2/fast-cycle searches across all eligible owned cards, seven-point counter-coverage checklist, advanced include/exclude and elixir/level limits, five diverse alternatives, and deck share links.
 - Explainable role scoring, teammate-role complement in 2v2 and qualitative matchup notes.
 - Battle history with both players in 2v2, conservative outcome classification and Wilson confidence intervals.
 - Owner-scoped snapshots, deduplicated battles and tracked base-composition choices in D1.
@@ -56,7 +56,7 @@ Export includes the current loaded player snapshot and the browser's bounded per
 
 `src/lib/model.ts` owns normalization and editorial role annotations. `engine.ts` contains pure scoring, approximate beam search, intervals, links and fixed-hit calculations. `server/service.ts` implements authenticated APIs, bounded upstream cache, retries, rate limits and persistence. `database/schema.ts` and checked-in Drizzle migrations own D1 schema. `scripts/build.mjs` exports the frontend and packages it with the API Worker; API routes are temporarily excluded and restored in a finally block.
 
-Final score is a weighted mean of defense, offense, level readiness, role coverage, cost efficiency, composition balance and overlap with editorial archetype seeds. The interface exposes each feature and weight. Search uses a width-75 beam over the top 40 eligible cards by level plus seed decks, then enforces pairwise differences of at least two cards. It is approximate and can miss better compositions. It does not output win probabilities.
+Final score is a weighted mean of defense, offense, level readiness, role coverage, cost efficiency, composition balance and overlap with editorial archetype seeds. The interface exposes each feature and weight. Deck Laboratory now has a one-click playstyle chooser, a seven-point coverage audit, five diverse suggested teams and optional advanced filters. The search examines **every eligible owned card**, not merely the top 40 by level. It combines role-aware seeds and editorial archetypes with bounded all-card swaps, preserving must-include/exclude selections, card ownership, uniqueness and elixir limits. It remains a heuristic optimizer: the method can miss better combinations and **cannot promise any deck will beat every opponent**. Scores do not represent calibrated win probabilities.
 
 The fixed-damage calculator uses ceil(HP/damage) hits and first-hit delay + (hits−1) × interval. It does not model shields, projectiles, spawned units, targeting or modifiers. Battle outcomes with equal crowns remain unknown; unknown outcomes are excluded from decisive win-rate intervals. Recorded deck choices match later battles by base card IDs, ignoring forms/towers, and establish no causation.
 
