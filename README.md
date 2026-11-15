@@ -2,6 +2,13 @@
 
 Personal Clash Royale analytics built with Next.js, React and TypeScript. This release offers a complete navigable workspace with an explicitly synthetic demo and a server-side live API integration.
 
+## Mobile-first Royal Arena interface
+
+On phones and tablets, use the fixed **Home · Cards · Build · Battles · More** bottom navigation. **More** opens all remaining workspace sections. Player tag lookup is the first content on the page. Cards and decks use responsive 4-column battle-deck grids, touch-friendly inputs and an accessible card-detail bottom sheet. The interface uses an original, Clash Royale-inspired royal-blue / crown-gold / elixir-purple design, with game card artwork supplied by the official API.
+
+The main deck panel now shows **Average Elixir** (sum of eight known costs / eight) and **4-Card Cycle** (sum of the four cheapest known card costs) separately. Both come from the card-cost data actually returned by the game API. Four-card cycle is an optimistic rotation benchmark, not a guarantee for a particular card; it does not model active Champion abilities, variable-cost cards or live hand state. Fast Cycle mode weights four-card efficiency more strongly than standard modes. Role and readiness estimates remain heuristics. HP, hit speed, damage, movement speed and range do **not** have a complete validated current-level dataset in the official public endpoint, so the app does not fabricate their values.
+
+
 ## Run
 
 Use Node 24. Run `npm ci`, `npm run dev`, and open the local URL. Run `npm test` and `npm run typecheck` for validation.
@@ -56,7 +63,7 @@ Export includes the current loaded player snapshot and the browser's bounded per
 
 `src/lib/model.ts` owns normalization and editorial role annotations. `engine.ts` contains pure scoring, approximate beam search, intervals, links and fixed-hit calculations. `server/service.ts` implements authenticated APIs, bounded upstream cache, retries, rate limits and persistence. `database/schema.ts` and checked-in Drizzle migrations own D1 schema. `scripts/build.mjs` exports the frontend and packages it with the API Worker; API routes are temporarily excluded and restored in a finally block.
 
-Final score is a weighted mean of defense, offense, level readiness, role coverage, cost efficiency, composition balance and overlap with editorial archetype seeds. The interface exposes each feature and weight. Deck Laboratory now has a one-click playstyle chooser, a seven-point coverage audit, five diverse suggested teams and optional advanced filters. The search examines **every eligible owned card**, not merely the top 40 by level. It combines role-aware seeds and editorial archetypes with bounded all-card swaps, preserving must-include/exclude selections, card ownership, uniqueness and elixir limits. It remains a heuristic optimizer: the method can miss better combinations and **cannot promise any deck will beat every opponent**. Scores do not represent calibrated win probabilities.
+Final score is a weighted mean of defense, offense, level readiness, role coverage, average-elixir efficiency, four-card-cycle efficiency, composition balance and overlap with editorial archetype seeds. The interface exposes each feature and weight. Deck Laboratory now has a one-click playstyle chooser, a seven-point coverage audit, five diverse suggested teams and optional advanced filters. The search examines **every eligible owned card**, not merely the top 40 by level. It combines role-aware seeds and editorial archetypes with bounded all-card swaps, preserving must-include/exclude selections, card ownership, uniqueness and elixir limits. It remains a heuristic optimizer: the method can miss better combinations and **cannot promise any deck will beat every opponent**. Scores do not represent calibrated win probabilities.
 
 The fixed-damage calculator uses ceil(HP/damage) hits and first-hit delay + (hits−1) × interval. It does not model shields, projectiles, spawned units, targeting or modifiers. Battle outcomes with equal crowns remain unknown; unknown outcomes are excluded from decisive win-rate intervals. Recorded deck choices match later battles by base card IDs, ignoring forms/towers, and establish no causation.
 
