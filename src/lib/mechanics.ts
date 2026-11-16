@@ -10,6 +10,23 @@ export const MECHANICS_DATA_BASE =
   "https://royaleapi.github.io/cr-api-data/json";
 export type MechanicsKind = "Troop" | "Building" | "Spell" | "Other";
 
+/** Each base-deployment group member has independent HP, targeting and attacks. */
+export type MechanicsGroupUnit = {
+  name: string;
+  count: number | null;
+  hpByLevel: number[] | null;
+  damageByLevel: number[] | null;
+  dpsByLevel?: number[] | null;
+  shieldHpByLevel?: number[] | null;
+  hitSpeedSeconds: number | null;
+  targetsAir?: boolean | null;
+  targetsGround?: boolean | null;
+  rangeTiles?: number | null;
+  rangeLabel?: string;
+  moveSpeedLabel?: string;
+  sourceUrl?: string;
+};
+
 export type MechanicsCard = {
   id: number;
   name: string;
@@ -26,6 +43,8 @@ export type MechanicsCard = {
   buildingsOnly: boolean | null;
   areaRadiusTiles: number | null;
   unitCount: number | null;
+  /** Base deployment composition; HP is NEVER a shared group health bar. */
+  groupUnits?: MechanicsGroupUnit[];
   deploySeconds: number | null;
   firstHitSeconds: number | null;
   specialAbility: boolean;
