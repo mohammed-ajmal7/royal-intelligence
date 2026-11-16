@@ -60,6 +60,19 @@ export function parseCurrentReference(
     .map(x=>tableFrom(x[0])).filter((t):t is DataTable=>t!==null);
   const first=tables.find(t=>t.headers.some(x=>/(hitpoints|damage)/i.test(x)));
   if(!first)return null;
+  const otherSections:Record<string,Record<string,number[]>>={};
+  const headings=[...body.matchAll(/<h[234][^>]*>([sS]*?)</h[234]>/gi)]
+    .map(h=>({at:h.index??0,label:htmlText(h[1])}));
+  for(const match of body.matchAll(/<table[^>]*>([sS]*?)</table>/gi)) {
+    if((match.index??0)<base.length)continue;
+    const other=tableFrom(match[0]);
+    if(!other)continue;
+    const section=headings.filter(h=>h.at<(match.index??0)).at(-1)?.label || "Other form";
+    const group=(otherSections[section]??={});
+    for(const row of other.rows)other.headers.slice(1).forEach((label,i)=>{
+      if(label)(group[label]??=[])[row.level-1]=row.stats[i]??0;
+    });
+  }
   const fieldLabels=first.headers.slice(1);
   const series:Record<string,number[]>={};
   const seen=new Set<number>();
@@ -112,9 +125,14 @@ export function parseCurrentReference(
     sourceUrl,sourceUpdatedAt:updatedAt??undefined,
     moveSpeedLabel:movement??undefined,rangeLabel:range??undefined,
     extraStatsByLevel:Object.fromEntries(Object.entries(series).map(([key,a])=>[key,padded(a)??[]])),
+    extraFormsByLevel:Object.fromEntries(Object.entries(otherSections)
+      .map(([form,fields])=>[form,Object.fromEntries(
+        Object.entries(fields).map(([key,a])=>[key,padded(a)??[]])
+      )])),
     sourceRecords:{
       reference:{url:sourceUrl,version,updatedAt,knownLevelRows:seen.size},
       observed:{hitSpeed,target,movement,range,count,deploy},
+      formNames:{names:Object.keys(otherSections)},
       levelFields:{columns:fieldLabels,valuesByLevel:Object.fromEntries(
         [...seen].sort((a,b)=>a-b).map(level=>[level,
           Object.fromEntries(Object.entries(series).map(([key,a])=>[key,a[level-1]||null]))
