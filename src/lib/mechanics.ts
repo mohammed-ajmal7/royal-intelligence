@@ -16,6 +16,8 @@ export type MechanicsCard = {
   kind: MechanicsKind;
   hpByLevel: number[] | null;
   damageByLevel: number[] | null;
+  /** Explicit damage-per-second array, if the source publishes it. */
+  dpsByLevel?: number[] | null;
   hitSpeedSeconds: number | null;
   rangeTiles: number | null;
   moveSpeedRaw: number | null;
@@ -341,10 +343,16 @@ export function resolveMechanics(
   if (!item) return null;
   const hitpoints = statForLevel(item.hpByLevel, card.level);
   const damage = statForLevel(item.damageByLevel, card.level);
-  const dps =
-    damage !== null && item.hitSpeedSeconds !== null && item.hitSpeedSeconds > 0
-      ? damage / item.hitSpeedSeconds
-      : null;
+  const explicitDps = statForLevel(item.dpsByLevel ?? null, card.level);
+  const dps = explicitDps ?? (
+    // One-shot spells do not have a sustained attack interval. For example,
+    // Lightning's cast timing must not be treated as a 2,000+ DPS value.
+    item.kind === "Spell" && item.statSubject !== "spawned-unit"
+      ? null
+      : damage !== null && item.hitSpeedSeconds !== null && item.hitSpeedSeconds > 0
+        ? damage / item.hitSpeedSeconds
+        : null
+  );
   const major = [
     hitpoints,
     damage,
