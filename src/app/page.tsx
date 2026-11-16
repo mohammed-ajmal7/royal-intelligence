@@ -661,13 +661,15 @@ export default function App() {
   }
   function answer(text: string) {
     const e = evaluate(deck, q, mechanics);
+    const strategy=assessStrategy(deck,mechanics,{focus,battles:s.battles});
+    const air=strategy.scenarios.find(x=>x.id==="air");
     const a = /air|balloon|lava/i.test(text)
-      ? `Your selected deck has ${e.air} sustained air-defense options. ${e.air < 2 ? "Add a second reliable air defender; cycle units alone are fragile." : "Avoid spending both air answers together before identifying the opponent’s win condition."} Protect your air defenders from spell value. This is role guidance, not a simulated matchup.`
+      ? `Air-defense estimate ${air?.score ?? "unknown"}/100: ${air?.explanation ?? "No usable data."} ${air?.caution ?? ""} ${strategy.risks.slice(0,2).join(" ")} This is not a simulated fight or a win probability.`
       : /upgrade/i.test(text)
         ? "Prioritize the cards in your chosen deck, especially spells and your win condition. Check actual costs and interactions in-game; this app does not have a complete upgrade-cost dataset."
         : /win|lost|lose|mistake/i.test(text)
-          ? `The loaded filter contains ${st.wins} wins, ${st.losses} losses and ${st.unknown} unknown outcomes. Battle summaries cannot reveal placement or timing mistakes. Review replays yourself and compare more matches in the same mode.`
-          : `${name(deck)} averages ${ev.avg?.toFixed(2) ?? "unknown"} elixir. ${ev.warnings.join(" ") || "The annotated roles cover the basic checklist."} Use a low-commitment opening, preserve counters, and turn surviving defenders into pressure. Score ${ev.score}/100 is editorial, not a win probability.`;
+          ? `The loaded filter contains ${st.wins} wins, ${st.losses} losses and ${st.unknown} unknown outcomes. Observed matchup appearances: ${strategy.battleSignals.map(x=>x.name+" in "+x.seen+" games ("+x.losses+" losses)").join("; ")}. Those observations alone cannot establish why a battle was lost. Replays are needed for timing and placement.`
+          : `${name(deck)} averages ${ev.avg?.toFixed(2) ?? "unknown"} elixir. Tactical coverage is ${strategy.score}/100: ${strategy.headline} ${strategy.risks.slice(0,3).join(" ")} ${strategy.synergies.slice(0,2).join(" ")} Neither this nor the numerical ${ev.score}/100 is a proven win rate.`;
     setAnswers([...answers, { q: text, a }]);
     setQuestion("");
   }
@@ -2510,11 +2512,14 @@ export default function App() {
           {page === "AI Coach" && (
             <Panel
               title="Your personal strategy desk"
-              kicker="GROUNDED RULE-BASED COACH"
+              kicker="GROUNDED STRATEGIC ANALYSIS"
             >
               <Notice>
-                This release uses a deterministic coach, not a connected
-                language model. It explains the loaded data and editorial roles.
+                This coach uses the same tactical scenarios as Deck Laboratory:
+                air pressure, tanks, swarms, ground defense, tower pressure,
+                elixir and battle evidence. It is deterministic, not the
+                paid language-model review. For an optional actual AI comparison
+                of five eligible decks, open Deck Laboratory.
               </Notice>
               <div className="prompt-grid">
                 {[
