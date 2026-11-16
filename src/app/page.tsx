@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Crown,
   LayoutDashboard,
@@ -42,7 +42,6 @@ import {
 import {
   defaults,
   evaluate,
-  generate,
   modes,
   stats,
   key,
@@ -57,6 +56,9 @@ import {
   type StrategyFocus,
 } from "../lib/deckStrategy";
 import { DeckStrategyPanel } from "../components/DeckStrategyPanel";
+import { recommendFromTop100, type LiveCandidate } from "../lib/liveDeckLab";
+import type { LabEvent, LabProgress, LiveMeta } from "../lib/liveMeta";
+import { LiveMetaPanel, LiveCandidateEvidence } from "../components/LiveMetaPanel";
 import { CardDetails } from "../components/CardDetails";
 import { DeckItemView } from "../components/DeckItemView";
 const nav = [
@@ -268,7 +270,7 @@ export default function App() {
     [sort, setSort] = useState("Level"),
     [selected, setSelected] = useState<Card | null>(null),
     [q, setQ] = useState<Constraints>(defaults),
-    [candidates, setCandidates] = useState<ReturnType<typeof generate>>([]),
+    [candidates, setCandidates] = useState<LiveCandidate[]>([]),
     [focus, setFocus] = useState<StrategyFocus>("balanced"),
     [aiAccessCode, setAiAccessCode] = useState(""),
     [aiReview, setAiReview] = useState<AIComparisonReview | null>(null),
@@ -304,6 +306,22 @@ export default function App() {
     [question, setQuestion] = useState(""),
     [answers, setAnswers] = useState<{ q: string; a: string }[]>([]),
     [confirmDelete, setConfirmDelete] = useState(false);
+  const [liveMeta,setLiveMeta]=useState<LiveMeta|null>(null);
+  const [labProgress,setLabProgress]=useState<LabProgress|null>(null);
+  const [labError,setLabError]=useState("");
+  const [labFailed,setLabFailed]=useState<{rank:number;name:string;reason:string}[]>([]);
+  const labRun=useRef(0);
+  const labAbort=useRef<AbortController|null>(null);
+  function cancelLab() {
+    labRun.current++;
+    labAbort.current?.abort();labAbort.current=null;
+    setBusy(false);setLabProgress(null);setLiveMeta(null);setCandidates([]);
+    setAiReview(null);setAiReviewLoading(false);setLabFailed([]);setLabError("");
+  }
+  useEffect(()=>{
+    cancelLab();
+    return ()=>{labRun.current++;labAbort.current?.abort();};
+  },[s.tag,q,focus]);
   useEffect(() => {
     const change = () => {
       try {
@@ -437,7 +455,8 @@ export default function App() {
     current = evaluate(s.deck, { ...defaults, cap: s.cap }, mechanics),
     strategic = assessStrategy(deck,mechanics,{focus,battles:s.battles}),
     strategicSwaps = compareStrategy(s.deck,deck,mechanics,{focus}),
-    recommendationScore = Math.round((ev.score*0.58+strategic.score*0.42)*10)/10;
+    liveChoice = candidates.find(c=>key(c.cards)===key(deck)),
+    recommendationScore = liveChoice?.recommendationScore ?? strategic.score;
   const visible = s.catalog
     .filter(
       (c) =>
@@ -471,6 +490,7 @@ export default function App() {
     return b;
   }
   async function connect(searchTag = tagInput) {
+    cancelLab();
     setError("");
     setLoading(true);
     try {
@@ -525,30 +545,73 @@ export default function App() {
       setLoading(false);
     }
   }
-  function optimize() {
-    setBusy(true);
-    setError("");
-    setTimeout(() => {
-      try {
-        const cs = generate(s.cards, q, deck, mechanics,
-          {focus,battles:s.battles});
-        setCandidates(cs);
-        setAiReview(null);
-        setAiReviewError("");
-        if (cs.length) setDeck(cs[0].cards);
-        else
-          setError(
-            "No eligible eight-card deck meets the current rules. In Advanced Options, lower the minimum level, raise the elixir limit, or remove locked/excluded cards.",
-          );
-      } catch (e) {
-        setError((e as Error).message);
-      } finally {
-        setBusy(false);
+  async function optimize() {
+    if(busy)return;
+    cancelLab();setError("");setAiReviewError("");
+    if(s.mode!=="live") {setLabError("Load your real player tag before requesting live top-100 recommendations.");return;}
+    if(q.mode.includes("2v2")) {setLabError("Global Ranked is a 1v1 sample. Select a 1v1 mode for this strict workflow.");return;}
+    const run=++labRun.current, controller=new AbortController();
+    labAbort.current=controller;setBusy(true);setDeck(s.deck);
+    const timer=window.setTimeout(()=>controller.abort(),250000);
+    let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
+    let received=false;
+    try {
+      const response=await fetch("/api/deck-lab",{
+        method:"POST",cache:"no-store",signal:controller.signal,
+        headers:{"Content-Type":"application/json",...(access?{"x-app-access-key":access}:{})},
+        body:JSON.stringify({tag:s.tag}),
+      });
+      if(!response.ok) {const value=await response.json();throw new Error(value.error??"Live scan failed.");}
+      if(!response.body)throw new Error("Streaming data is unavailable. No offline result was used.");
+      reader=response.body.getReader();
+      const decoder=new TextDecoder();let buffer="";
+      const consume=async(line:string)=>{
+        if(!line.trim()||run!==labRun.current)return;
+        const event=JSON.parse(line) as LabEvent;
+        if(event.type==="progress")setLabProgress(event.progress);
+        else if(event.type==="error") {setLabFailed(event.failed??[]);throw new Error(event.error);}
+        else if(event.type==="complete") {
+          if(received)throw new Error("Duplicate result received; scan discarded.");
+          if(event.player.tag!==s.tag||event.player.mode!=="live"||event.player.stale)
+            throw new Error("Fresh collection data did not match the requested account.");
+          received=true;
+          setLabProgress({stage:4,completed:0,total:100,message:"Adapting the observed top-100 decks to your freshly fetched collection…"});
+          // Yield once so the final progress stage paints before bounded search.
+          await new Promise<void>(resolve=>window.setTimeout(resolve,0));
+          if(run!==labRun.current||controller.signal.aborted)return;
+          const choices=await recommendFromTop100(event.player.cards,{...q,cap:event.player.cap},event.meta,mechanics,{focus},controller.signal);
+          if(run!==labRun.current||controller.signal.aborted)return;
+          setS({...event.player,battles:s.battles,chests:s.chests,
+            warnings:[...event.player.warnings,"Deck Lab refreshed your profile and collection; battle history and chests retain their previous refresh."]});
+          setLiveMeta(event.meta);setCandidates(choices);
+          setLabProgress({stage:4,completed:100,total:100,message:"Live analysis complete."});
+          if(choices.length)setDeck(choices[0].cards);
+          else setLabError("All 100 decks were analyzed, but no adapted eight-card deck meets your collection and filters. Adjust the filters and run a fresh scan.");
+        }
+      };
+      while(true) {
+        const {done,value}=await reader.read();
+        buffer+=decoder.decode(value,{stream:!done});
+        const lines=buffer.split("\n");buffer=lines.pop()??"";
+        for(const line of lines)await consume(line);
+        if(done){await consume(buffer);break;}
       }
-    }, 30);
+      if(!received&&run===labRun.current)throw new Error("The live scan ended before all required data arrived. No fallback recommendation was generated.");
+    } catch(e) {
+      controller.abort();
+      if(run===labRun.current) {
+        setLiveMeta(null);setCandidates([]);setDeck(s.deck);
+        setLabError(e instanceof Error&&e.name!=="AbortError"?e.message:"The scan timed out or was cancelled. Click again to start fresh.");
+      }
+    } finally {
+      window.clearTimeout(timer);
+      if(reader){await reader.cancel().catch(()=>{});reader.releaseLock();}
+      if(run===labRun.current){setBusy(false);labAbort.current=null;}
+    }
   }
   async function requestAIReview(){
     if(!candidates.length || aiReviewLoading)return;
+    const reviewRun=labRun.current;
     setAiReviewLoading(true);
     setAiReviewError("");
     setAiReview(null);
@@ -580,13 +643,14 @@ export default function App() {
         }),
       });
       const result=await response.json();
+      if(reviewRun!==labRun.current)return;
       if(!response.ok)throw new Error(result.error??"The AI review failed.");
       if(!result.review||typeof result.review.choiceIndex!=="number")
         throw new Error("The AI returned an invalid recommendation.");
       setAiReview({...result.review,model:result.model??"AI model"});
     }catch(error){
-      setAiReviewError(error instanceof Error?error.message:"AI review failed.");
-    }finally{setAiReviewLoading(false);}
+      if(reviewRun===labRun.current)setAiReviewError(error instanceof Error?error.message:"AI review failed.");
+    }finally{if(reviewRun===labRun.current)setAiReviewLoading(false);}
   }
   function add(c: Card) {
     if (deck.some((x) => x.id === c.id))
@@ -1409,19 +1473,18 @@ export default function App() {
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
-              <Panel title="Find your strongest decks" kicker="ONE-CLICK COLLECTION ANALYSIS">
+              <Panel title="Find the best deck for your collection" kicker="FRESH GLOBAL TOP 100 · STRICT MODE">
                 <p className="smart-intro">
-                  Pick a playstyle, then find the strongest balanced teams we can
-                  build from {s.cards.filter(c => c.owned && !c.tower).length} cards
-                  in {s.name}'s collection. Every eligible owned card is
-                  considered, including lower-level counters.
+                  Every search fetches the current global Ranked top 100, reads each
+                  account's latest available Ranked deck, counts cards and roles, then
+                  adapts those decks to your owned cards and levels. All 100 decks are
+                  required. This 1v1 workflow does not use Trophy Road or 2v2 rankings.
                 </p>
                 <div className="mode-tabs smart-modes" aria-label="Choose deck playstyle">
                   {[
                     ["Best overall", "Balanced"],
                     ["Maximum defense", "Strong defense"],
                     ["Maximum offense", "Aggressive"],
-                    ["2v2 defensive support", "2v2 partner"],
                     ["Fast cycle", "Fast cycle"],
                   ].map(([mode, label]) => (
                     <button
@@ -1451,11 +1514,10 @@ export default function App() {
                   </select>
                 </div>
                 <div className="actions">
-                  <button className="btn smart-find" disabled={busy || loading || mechanicsLoading || s.cards.length < 8}
+                  <button className="btn smart-find" disabled={busy || loading || s.mode !== "live" || s.cards.length < 8}
                     onClick={optimize}>
                     <Sparkles size={17} />
-                    {busy ? "Checking your collection…" : mechanicsLoading ?
-                      "Loading combat stats…" : "Find my best decks"}
+                    {busy ? "Reading the live top 100…" : "Find the best deck — fresh top 100"}
                   </button>
                   <button className="btn secondary"
                     onClick={() => {
@@ -1469,17 +1531,18 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Recommendations now weigh numerical card analysis (58%) and
-                  matchup-aware tactical reasoning (42%): air pressure, tanks,
-                  swarms, defense, tower pressure, cycle, overlap and your
-                  chosen strategic focus. Still not simulated wins.
-                  No deck beats every possible opponent.
-                  {s.mode === "demo" ? " DEMO MODE: Load your real tag to optimize your actual collection." : ""}
+                  Recommendations use observed top-100 deck combinations, card and role
+                  counts, your levels, tactical coverage and your chosen focus.
+                  Counts are exact for a completed sample; recommendations are estimates,
+                  not measured win rates or a guarantee of the globally best deck.
+                  {s.mode === "demo" ? " Load your real tag to use this workflow." : ""}
                 </p>
+                <LiveMetaPanel meta={liveMeta} progress={labProgress} busy={busy}
+                  error={labError} failed={labFailed} cancel={cancelLab}/>
                 <div className="smart-overview">
                   <div className="smart-overview-head">
                     <div>
-                      <div className="eyebrow">{candidates.length ? "TOP RECOMMENDATION" : "CURRENT SELECTED DECK"}</div>
+                      <div className="eyebrow">{liveChoice ? "LIVE-SCAN RECOMMENDATION" : "MANUALLY SELECTED / CURRENT DECK"}</div>
                       <h3>{name(deck)}</h3>
                       <span className="muted">
                         {deck.length}/8 cards · picked from {s.cards.length} owned base cards
@@ -1493,10 +1556,11 @@ export default function App() {
                   </div>
                   <Deck cards={deck} onClick={setSelected}/>
                   <div className="reasoned-recommendation-score">
-                    <span><BrainCircuit size={18}/> Strategy-informed recommendation</span>
+                    <span><BrainCircuit size={18}/> {liveChoice ? "Recommendation from the completed live scan" : "Selected deck: tactical analysis"}</span>
                     <strong>{recommendationScore.toFixed(1)}<small>/100</small></strong>
-                    <p>Numerical {ev.score}/100 · Tactical {strategic.score}/100.
-                      These are relative heuristic scores, never predicted win rates.</p>
+                    <p>{liveChoice ? "Live combinations 35% · Tactical coverage 30% · Owned levels 25% · Card usage 10%." : "This selection is not being claimed as a live top-100 recommendation."}
+                      Scores are editorial estimates, never predicted win rates.</p>
+                    {liveChoice&&<LiveCandidateEvidence candidate={liveChoice}/>}
                   </div>
                   <div className="smart-resource-metrics" aria-label="Elixir and rotation cost">
                     <div className="smart-resource-metric">
@@ -1512,12 +1576,12 @@ export default function App() {
                     Cycle is the sum of the four cheapest cards, a best-case rotation measure—not
                     a guaranteed return cost for every card.
                   </p>
-                  <div className="mechanics-headline" aria-label="Mechanics-first scoring disclosure">
+                  <div className="mechanics-headline" aria-label="Optional combat-stat analysis">
                     <div>
-                      <strong><Shield size={16}/> Card mechanics first</strong>
+                      <strong><Shield size={16}/> Separate combat-stat analysis</strong>
                       <p>
                         {mechanicsLoading ? "Checking community combat-stat data…" :
-                        mechanicsError ? "Combat stats unavailable. Structural fallback active." :
+                        mechanicsError ? "Combat stats unavailable. Tactical estimates will state their limitations." :
                         mechanics ? "Community game-data snapshot · patch accuracy not guaranteed" :
                         "Combat-stat feed unavailable."}
                       </p>
@@ -1614,10 +1678,10 @@ export default function App() {
                       <button
                         className="btn"
                         onClick={optimize}
-                        disabled={busy || mechanicsLoading}
+                        disabled={busy || loading || s.mode !== "live"}
                       >
                         <Sparkles size={16} />
-                        {busy ? "Evaluating…" : mechanicsLoading ? "Loading stats…" : "Optimize my deck"}
+                        {busy ? "Reading live top 100…" : "Find the best deck — fresh top 100"}
                       </button>
                       <button
                         className="btn secondary"
@@ -1803,10 +1867,10 @@ export default function App() {
                       </>
                     )}
                     <p className="micro">
-                      Full-collection role-aware search and bounded single-card swaps.
-                      It excludes Champions and does not optimize special forms,
-                      abilities or tower synergy. Scores are estimates, not
-                      win probabilities. Check Ranked rules in-game.
+                      Candidates are adapted only from the freshly retrieved top-100 decks.
+                      Locked cards and level/elixir filters still apply. Champions are excluded;
+                      recommended cards use base forms. Form differences are shown explicitly.
+                      Scores are estimates, not win probabilities. Check Ranked rules in-game.
                     </p>
                   </Panel>
                 </div>
@@ -1918,14 +1982,14 @@ export default function App() {
               {candidates.length > 0 && (
                 <Panel
                   title="Top alternative teams"
-                  kicker="DIVERSE REAL-COLLECTION COMPOSITIONS"
+                  kicker="ADAPTED FROM THIS LIVE TOP-100 SCAN"
                 >
                   <div className="candidate-grid">
                     {candidates.map((c, i) => (
                       <div className="candidate" key={key(c.cards)}>
                         <div className="deck-meta">
                           <Pill>0{i + 1}</Pill>
-                          <strong>{c.recommendationScore.toFixed(1)}/100 recommendation · {c.evaluation.audit.passed}/{c.evaluation.audit.total} checks</strong>
+                          <strong>{c.recommendationScore.toFixed(1)}/100 estimated fit</strong>
                         </div>
                         <h4>{name(c.cards)}</h4>
                         <Deck cards={c.cards} onClick={setSelected} />
@@ -1938,6 +2002,7 @@ export default function App() {
                           Numerical: {c.evaluation.score}/100 · Tactical:
                           {" "}{c.strategy?.score ?? "—"}/100.
                         </p>
+                        <LiveCandidateEvidence candidate={c}/>
                         {c.strategy?.risks.slice(0,2).map((risk,i)=>(
                           <p className="micro" key={i}>{risk}</p>
                         ))}
@@ -2843,3 +2908,4 @@ export default function App() {
     </div>
   );
 }
+

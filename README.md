@@ -1,3 +1,5 @@
+> Deck Lab update (2026-11-16): the recommendation action now requires a fresh, complete global Ranked top-100 scan on every click. See [the acquisition, scoring and failure contract](docs/LIVE-DECK-LAB.md). Older template-search descriptions below describe the legacy engine, not the new recommendation path. This change has not been tested or built, at the user’s request.
+
 # Royal Intelligence
 
 Personal Clash Royale analytics built with Next.js, React and TypeScript. This release offers a complete navigable workspace with an explicitly synthetic demo and a server-side live API integration.
@@ -305,3 +307,4 @@ Unofficial fan content, not endorsed by Supercell. See https://supercell.com/en/
 Tap a Deck Item (or collection card) for a shared card-detail sheet. Choose a second card to compare twelve numerical fields with paired bars and signed differences on both sides. Green/red describes favorable/unfavorable values for the metric; attack interval, deployment time and elixir favor lower numbers. Speed and unit count remain neutral. Equal values show `= 0`, and absent values show `Not comparable` rather than fabricated zeros.
 
 Use collection levels or enable the same-level selector (1–16). Unsupported levels remain unavailable. Per-level community arrays are aligned from each **source row's** rarity unlock level (Common 1, Rare 3, Epic 6, Legendary 9, Champion 11), including projectile rows. Raw registry, deployment, unit and projectile records are expandable separately; they retain source units and base-level semantics. The downloaded source includes historical mechanics and is **not a guarantee of current-patch data or complete Evolution/Hero mechanics**. The API now checks the source's combat-file commit date and displays a warning for old data; a fresh HTTP fetch is not a balance update.
+

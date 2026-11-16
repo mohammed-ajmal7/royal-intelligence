@@ -3764,3 +3764,23 @@ footer p { color: #afcbe4; }
   .reasoned-recommendation-score>strong {font-size:23px;}
   .reasoned-ai-controls .btn {width:100%;}
 }
+
+
+/* Fresh Ranked top-100 analysis: tables scroll inside the mobile viewport. */
+.live-meta { margin: 18px 0; padding: 16px; border: 1px solid #3c4564; border-radius: 14px; background: #121a2a; min-width: 0; }
+.live-meta-steps { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; padding: 0; margin: 0 0 16px; list-style: none; }
+.live-meta-steps li { padding: 12px; border: 1px solid #36405a; border-radius: 10px; font-size: 12px; }
+.live-meta-steps span { display: block; color: #aab7d8; margin-bottom: 6px; }
+.live-meta-steps [data-active="true"] { border-color: #f8c65c; background: #302a1c; }
+.live-meta-steps [data-done="true"] span { color: #80e0b0; }
+.live-meta progress { display: block; width: 100%; margin: 12px 0; accent-color: #f8c65c; }
+.live-meta details, .live-meta-evidence { margin-top: 14px; min-width: 0; }
+.live-meta summary, .live-meta-evidence summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+.live-meta-scroll { overflow: auto; max-height: 420px; max-width: 100%; }
+.live-meta table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
+.live-meta th, .live-meta td { padding: 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #36405a; }
+.live-meta th { position: sticky; top: 0; background: #172239; z-index: 1; }
+.live-meta small { display: block; margin-top: 5px; color: #aab7d8; }
+.live-meta-evidence { text-align: left; font-size: 13px; line-height: 1.6; }
+.live-meta-evidence li, .live-meta li { overflow-wrap: anywhere; }
+@media(max-width:700px) { .live-meta { padding: 12px; } .live-meta-steps { grid-template-columns: repeat(2,minmax(0,1fr)); } }

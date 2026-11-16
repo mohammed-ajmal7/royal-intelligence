@@ -218,7 +218,7 @@ export function evaluate(
           cs.length) *
         100
       : 0,
-    coverage = (Object.values(roles).filter(Boolean).length / 9) * 100,
+    coverage = (Object.values(roles).filter(Boolean).length / Object.keys(roleGroups).length) * 100,
     efficiency =
       avg == null
         ? 0
@@ -625,3 +625,4 @@ export function combat(
   const hits = Math.ceil(hp / damage);
   return { hits, dps: damage / interval, time: delay + (hits - 1) * interval };
 }
+

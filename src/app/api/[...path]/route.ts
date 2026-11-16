@@ -1,5 +1,6 @@
 import { api, Env } from "../../../../server/service";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 function handle(req: Request) {
   const headers = new Headers(req.headers);
   headers.delete("oai-authenticated-user-id");
@@ -9,3 +10,4 @@ function handle(req: Request) {
 export const GET = handle;
 export const POST = handle;
 export const DELETE = handle;
+

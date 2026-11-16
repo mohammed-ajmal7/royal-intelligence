@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { tag, normalize, Snapshot, Battle } from "../src/lib/model";
 import { legal, defaults, evaluate, modes } from "../src/lib/engine";
+import { liveDeckLab } from "./liveDeckLab";
 export interface Statement {
   bind(...v: unknown[]): Statement;
   run(): Promise<unknown>;
@@ -382,6 +383,10 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
       await throttle(publicBucket, env);
       return json(await publicRankings(env, fetcher));
     }
+    if (u.pathname === "/api/deck-lab" && req.method === "POST") {
+      await throttle(publicBucket, env);
+      return liveDeckLab(req, env, publicBucket, fetcher);
+    }
     if (!owner)
       throw new APIError(
         401,
@@ -471,3 +476,4 @@ export async function api(req: Request, env: Env, fetcher: typeof fetch = fetch)
     );
   }
 }
+

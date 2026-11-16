@@ -73,6 +73,9 @@ export const roleGroups: Record<string, string[]> = {
     "Goblin Drill",
     "Wall Breakers",
     "Electro Giant",
+    "Minion Giant",
+    "Elixir Golem",
+    "Skeleton Barrel",
   ],
   "Air defense": [
     "Archers",
@@ -105,6 +108,13 @@ export const roleGroups: Record<string, string[]> = {
     "Archer Queen",
     "Little Prince",
     "Three Musketeers",
+    "Furnace",
+    "Mother Witch",
+    "Zappies",
+    "Rascals",
+    "Skeleton Dragons",
+    "Goblinstein",
+    "Spirit Empress",
   ],
   "Ground defense": [
     "Knight",
@@ -207,7 +217,6 @@ export const roleGroups: Record<string, string[]> = {
     "X-Bow",
     "Goblin Hut",
     "Barbarian Hut",
-    "Furnace",
     "Elixir Collector",
   ],
   Spell: [
@@ -230,6 +239,8 @@ export const roleGroups: Record<string, string[]> = {
     "Barbarian Barrel",
     "Clone",
     "Void",
+    "Goblin Curse",
+    "Vines",
   ],
   Cycle: [
     "Skeletons",
@@ -247,6 +258,24 @@ export const roleGroups: Record<string, string[]> = {
     "Wall Breakers",
   ],
 };
+// Roles are editorial, overlapping capabilities, not official API statistics.
+// Keep unknown releases visible instead of guessing from a card's rarity or name.
+roleGroups["Ground defense"].push("Berserker", "Boss Bandit", "Ronin", "Rune Giant",
+  "Goblin Demolisher", "Goblin Machine", "Cannon Cart", "Royal Recruits", "Rascals",
+  "Battle Healer", "Goblinstein");
+roleGroups["Swarm control"].push("Furnace", "Skeleton Dragons", "Mother Witch",
+  "Goblin Demolisher", "Goblin Curse", "Giant Snowball");
+roleGroups["Mini tank"].push("Battle Healer");
+roleGroups["Pressure"] = ["Bandit", "Royal Ghost", "Wall Breakers", "Suspicious Bush",
+  "Skeleton Barrel", "Three Musketeers", "Boss Bandit"];
+roleGroups["Support"] = ["Night Witch", "Heal Spirit", "Battle Healer", "Rage", "Clone",
+  "Goblin Machine", "Rune Giant", "Spirit Empress", "Goblinstein", "Fisherman"];
+roleGroups["Spawner"] = ["Goblin Hut", "Barbarian Hut", "Tombstone", "Furnace", "Witch", "Night Witch"];
+roleGroups["Economy"] = ["Elixir Collector"];
+roleGroups["Small spell"] = ["Arrows", "Zap", "The Log", "Giant Snowball", "Barbarian Barrel", "Royal Delivery"];
+roleGroups["Heavy spell"] = ["Fireball", "Poison", "Lightning", "Rocket", "Earthquake", "Void"];
+roleGroups["Control"] = ["Ice Wizard", "Electro Wizard", "Electro Spirit", "Ice Spirit",
+  "Zappies", "Tornado", "Freeze", "Vines", "Fisherman"];
 export const rolesFor = (name: string) =>
   Object.keys(roleGroups).filter((r) => roleGroups[r].includes(name));
 export const rawCard = z
@@ -470,3 +499,4 @@ export function normalize(
     ],
   };
 }
+
