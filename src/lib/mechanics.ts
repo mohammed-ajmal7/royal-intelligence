@@ -353,6 +353,10 @@ export function getMechanicsRecord(
   const sourced = index.get(card.id);
   const useSourced = sourced?.provenance === "crtool-game-data" &&
     !!sourced.sourceUpdatedAt &&
+    // A new page with only the first member must not overwrite a complete
+    // known mixed squad (e.g. Goblin Gang or Rascals).
+    (!recent?.groupUnits || recent.groupUnits.length < 2 ||
+      (sourced.groupUnits?.length ?? 0) >= recent.groupUnits.length) &&
     (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? "") ||
       (sourced.sourceUpdatedAt === recent.sourceUpdatedAt &&
         !!sourced.groupUnits?.length && !!sourced.extraStatsByLevel));
