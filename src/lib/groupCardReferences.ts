@@ -150,8 +150,14 @@ export function sourcedGroupReference(card: {id:number;name?:string}):MechanicsC
 export function withGroupComposition(card:MechanicsCard):MechanicsCard {
   if(card.groupUnits?.length) return card;
   const roster=rosterFor(card.name);
-  if(!roster || roster.length!==1) return card;
-  const only=roster[0];
+  // A sourced "Count" for a troop is also a valid homogeneous group when
+  // the card is not one of the explicitly mixed composition cards.
+  if(roster && roster.length!==1) return card;
+  const only=roster?.[0] ??
+    (card.kind === "Troop" && card.unitCount !== null &&
+      Number.isInteger(card.unitCount) && card.unitCount>1 && card.unitCount<=30
+        ? {name:card.name,count:card.unitCount} : null);
+  if(!only) return card;
   return {...card,unitCount:only.count,
     statSubject:"spawned-unit",statSubjectLabel:only.name,
     groupUnits:[{name:only.name,count:only.count,
