@@ -75,8 +75,11 @@ export function parseCurrentReference(
   const padded=(a:number[]|undefined) => a?Array.from({length},(_,i)=>a[i]||0):null;
   const hpKey=fieldLabels.find(k=>/^(hitpoints|hit points|hp)$/i.test(k));
   const damageKey=fieldLabels.find(k=>/^(damage|area damage|ranged damage|melee damage|impact damage|damage: 1 target)$/i.test(k));
+  const dpsKey=fieldLabels.find(k=>
+    /^(damage\s*\/\s*sec|damage\s*\/\s*s|damage per second|dps)$/i.test(k));
   const hp=padded(hpKey?series[hpKey]:undefined);
   const damage=padded(damageKey?series[damageKey]:undefined);
+  const dps=padded(dpsKey?series[dpsKey]:undefined);
   const firstTablePos=body.search(/<table\b/i);
   const summary=htmlText(body.slice(0,firstTablePos<0?body.length:firstTablePos));
   const hitSpeed=readField(summary,"Hit Speed","[\\d.]+\\s*sec");
@@ -96,6 +99,7 @@ export function parseCurrentReference(
     id:card.id,name:card.name,kind,
     hpByLevel:hp?.some(v=>v>0)?hp:null,
     damageByLevel:damage?.some(v=>v>0)?damage:null,
+    dpsByLevel:dps?.some(v=>v>0)?dps:null,
     hitSpeedSeconds:seconds(hitSpeed),
     rangeTiles:range&&/^\d+(?:\.\d+)?$/.test(range)?Number(range):null,
     moveSpeedRaw:null,targetsAir:lowered?lowered.includes("air"):null,
