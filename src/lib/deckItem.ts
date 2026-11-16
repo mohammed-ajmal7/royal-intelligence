@@ -33,6 +33,7 @@ export type ItemRankingOptions = {
   attackMetric: AttackMetric;
   kind: ItemType;
   ownedOnly: boolean;
+  groupOnly: boolean;
   query: string;
   incomingDamage: number;
   /** Same reference level for every card, owned or unowned, for fair comparisons. */
@@ -141,6 +142,7 @@ export const defaultItemOptions: ItemRankingOptions = {
   attackMetric: "hit",
   kind: "all",
   ownedOnly: false,
+  groupOnly: false,
   query: "",
   incomingDamage: 200,
   levelMode: "comparison",
@@ -241,6 +243,7 @@ export function rankDeckItems(
 
     const chosen = selectedItemLevel(card, options);
     const record = getMechanicsRecord(card, catalog);
+    if (options.groupOnly && !(record?.groupUnits?.length)) continue;
     const m = resolveMechanics({ id: card.id, name: card.name, level: chosen.level }, catalog);
     const classified = classifyCard(card, m);
     if (
