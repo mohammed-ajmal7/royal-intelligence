@@ -138,6 +138,10 @@ const references: Record<string, Omit<MechanicsCard,"id">> = {
 
 /** No invented IDs or inferred levels. Uses the official card's ID at lookup. */
 export function sourcedGroupReference(card: {id:number;name?:string}):MechanicsCard|undefined {
+  // Prevent unrelated numeric IDs or synthetic fixtures from matching a card
+  // merely because their display name happens to be the same.
+  if (!Number.isSafeInteger(card.id) ||
+      Math.floor(card.id/1_000_000)!==26) return undefined;
   const value=references[groupKey(card.name??"")];
   return value?{...value,id:card.id}:undefined;
 }
@@ -153,10 +157,13 @@ export function withGroupComposition(card:MechanicsCard):MechanicsCard {
   // A sourced "Count" for a troop is also a valid homogeneous group when
   // the card is not one of the explicitly mixed composition cards.
   if(roster && roster.length!==1) return card;
-  const only=roster?.[0] ??
-    (card.kind === "Troop" && card.unitCount !== null &&
-      Number.isInteger(card.unitCount) && card.unitCount>1 && card.unitCount<=30
-        ? {name:card.name,count:card.unitCount} : null);
+  const fromSource = card.unitCount !== null &&
+    Number.isInteger(card.unitCount) && card.unitCount>1 && card.unitCount<=30
+    ? card.unitCount : null;
+  const only=roster?.[0]
+    ? {name:roster[0].name,count:fromSource ?? roster[0].count}
+    : card.kind === "Troop" && fromSource !== null
+      ? {name:card.name,count:fromSource} : null;
   if(!only) return card;
   return {...card,unitCount:only.count,
     statSubject:"spawned-unit",statSubjectLabel:only.name,
