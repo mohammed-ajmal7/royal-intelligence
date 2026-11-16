@@ -3,6 +3,7 @@ import { evaluate, key, legal, type Constraints } from "./engine";
 import { assessStrategy, type ReasoningContext } from "./deckStrategy";
 import type { MechanicsCatalog } from "./mechanics";
 import type { LiveMeta, RankedDeck } from "./liveMeta";
+import { createReplacementAnalyzer, type AssignedReplacement } from "./slotReplacements";
 
 export type LiveCandidate = {
   cards: Card[]; evaluation: ReturnType<typeof evaluate>;
@@ -12,7 +13,14 @@ export type LiveCandidate = {
     adaptationMethod: "source-deck" | "observed-usage-fallback";
     sourceRank: number; sourceName: string; sourceTag: string;
     sourceCards: Card[]; sharedCards: number; exactBaseDeckAccounts: number;
-    substitutions: { out: string; in: string }[]; formDifferences: string[];
+    substitutions: {
+      out:string; in:string; sourceLevel:number|null; ownedLevel:number|null;
+      sourceElixir:number|null; ownedElixir:number|null; score:number|null;
+      preserved:string[]; gained:string[]; limitations:string[]; reason:string;
+    }[];
+    formDifferences: string[];
+    ownedLevelBenchmark:number; lowestOwnedLevel:number; maxSlotElixirIncrease:1;
+    measuredCombatCoverage:number;
     components: { name: string; score: number; weight: number }[];
     cardUsage: { id: number; name: string; count: number; roles: string[] }[];
   };
@@ -58,6 +66,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
   }
   if(pool.length<8 || forced.length>8)return [];
   const locked=forced as Card[];
+  const analyzer=createReplacementAnalyzer(pool,mechanics);
   const usage=new Map(meta.usage.map(c=>[c.id,c.count]));
   const highestLevel=Math.max(...pool.map(c=>c.level??0));
   const maxUsage=Math.max(1,...meta.usage.map(c=>c.count));
@@ -71,37 +80,66 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     cs.some(c=>c.roles.includes("Win condition"))&&
     cs.reduce((sum,c)=>sum+(c.elixir??0),0)<=q.maxElixir*8;
   const seeds=new Map<string,{cards:Card[];source:RankedDeck;
-    method:"source-deck"|"observed-usage-fallback"}>();
+    method:"source-deck"|"observed-usage-fallback";
+    assignments:AssignedReplacement[]|null}>();
   const add=(cs:Card[],source:RankedDeck,
     method:"source-deck"|"observed-usage-fallback"="source-deck")=>{
     if(!eligible(cs))return;
+    // Even after beam search, validate that EVERY source slot has a
+    // compatible owned replacement under the +1-per-slot elixir rule.
+    const assignments=analyzer.assign(source.cards,cs);
+    if(method==="source-deck"&&!assignments)return;
     const id=key(cs),previous=seeds.get(id);
-    const shared=(p:RankedDeck)=>cs.filter(c=>p.cards.some(x=>x.id===c.id)).length;
-    if(!previous||shared(source)>shared(previous.source))
-      seeds.set(id,{cards:cs,source,method});
+    const quality=assignments?
+      assignments.reduce((sum,row)=>sum+row.assessment.score,0)/8:0;
+    const previousQuality=previous?.assignments?
+      previous.assignments.reduce((sum,row)=>sum+row.assessment.score,0)/8:0;
+    if(!previous || (method==="source-deck"&&previous.method!=="source-deck") ||
+      (method===previous.method && quality>previousQuality))
+      seeds.set(id,{cards:cs,source,method,assignments});
   };
   for(const source of meta.players) {
     if(source.rank%5===1)await yieldToUI();
-    // Match forced cards to source slots first, then adapt the remaining slots.
+    // Lock cards into a source role only if their function and cost qualify.
+    // Process most-constrained locked cards first. If this source cannot
+    // honor the user's locks, try another observed deck (then fallback).
     const remaining=[...source.cards];
-    for(const fixed of locked) {
-      const best=remaining.map((c,i)=>({i,value:similarity(c,fixed)})).sort((a,b)=>b.value-a.value)[0];
-      if(best)remaining.splice(best.i,1);
+    const sortedLocks=[...locked].sort((a,b)=>{
+      const aFits=source.cards.filter(c=>analyzer.evaluate(c,a).eligible).length;
+      const bFits=source.cards.filter(c=>analyzer.evaluate(c,b).eligible).length;
+      return aFits-bFits || a.id-b.id;
+    });
+    let lockedCompatible=true;
+    for(const fixed of sortedLocks) {
+      const best=remaining.map((c,i)=>({i,match:analyzer.evaluate(c,fixed)}))
+        .filter(row=>row.match.eligible)
+        .sort((a,b)=>b.match.score-a.match.score||a.i-b.i)[0];
+      if(!best){lockedCompatible=false;break;}
+      remaining.splice(best.i,1);
     }
+    if(!lockedCompatible)continue;
     let beam:{cards:Card[];value:number}[]=[{cards:[...locked],value:0}];
     for(const wanted of remaining) {
       const trials:{cards:Card[];value:number}[]=[];
       for(const state of beam) {
-        const options=pool.filter(c=>!state.cards.some(x=>x.id===c.id)&&
-          (!wanted.roles.includes("Win condition")||c.roles.includes("Win condition")))
+        const options=pool.filter(c=>!state.cards.some(x=>x.id===c.id))
           .map(c=>{
-            const synergy=state.cards.reduce((sum,x)=>sum+(pairs.get(pairKey(c.id,x.id))??0),0)/Math.max(1,state.cards.length);
-            const roleCount=Math.max(0,...wanted.roles.map(r=>roleUsage.get(r)?.get(c.id)??0));
-            const value=similarity(wanted,c)*40+(c.level??0)/highestLevel*22+
-              (usage.get(c.id)??0)/maxUsage*12+roleCount/maxUsage*10+synergy/maxUsage*12-
-              Math.abs((wanted.elixir??0)-(c.elixir??0))*2;
+            const match=analyzer.evaluate(wanted,c);
+            if(!match.eligible)return null;
+            const synergy=state.cards.reduce((sum,x)=>
+              sum+(pairs.get(pairKey(c.id,x.id))??0),0)/
+              Math.max(1,state.cards.length);
+            const roleCount=Math.max(0,...wanted.roles.map(r=>
+              roleUsage.get(r)?.get(c.id)??0));
+            const value=match.score*0.84+
+              (usage.get(c.id)??0)/maxUsage*5+
+              roleCount/maxUsage*4+
+              synergy/maxUsage*7;
             return {card:c,value};
-          }).sort((a,b)=>b.value-a.value||a.card.id-b.card.id).slice(0,8);
+          })
+          .filter((x):x is {card:Card;value:number}=>x!==null)
+          .sort((a,b)=>b.value-a.value||a.card.id-b.card.id)
+          .slice(0,12);
         for(const option of options) {
           const cards=[...state.cards,option.card];
           if(cards.reduce((sum,c)=>sum+(c.elixir??0),0)<=q.maxElixir*8)
@@ -111,7 +149,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       const unique=new Map<string,{cards:Card[];value:number}>();
       for(const trial of trials.sort((a,b)=>b.value-a.value||key(a.cards).localeCompare(key(b.cards))))
         if(!unique.has(key(trial.cards)))unique.set(key(trial.cards),trial);
-      beam=[...unique.values()].slice(0,10);
+      beam=[...unique.values()].slice(0,20);
       if(!beam.length)break;
     }
     for(const state of beam)add(state.cards,source);
@@ -158,7 +196,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     }
   }
   const rows:LiveCandidate[]=[];
-  for(const {cards,source,method} of seeds.values()) {
+  for(const {cards,source,method,assignments} of seeds.values()) {
     if(rows.length%20===0)await yieldToUI();
     const strategy=assessStrategy(cards,mechanics,{...reasoning,
       focus:q.mode==="Fast cycle"&&reasoning.focus==="balanced"?"cycle":reasoning.focus});
@@ -166,7 +204,14 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       ["air","tanks","ground","swarms"].includes(s.id):q.mode==="Maximum offense"?s.id==="pressure":false);
     const tactical=targeted.length?strategy.score*0.5+
       targeted.reduce((sum,s)=>sum+s.score,0)/targeted.length*0.5:strategy.score;
-    const readiness=cards.reduce((sum,c)=>sum+(c.level??0)/highestLevel*100,0)/8;
+    // Avoid average-only readiness hiding one critically underlevelled
+    // defender. Benchmarks are relative to THIS player's eligible levels.
+    const levelGaps=cards.map(c=>Math.max(0,analyzer.benchmark-(c.level??0)));
+    const biggestGap=Math.max(0,...levelGaps);
+    const readiness=clamp(100-
+      levelGaps.reduce((sum,gap)=>sum+gap,0)/8*13-biggestGap*7);
+    const matchQuality=assignments?
+      assignments.reduce((sum,row)=>sum+row.assessment.score,0)/8:60;
     const shared=cards.filter(c=>source.cards.some(s=>s.id===c.id)).length;
     const popularity=cards.reduce((sum,c)=>sum+(usage.get(c.id)??0)/maxUsage*100,0)/8;
     let together=0;
@@ -180,17 +225,29 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     const roleFit=100-clamp([...sourceRoles].reduce((sum,[r,n])=>sum+Math.max(0,n-(ownRoles.get(r)??0)),0)*5);
     const cohesion=shared/8*50+together/28*30+roleFit*0.2;
     const components=[
-      {name:"Live deck similarity and card combinations",score:cohesion,weight:35},
-      {name:"Tactical coverage, mode and chosen focus",score:tactical,weight:30},
-      {name:"Readiness at your owned levels",score:readiness,weight:25},
-      {name:"Card frequency in the verified global sample",score:popularity,weight:10},
+      {name:"Observed deck combinations and role cohesion",score:cohesion,weight:20},
+      {name:"Air, ground, tank, swarm and chosen-focus coverage",score:tactical,weight:25},
+      {name:"Owned-card levels and weakest-card readiness",score:readiness,weight:40},
+      {name:"Observed card frequency",score:popularity,weight:5},
+      {name:"Verified functional / elixir slot replacements",score:matchQuality,weight:10},
     ];
-    const out=source.cards.filter(c=>!cards.some(x=>x.id===c.id));
-    const added=cards.filter(c=>!source.cards.some(x=>x.id===c.id));
-    const substitutions=out.map(c=>{
-      added.sort((a,b)=>similarity(c,b)-similarity(c,a)||a.id-b.id);
-      return {out:c.name,in:added.shift()?.name??"Unmatched"};
-    });
+    const substitutions=assignments?
+      assignments.filter(row=>row.source.id!==row.replacement.id)
+        .map(row=>({
+          out:row.source.name,in:row.replacement.name,
+          sourceLevel:row.assessment.sourceLevel,
+          ownedLevel:row.assessment.ownedLevel,
+          sourceElixir:row.assessment.sourceElixir,
+          ownedElixir:row.assessment.ownedElixir,
+          score:row.assessment.score,
+          preserved:row.assessment.preserved,
+          gained:row.assessment.gained,
+          limitations:row.assessment.limitations,
+          reason:row.assessment.reason,
+        })):
+      // An observed-usage fallback is NOT a direct one-to-one replacement,
+      // so the UI must not claim precise source-slot substitutions.
+      [];
     const formDifferences=source.cards.filter(c=>c.active!=="base"&&cards.some(x=>x.id===c.id))
       .map(c=>`${c.name}: source ${c.active}; recommendation uses base form. Special-form effects are not assumed.`);
     rows.push({cards,evaluation:evaluate(cards,q,mechanics),strategy,
@@ -200,6 +257,11 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
         sourceCards:source.cards,sharedCards:shared,
         exactBaseDeckAccounts:meta.players.filter(p=>key(p.cards)===key(cards)).length,
         substitutions,formDifferences,components,
+        ownedLevelBenchmark:analyzer.benchmark,
+        lowestOwnedLevel:Math.min(...cards.map(c=>c.level??0)),
+        maxSlotElixirIncrease:1 as const,
+        measuredCombatCoverage:strategy.cards.filter(c=>
+          c.data.startsWith("Reference stats")).length,
         cardUsage:cards.map(c=>({id:c.id,name:c.name,count:usage.get(c.id)??0,roles:c.roles})),
       },
     });
