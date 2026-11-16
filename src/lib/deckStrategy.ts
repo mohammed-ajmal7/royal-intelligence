@@ -35,7 +35,7 @@ export type ReasoningContext = {
   battles?:Battle[];
 };
 const score100=(n:number)=>Math.round(Math.max(0,Math.min(100,n))*10)/10;
-const unique=(values:string[])=>[...new Set(values)];
+const unique=<T,>(values:T[])=>[...new Set(values)];
 const names=(cards:Card[])=>cards.map(c=>c.name);
 const has=(deck:Card[],name:string)=>deck.some(c=>c.name===name);
 const role=(c:Card,r:string)=>c.roles.includes(r);
