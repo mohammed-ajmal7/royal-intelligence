@@ -3947,3 +3947,20 @@ footer p { color: #afcbe4; }
   .live-meta-replacement-grid{grid-template-columns:minmax(0,1fr);}
   .live-meta-replacement{padding:10px;}
 }
+
+.live-meta-replacement-combat {
+  display:grid;
+  gap:5px;
+  padding:9px;
+  background:#082849;
+  border:1px solid #376994;
+  border-radius:7px;
+  font-size:10px;
+  line-height:1.6;
+}
+.live-meta-replacement-combat b {color:#ffe0a0;}
+.live-meta-replacement-combat span {
+  display:block;
+  font-variant-numeric:tabular-nums;
+  color:#d5e9f6;
+}
