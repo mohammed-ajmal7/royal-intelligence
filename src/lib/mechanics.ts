@@ -1,4 +1,5 @@
 import { recentCardReference } from "./recentCardMechanics";
+import { sourcedGroupReference, withGroupComposition } from "./groupCardReferences";
 
 /**
  * Mechanics are a SECOND, community-maintained dataset, not a Supercell player
@@ -338,22 +339,25 @@ export function getMechanicsRecord(
   card: { id: number; name?: string },
   catalog?: MechanicsCatalog | null,
 ): MechanicsCard | undefined {
-  const recent = recentCardReference(card);
-  // Goblin Barrel needs its separate spawned-Goblin semantics. Never
-  // misinterpret the barrel as a single damaging troop.
-  if (recent && card.name?.toLowerCase() === "goblin barrel") return recent;
-  if (!catalog) return recent;
+  const recent = sourcedGroupReference(card) ?? recentCardReference(card);
+  // Goblin Barrel spawns three separate Goblins. Its per-Goblin statistics
+  // must never be replaced by an old "spell impact damage" record.
+  if (recent && card.name?.toLowerCase() === "goblin barrel")
+    return withGroupComposition(recent);
+  if (!catalog) return recent && withGroupComposition(recent);
   let index = mechanicsIndices.get(catalog);
   if (!index) {
-    index = new Map(catalog.cards.map((c) => [c.id, c]));
-    mechanicsIndices.set(catalog, index);
+    index = new Map(catalog.cards.map(c => [c.id,c]));
+    mechanicsIndices.set(catalog,index);
   }
   const sourced = index.get(card.id);
-  if (sourced?.provenance === "crtool-game-data" && sourced.sourceUpdatedAt) {
-    if (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? ""))
-      return sourced;
-  }
-  return recent ?? sourced;
+  const useSourced = sourced?.provenance === "crtool-game-data" &&
+    !!sourced.sourceUpdatedAt &&
+    (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? "") ||
+      (sourced.sourceUpdatedAt === recent.sourceUpdatedAt &&
+        !!sourced.groupUnits?.length && !!sourced.extraStatsByLevel));
+  const chosen = useSourced ? sourced : recent ?? sourced;
+  return chosen ? withGroupComposition(chosen) : undefined;
 }
 
 export function resolveMechanics(
