@@ -1,14 +1,17 @@
 import { z } from "zod";
 import { card, normalize, rawCard, tag } from "../src/lib/model";
-import { countRankedDecks, ROLE_VERSION, type LabEvent, type RankedDeck } from "../src/lib/liveMeta";
+import { countRankedDecks, ROLE_VERSION, type LabEvent, type RankedDeck, type GlobalRankedLimit } from "../src/lib/liveMeta";
 import type { Env } from "./service";
 
 const rankSchema = z.object({ items: z.array(z.object({
   rank: z.number().int().positive(), tag: z.string(), name: z.string(),
   eloRating: z.number().optional(), trophies: z.number().optional(),
-})) });
+})), paging: z.object({
+  cursors: z.object({ after: z.union([z.string(), z.number()]).optional() }).passthrough().optional(),
+}).passthrough().optional() });
 const catalogSchema = z.object({ items: z.array(rawCard), supportItems: z.array(rawCard).optional() });
-const ladderPath = "/locations/global/pathoflegend/players?limit=100";
+const ladderBase = "/locations/global/pathoflegend/players";
+const supportedSizes: readonly GlobalRankedLimit[] = [100,200,300];
 const inFlight = new Set<string>();
 const lastStarted = new Map<string, number>();
 
@@ -28,11 +31,17 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
   if (!["https://api.clashroyale.com/v1", "https://proxy.royaleapi.dev/v1"].includes(base))
     return jsonError("Unsupported game API base URL.", 500);
   let playerTag: string;
+  let requestedCount: GlobalRankedLimit;
   try {
     const raw = await req.text();
     if (raw.length > 1024) return jsonError("Request too large.", 413);
-    playerTag = tag(z.object({ tag: z.string().max(20) }).parse(JSON.parse(raw)).tag);
-  } catch { return jsonError("Provide a valid player tag.", 400); }
+    const input = z.object({
+      tag: z.string().max(20),
+      top: z.union([z.literal(100),z.literal(200),z.literal(300)]).default(100),
+    }).parse(JSON.parse(raw));
+    playerTag = tag(input.tag);
+    requestedCount = input.top;
+  } catch { return jsonError("Provide a valid player tag and Top 100, 200 or 300 selection.", 400); }
   if (inFlight.has(bucket) || inFlight.size >= 2 || Date.now() - (lastStarted.get(bucket) ?? 0) < 15000)
     return jsonError("A live analysis is running or was just requested. Wait before starting another fresh scan.", 429);
   inFlight.add(bucket);
@@ -101,28 +110,82 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
         }
         throw new LiveError("Required game data could not be retrieved.");
       };
+      /** Cursor paging is required: a single leaderboard page may stop at
+       * 100 even when 200 or 300 are requested. No second leaderboard or
+       * previous-season data is substituted for missing pages. */
       const leaderboard = async () => {
-        const rows=rankSchema.parse(await fresh(ladderPath)).items;
-        const top=rows.filter(r=>r.rank<=100).sort((a,b)=>a.rank-b.rank);
-        if (top.length!==100 || new Set(top.map(r=>tag(r.tag))).size!==100 ||
-            top.some((r,i)=>r.rank!==i+1))
-          throw new LiveError("The API did not supply all 100 distinct current Ranked accounts with ranks 1–100. Scan stopped.");
-        return top.map(r=>({...r,tag:tag(r.tag)}));
+        const ranks: z.infer<typeof rankSchema>["items"] = [];
+        const seen = new Set<string>();
+        const cursors = new Set<string>();
+        let after: string | null = null;
+        let warning: string | null = null;
+        while(ranks.length < requestedCount) {
+          abort.signal.throwIfAborted();
+          const limit = Math.min(100,requestedCount-ranks.length);
+          const path = ladderBase+"?limit="+limit+
+            (after?"&after="+encodeURIComponent(after):"");
+          let response:z.infer<typeof rankSchema>;
+          try {
+            response = rankSchema.parse(await fresh(path));
+          } catch (error) {
+            if(ranks.length===0)throw error;
+            warning = "The Ranked leaderboard stopped after rank #"+
+              ranks.length+": "+(error instanceof Error?error.message:"page unavailable.");
+            break;
+          }
+          if(!response.items.length) {
+            warning = "No further current Ranked leaderboard entries were returned after #"+ranks.length+".";
+            break;
+          }
+          let malformed=false;
+          for(const entry of response.items) {
+            if(ranks.length>=requestedCount)break;
+            let normalized:string;
+            try {normalized=tag(entry.tag);}
+            catch {malformed=true;break;}
+            if(entry.rank!==ranks.length+1 || seen.has(normalized)) {
+              malformed=true;break;
+            }
+            seen.add(normalized);
+            ranks.push({...entry,tag:normalized});
+          }
+          if(malformed) {
+            warning="The current Ranked leaderboard contained an invalid, duplicate or missing rank after #"+ranks.length+".";
+            break;
+          }
+          if(ranks.length>=requestedCount)break;
+          const next=response.paging?.cursors?.after;
+          const cursor=next===undefined?null:String(next);
+          if(!cursor || cursors.has(cursor)) {
+            warning="The API did not provide a usable next-page cursor after rank #"+ranks.length+".";
+            break;
+          }
+          cursors.add(cursor);
+          after=cursor;
+        }
+        if(!ranks.length)
+          throw new LiveError("The game API returned no verifiable global Ranked leaderboard accounts.");
+        return {ranks,warning};
       };
       void (async () => {
         const startedAt=new Date().toISOString();
-        progress(1,0,100,"Fetching the current global Ranked top 100 and your collection…");
-        const [ranks,catalogInput,profile] = await Promise.all([
+        const scanSoftDeadline=Date.now()+170000;
+        progress(1,0,requestedCount,
+          "Fetching the current global Ranked top "+requestedCount+" and your collection…");
+        const [leaderboardData,catalogInput,profile] = await Promise.all([
           leaderboard(), fresh("/cards"), fresh("/players/"+encodeURIComponent(playerTag)),
         ]);
+        const {ranks,warning:leaderboardWarning}=leaderboardData;
         const leaderboardAt=new Date().toISOString();
         const catalog=catalogSchema.parse(catalogInput);
         const capSetting=Number(env.DISPLAY_LEVEL_CAP??16);
         const cap=Number.isInteger(capSetting)&&capSetting>0&&capSetting<=30?capSetting:16;
         const player=normalize(profile,catalog,[],{},leaderboardAt,cap);
         if (tag(player.tag)!==playerTag) throw new LiveError("The API returned a different player profile. Scan stopped.");
-        progress(1,100,100,"Current ranks 1–100 received. Fetching their latest available Ranked battles…");
-        const players:(RankedDeck|undefined)[]=new Array(100);
+        progress(1,ranks.length,requestedCount,
+          "Received "+ranks.length+" global Ranked accounts out of the selected "+
+          requestedCount+". Reading their recent Ranked battles…");
+        const players:(RankedDeck|undefined)[]=new Array(ranks.length);
         const rankIndex=new Map(ranks.map((rank,i)=>[rank.tag,i]));
         const cardIndex=new Map(catalog.items.map(item=>[item.id,item]));
         const towerIds=new Set(catalog.supportItems?.map(item=>item.id)??[]);
@@ -205,7 +268,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
           return observed;
         };
         const worker=async()=>{
-          while(next<ranks.length&&!abort.signal.aborted){
+          while(next<ranks.length&&!abort.signal.aborted&&Date.now()<scanSoftDeadline){
             const index=next++;
             try {
               const payload=await fresh(
@@ -227,42 +290,84 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
             }
             completed++;
             const available=players.filter(Boolean).length;
-            progress(2,completed,100,
-              `Checked ${completed}/100 recent logs; found ${available}/100 top-ranked played decks.`);
+            progress(2,completed,ranks.length,
+              `Checked ${completed}/${ranks.length} current logs; verified ${available}/${requestedCount} requested top-ranked decks.`);
           }
         };
-        await Promise.all(Array.from({length:5},worker));
+        await Promise.all(Array.from({length:requestedCount===300?10:requestedCount===200?8:6},worker));
         abort.signal.throwIfAborted();
-        const failed=ranks.flatMap((rank,index)=>players[index]?[]:[{
+        const unavailable=ranks.flatMap((rank,index)=>players[index]?[]:[{
           rank:rank.rank,tag:rank.tag,name:rank.name||rank.tag,
-          reason:(issues.get(index)??"No qualifying Ranked battle found.")+
-            " Not observed as an opponent in another sampled top-100 Ranked battle.",
+          reason:(issues.get(index)??(
+            index>=next
+              ? "Scan time budget reached before this account could be requested."
+              : "No qualifying Ranked battle found."
+          ))+
+            " Not observed as an opponent in another sampled Ranked battle.",
         }]);
-        if(failed.length || completed!==100)
+        const observedPlayers=players.filter((player):player is RankedDeck=>!!player)
+          .sort((a,b)=>a.rank-b.rank);
+        // The recommendation is based ONLY on verified played decks.
+        // A missing battle is no longer treated as proof the other 99–299
+        // observed decks are unusable. Zero evidence still cannot generate.
+        if(!observedPlayers.length)
           throw new LiveError(
-            `Only ${100-failed.length}/100 verifiable Ranked decks found from the current top-100 accounts. `+
-            `Strict mode needs all 100; no recommendation generated. `+
-            `See the unavailable account and reason below.`,
-            failed.sort((a,b)=>a.rank-b.rank)
+            "No verifiable current Ranked 1v1 decks were found in the selected top "+
+            requestedCount+". A live-based recommendation cannot be generated.",
+            unavailable
           );
-        const completePlayers=players as RankedDeck[];
-        progress(3,0,100,"Checking leaderboard consistency and counting all 800 card slots…");
-        const endRanks=await leaderboard();
-        if (endRanks.some((r,i)=>r.tag!==ranks[i].tag))
-          throw new LiveError("Ranks changed while decks were being fetched. Run a new scan; this result was not used.");
-        const counts=countRankedDecks(completePlayers);
+        progress(3,0,observedPlayers.length,
+          "Checking available leaderboard evidence and counting "+
+          observedPlayers.length*8+" verified card slots…");
+        let changedRanks:number|null=null;
+        let consistencyWarning:string|null=null;
+        if(Date.now()<scanSoftDeadline+38000) {
+          try {
+            const check=await leaderboard();
+            const current=new Map(check.ranks.map(r=>[r.rank,r.tag]));
+            changedRanks=ranks.filter(r=>{
+              const other=current.get(r.rank);
+              return other!==undefined && other!==r.tag;
+            }).length;
+            if(check.warning)consistencyWarning="End-of-scan leaderboard recheck: "+check.warning;
+          } catch (error) {
+            consistencyWarning="The end-of-scan leaderboard check was unavailable: "+
+              (error instanceof Error?error.message:"upstream request failed.");
+          }
+        } else {
+          consistencyWarning="The end-of-scan leaderboard recheck was skipped to respect the scan time budget.";
+        }
+        const counts=countRankedDecks(observedPlayers);
         const unknown=counts.roleUsage.find(r=>r.role==="Unclassified");
-        if(unknown) throw new LiveError("Role definitions are missing for: "+unknown.cards.map(c=>c.name).join(", ")+". Update the role catalog before recommending.");
         const completedAt=new Date().toISOString();
-        const old=completePlayers.filter(p=>Date.parse(completedAt)-Date.parse(p.battleTime)>86400000).length;
-        const recovered=completePlayers.filter(p=>p.evidenceOrigin==="other-top100-log").length;
-        progress(3,100,100,"All 100 decks counted. Role coverage and form counts are ready.");
+        const old=observedPlayers.filter(p=>Date.parse(completedAt)-Date.parse(p.battleTime)>86400000).length;
+        const recovered=observedPlayers.filter(p=>p.evidenceOrigin==="other-top100-log").length;
+        progress(3,observedPlayers.length,observedPlayers.length,
+          "Counted "+observedPlayers.length+" verified decks and "+
+          observedPlayers.length*8+" card slots; adapting to your owned levels…");
         emit({type:"complete",player,meta:{id:crypto.randomUUID(),startedAt,leaderboardAt,completedAt,
-          source:base+ladderPath,sampleSize:100,roleVersion:ROLE_VERSION,players:completePlayers,...counts,
+          source:base+ladderBase,requestedCount,leaderboardCount:ranks.length,
+          sampleSize:observedPlayers.length,unavailable,
+          leaderboardWarning:leaderboardWarning??null,changedRanks,
+          roleVersion:ROLE_VERSION,players:observedPlayers,...counts,
           warnings:[
             "Fresh API requests do not guarantee the upstream provider updates instantly. These are the latest available Ranked battle decks, not currently selected profile decks.",
             "Ranks matched at the beginning and end of this collection window; the API offers no atomic snapshot or guarantee they stayed unchanged between reads.",
-            "The sample represents 100 ranked accounts, not necessarily 100 different people. Every account contributes once, even when decks repeat.",
+            "Only verified, actually played Ranked decks are counted. Each observed account contributes once, even when deck compositions repeat.",
+            ...(ranks.length<requestedCount?[
+              "The leaderboard supplied only "+ranks.length+"/"+requestedCount+
+              " requested ranks; all statistics reflect available observed accounts, not the entire selected top group."
+            ]:[]),
+            ...(unavailable.length?[
+              unavailable.length+" ranked accounts had no verifiable recent Ranked deck; recommendations use the remaining "+observedPlayers.length+
+              " and may be less representative."
+            ]:[]),
+            ...(leaderboardWarning?[leaderboardWarning]:[]),
+            ...(consistencyWarning?[consistencyWarning]:[]),
+            ...(changedRanks!==null&&changedRanks>0?[
+              changedRanks+" leaderboard ranks changed during the scan. Observations are from the opening leaderboard, not a synchronized current snapshot."
+            ]:[]),
+            ...(unknown?["Some cards lack editorial role definitions: "+unknown.cards.map(c=>c.name).join(", ")+". Their known card identities and other roles remain counted."]:[]),
             ...(recovered?[`${recovered} decks were verified from a Ranked opponent in another top-100 account\u0027s fresh battle log. No profile deck was substituted.`]:[]),
             "Card and form usage are observed counts. Role labels, substitutions and recommendation scores are editorial estimates, not win probabilities.",
             ...(old?[`${old} accounts last played an available Ranked battle more than 24 hours ago; individual battle times are shown.`]:[]),
