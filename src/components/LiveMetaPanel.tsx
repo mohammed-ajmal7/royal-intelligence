@@ -9,7 +9,7 @@ export function LiveMetaPanel({meta,progress,busy,error,failed,cancel,retry,targ
   cancel:()=>void;retry:()=>void;target:GlobalRankedLimit;
 }) {
   const size=meta?.requestedCount ?? target;
-  const missing=meta?.unavailable ?? failed;
+  const skippedCount=meta?.unavailable.length ?? failed.length;
   const steps=["Fetch current global top "+size,
     "Read up to "+size+" Ranked battle decks","Count observed cards, forms and roles",
     "Adapt suitable decks to your collection"];
@@ -36,23 +36,26 @@ export function LiveMetaPanel({meta,progress,busy,error,failed,cancel,retry,targ
       </button>}
     </div>}
     {meta&&(meta.sampleSize<meta.requestedCount)&&<div className="live-meta-partial" role="status">
-      <strong>Partial live sample: {meta.sampleSize}/{meta.requestedCount} verified decks</strong>
-      <p>Recommendations use only these {meta.sampleSize} observed Ranked 1v1 decks.
-        The missing accounts are excluded. Card frequency and roles are counted
-        against the verified sample, not against {meta.requestedCount}.</p>
+      <strong>Analyzed {meta.sampleSize} of {meta.requestedCount} selected global players</strong>
+      {skippedCount>0&&<p>
+        Skipped {skippedCount} {skippedCount===1?"player":"players"} with no
+        verifiable recent Ranked 1v1 deck. These players contribute nothing
+        to card usage, roles, pair counts, ranking scores or recommendations.
+      </p>}
+      <p>All recommendations use only the {meta.sampleSize} valid observed decks.
+        Every card and role percentage uses {meta.sampleSize} as its denominator,
+        never {meta.requestedCount}.</p>
       {meta.leaderboardCount<meta.requestedCount&&<p>
-        The leaderboard supplied {meta.leaderboardCount} of {meta.requestedCount} requested accounts.
+        The leaderboard supplied only {meta.leaderboardCount} of
+        {" "}{meta.requestedCount} requested accounts; unretrieved ranks are not assumed to have decks.
       </p>}
       {meta.leaderboardWarning&&<p>{meta.leaderboardWarning}</p>}
     </div>}
-    {missing.length>0&&<details className="live-meta-failed">
-      <summary>Unavailable Ranked battle evidence ({missing.length})</summary>
-      <ul>{missing.map(p=><li key={p.rank}>
-        <strong>Rank #{p.rank} — {p.name?.trim()||p.tag||"Unnamed account"}</strong>
-        {p.tag&&<span> {p.tag}</span>}
-        <p>{p.reason||"No verifiable Ranked 1v1 battle available in sampled logs."}</p>
-      </li>)}</ul>
-    </details>}
+    {!meta&&failed.length>0&&<p className="micro" role="status">
+      Skipped {failed.length} unavailable Ranked
+      {failed.length===1?" account":" accounts"}; no eligible verified
+      sample was returned. No replacement decks were invented.
+    </p>}
     {meta&&<>
       <p className="micro">Collected {new Date(meta.startedAt).toLocaleString()} – {new Date(meta.completedAt).toLocaleTimeString()}.
         {" "}This is the completed scan, not a continuously updating leaderboard. Click again to fetch a new one.</p>
