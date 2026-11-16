@@ -159,8 +159,10 @@ export function parseCurrentReference(
         rangeLabel:rangeText??undefined,sourceUrl,
       } satisfies MechanicsGroupUnit;
     });
-    if(members.every((x):x is MechanicsGroupUnit=>x!==null))
-      groupUnits=members;
+    const complete=members.filter(
+      (x):x is NonNullable<(typeof members)[number]>=>x!==null);
+    if(complete.length===roster.length)
+      groupUnits=complete;
   }
   const record:MechanicsCard={
     id:card.id,name:card.name,kind,
