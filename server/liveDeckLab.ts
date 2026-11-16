@@ -13,7 +13,7 @@ const inFlight = new Set<string>();
 const lastStarted = new Map<string, number>();
 
 class LiveError extends Error {
-  constructor(message: string, public failed?: {rank:number;name:string;reason:string}[]) { super(message); }
+  constructor(message: string, public failed?: {rank:number;tag?:string;name:string;reason:string}[]) { super(message); }
 }
 const jsonError = (error: string, status: number) => Response.json({ error }, {
   status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
