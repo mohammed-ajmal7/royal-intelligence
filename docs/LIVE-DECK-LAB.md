@@ -44,6 +44,14 @@ After pressing **Find best deck**, the system:
 ## Partial-data and accuracy policy
 
 Missing player logs are **not a reason to discard 99 other valid decks**.
+Players whose fresh log has no qualifying Ranked 1v1 battle, and who cannot be
+verified as an opponent in the same current Ranked sample, are **skipped from
+all sample stats and recommendations**. The public UI reports only how many
+were skipped; it no longer displays their names or tags in an alarming
+"Unavailable Ranked battle evidence" section. This is a per-scan eligibility
+decision, not a permanent blocklist: a player with valid Ranked evidence on
+a future scan is included. The requested top group is not silently expanded
+to ranks outside the chosen Top 100, 200 or 300.
 An incomplete top group produces a recommendation from the decks that were
 actually verified; it never silently treats missing accounts as zero card
 usage or invents their deck lists. The app displays the requested count,
