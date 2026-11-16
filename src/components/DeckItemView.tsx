@@ -429,6 +429,11 @@ export function DeckItemView({
               onChange={e=>set({ownedOnly:e.target.checked})}/>
             <span>Only cards I own</span>
           </label>
+          <label className="deck-item-owned">
+            <input type="checkbox" checked={options.groupOnly}
+              onChange={e=>set({groupOnly:e.target.checked})}/>
+            <span>Group cards only</span>
+          </label>
         </div>
         <p className="deck-item-level-disclosure">
           <SlidersHorizontal size={16}/>
