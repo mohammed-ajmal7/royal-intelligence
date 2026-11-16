@@ -72,8 +72,12 @@ export function createReplacementAnalyzer(
       has(card,"Ground defense")||has(card,"Tank killer")||
       has(card,"Win condition")||has(card,"Swarm control")||
       has(card,"Mini tank")||has(card,"Building"));
-    const splash=m?.splashRadiusTiles!==null&&m?.splashRadiusTiles!==undefined
-      ? m.splashRadiusTiles>0:has(card,"Swarm control");
+    // Many old source records omit AoE geometry or publish zero for
+    // deployment effects. Preserve known editorial swarm-control roles
+    // instead of wrongly treating such a card as single-target.
+    const splash=has(card,"Swarm control")||
+      (m?.splashRadiusTiles!==null&&m?.splashRadiusTiles!==undefined&&
+        m.splashRadiusTiles>0);
     const spell=has(card,"Spell")||m?.kind==="Spell";
     const building=has(card,"Building")||m?.kind==="Building";
     const kind=spell?"Spell":building?"Building":
