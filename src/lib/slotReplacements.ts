@@ -1,6 +1,6 @@
 import type { Card } from "./model";
 import type { MechanicsCatalog, ResolvedMechanics } from "./mechanics";
-import { resolveMechanics } from "./mechanics";
+import { getMechanicsRecord, resolveMechanics } from "./mechanics";
 
 /**
  * A replacement is a *role-preserving* candidate for one observed slot.
@@ -60,13 +60,14 @@ export function createReplacementAnalyzer(
   const benchmark=ownedLevelBenchmark(pool);
   const originalOwned=new Map(fullCollection.filter(c=>c.owned)
     .map(c=>[c.id,c]));
-  const profileCache=new Map<string,{caps:Capabilities;mechanics:ResolvedMechanics|null}>();
+  const profileCache=new Map<string,{caps:Capabilities;mechanics:ResolvedMechanics|null;group:boolean}>();
   const matchCache=new Map<string,ReplacementAssessment>();
   const profile=(card:Card)=>{
     const k=card.id+":"+(card.level??"?")+":"+card.active;
     const existing=profileCache.get(k);
     if(existing)return existing;
     const m=resolveMechanics(card,mechanics);
+    const group=!!getMechanicsRecord(card,mechanics)?.groupUnits?.length;
     const air=m?.targetsAir ?? has(card,"Air defense");
     const ground=m?.targetsGround ?? (
       has(card,"Ground defense")||has(card,"Tank killer")||
@@ -91,7 +92,7 @@ export function createReplacementAnalyzer(
       heavySpell:heavySpellCards.has(card.name),
       flying:flyingTroops.has(card.name),
       uncertain:m===null || (m.targetsAir===null && m.targetsGround===null),
-    },mechanics:m};
+    },mechanics:m,group};
     profileCache.set(k,result);
     return result;
   };
@@ -198,6 +199,7 @@ export function createReplacementAnalyzer(
       &&known?.damage!==null&&known?.damage!==undefined?4:
       known?.damage!==null&&known?.damage!==undefined?2:0;
     const comparable=origin?.kind==="Troop"&&known?.kind==="Troop" &&
+      !originalData?.group && !targetData.group &&
       (original?.elixir??0)>0 && (target.elixir??0)>0 &&
       original?.id!==target.id;
     const dpsDifference=comparable&&origin?.dps!==null&&origin?.dps!==undefined&&
@@ -207,7 +209,9 @@ export function createReplacementAnalyzer(
     const measuredAdvantage=dpsDifference===null?0:
       Math.max(-5,Math.min(5,dpsDifference/30));
     if(dpsDifference!==null)limitations.push(
-      "DPS comparison is per elixir from available community tables; it does not simulate troop count, splash targets or battle outcomes");
+      "DPS comparison is per elixir from available community tables; it does not simulate splash targets or battle outcomes");
+    if(originalData?.group || targetData.group)
+      limitations.push("Group-card HP/damage can describe one member, not a shared group health bar");
     const value=clamp(fidelity*45+levelQuality*0.42+
       costBonus+measured+measuredAdvantage-
       Math.min(18,globalGap*3)+
