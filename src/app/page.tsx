@@ -1572,11 +1572,14 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Recommendations use observed top-{globalTopLimit} Ranked deck combinations,
-                  card and role counts, owned levels, tactical coverage and chosen focus.
-                  Missing accounts are excluded. All percentages use the verified
-                  observed count, not the requested count. Recommendations are estimates,
-                  not measured win rates or a guarantee of the globally best deck.
+                  Recommendations use verified top-{globalTopLimit} Ranked battle decks,
+                  actual owned levels, required air/ground/splash/tank roles and your
+                  selected strategy. Each source-slot replacement costs at most
+                  +1 elixir and must preserve its key combat functions; the
+                  overall average elixir, minimum level, locked and excluded cards
+                  are also enforced. Stronger owned cards can replace an
+                  underleveled pro favorite. Missing accounts remain excluded.
+                  Scores estimate suitability — never a guaranteed winning deck.
                   {s.mode === "demo" ? " Load your real tag to use this workflow." : ""}
                 </p>
                 <LiveMetaPanel meta={liveMeta} progress={labProgress} busy={busy}
@@ -1604,7 +1607,9 @@ export default function App() {
                   <div className="reasoned-recommendation-score">
                     <span><BrainCircuit size={18}/> {liveChoice ? "Recommendation from the completed live scan" : "Selected deck: tactical analysis"}</span>
                     <strong>{recommendationScore.toFixed(1)}<small>/100</small></strong>
-                    <p>{liveChoice ? "Live combinations 35% · Tactical coverage 30% · Owned levels 25% · Card usage 10%." : "This selection is not being claimed as a live top-100 recommendation."}
+                    <p>{liveChoice ?
+                      "Observed combinations 20% · Tactical roles 25% · Actual owned-level readiness 40% · Observed usage 5% · Functional replacement fit 10%. Each direct substitution has a hard +1 elixir ceiling." :
+                      "This selection is not being claimed as a fresh global Ranked recommendation."}
                       Scores are editorial estimates, never predicted win rates.</p>
                     {liveChoice&&<LiveCandidateEvidence candidate={liveChoice}/>}
                   </div>
@@ -2028,7 +2033,7 @@ export default function App() {
               {candidates.length > 0 && (
                 <Panel
                   title="Top alternative teams"
-                  kicker="ADAPTED FROM THIS LIVE TOP-100 SCAN"
+                  kicker={"LIVE GLOBAL TOP "+globalTopLimit+" · YOUR OWNED-LEVEL ADAPTATION"}
                 >
                   <div className="candidate-grid">
                     {candidates.map((c, i) => (
