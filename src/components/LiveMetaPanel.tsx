@@ -96,7 +96,10 @@ export function LiveMetaPanel({meta,progress,busy,error,failed,cancel,retry,targ
 export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
   const e=candidate.evidence;
   return <details className="live-meta-evidence"><summary>Why these eight? Live evidence and substitutions</summary>
-    <p>Adapted from #{e.sourceRank} {e.sourceName} ({e.sourceTag}); retains {e.sharedCards}/8 base cards.
+    <p>{e.adaptationMethod==="observed-usage-fallback"
+      ? "Built from observed global card usage and your eligible collection; closest observed source:"
+      : "Adapted from observed Ranked deck:"}
+      {" "}#{e.sourceRank} {e.sourceName} ({e.sourceTag}); retains {e.sharedCards}/8 base cards.
       {" "}This exact base-card combination appeared in {e.exactBaseDeckAccounts}/{e.observedCount} verified source decks
       (from a requested global top {e.requestedCount}).</p>
     <p className="micro">Source: {e.sourceCards.map(c=>`${c.name} [${c.active}]`).join(" · ")}</p>
