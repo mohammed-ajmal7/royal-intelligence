@@ -24,6 +24,58 @@ The **Deck Item** page has a mobile-first attack/defense leaderboard with a sepa
 - **Filters:** All types / Troops / Buildings / Spells / Other; owned-only toggle; card-name search.
 - **Leaderboard ties:** Same displayed attack or defense value shares one dense rank; identical survival-hit counts use HP as a *sorting* tiebreaker, not as a secretly different score.
 
+### Group cards: independent per-unit HP and attack details
+
+Deck Item now treats troop groups as **separate bodies**, rather than a single
+HP pool or an arbitrary "defense count". The **Group cards only** filter
+isolates squads. Every group entry shows its composition, and expanding its
+stats shows each unit type separately, including:
+
+- Number of troops spawned at base deployment.
+- **HP, damage per hit, DPS, shields, hit interval, targets and range per unit**.
+- Hits needed to defeat **one** member at the selected incoming damage
+  (including the lethal hit), plus complete hits survived.
+- A separate level-by-level table **for each distinct member type**.
+- An optional sum of separately-held unit HP with a prominent warning that
+  the group does **not** have one shared health bar.
+
+When mixed members have different HP/damage, the leaderboard uses the
+**strongest individual member for the selected sorting metric**, and explicitly
+names that member. It never silently multiplies an individual Skeleton's HP
+by 15 to rank Skeleton Army's defense.
+
+**Skeleton Army**, from the November 9, 2026 game-data snapshot: the regular
+card deploys **15 independent Skeletons**. At level 11 each Skeleton has
+**81 HP**, deals **81 damage per hit**, and attacks every **1.1 seconds**.
+The published base-Skeleton level table is included for levels 6–20.
+The Evolution's shielded Skeleton General appears in a separate alternate
+form table and is *not* counted as one of the regular base Skeletons.
+
+**Goblin Gang** contains three melee Goblins and three Spear Goblins; each
+has its own level-dependent HP, damage, attack interval and targeting.
+**Rascals** contains one Rascal Boy and two Rascal Girls, displayed as two
+distinct types. These two mixed-squad references include explicit levels
+1–20, with no invented scaling.
+
+Other base multi-unit cards (e.g. Skeletons, Minions, Minion Horde, Barbarians,
+Royal Recruits, Royal Hogs, Archers, Bats, Three Musketeers, Guards and
+Zappies) use independently sourced unit counts and their reference's
+level-specific **per-unit** statistics. If data for a level, unit type or
+squad is absent, it remains unknown rather than copying another unit's stats.
+Death spawns, timed spawns and Evolution-only summons are not assumed to
+join the initial base-deployment squad.
+
+The expanded group view is available both in **Deck Item → All levels +
+full card stats** and in the normal card-detail modal for supported selected
+levels.
+
+References: [Skeleton Army](https://crtool.app/en/units/skeleton-army/),
+[Goblin Gang](https://crtool.app/en/units/goblin-gang/),
+[Rascals](https://crtool.app/en/units/rascals/). Source numbers are
+independently maintained and are not direct Supercell API combat fields.
+Actual combat depends on troop placement, shields, splash damage, targeting,
+abilities and active form.
+
 ### All levels and all available source fields
 
 Every card row opens a separate **All levels + full card stats** panel with HP/unit, damage/hit, DPS, hit interval, attack range, movement (raw units), air/ground/building targeting, splash radius, unit count, deploy time, attack preload, special-mechanics flag and configurable hit endurance. A horizontally scrollable table lists every available reference-level HP/damage/DPS/hit-endurance value. Unsupported levels display `—` rather than interpolated values. The collapsible **all available community source fields (JSON)** section exposes the underlying registry/unit/deployment/projectile data when the record exists.
