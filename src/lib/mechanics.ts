@@ -41,6 +41,8 @@ export type MechanicsCard = {
   rangeLabel?: string;
   /** Every numeric level column in the chosen public reference. */
   extraStatsByLevel?: Record<string, number[]>;
+  /** Other explicitly labelled source sections: Evolutions, Heroes, summons. */
+  extraFormsByLevel?: Record<string, Record<string, number[]>>;
   description?: string;
   /** Public source records, kept separate to preserve units and provenance. */
   sourceRecords?: Record<string, Record<string, unknown>>;
