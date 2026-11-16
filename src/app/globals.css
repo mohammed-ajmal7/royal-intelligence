@@ -3784,3 +3784,46 @@ footer p { color: #afcbe4; }
 .live-meta-evidence { text-align: left; font-size: 13px; line-height: 1.6; }
 .live-meta-evidence li, .live-meta li { overflow-wrap: anywhere; }
 @media(max-width:700px) { .live-meta { padding: 12px; } .live-meta-steps { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+/* Strict live Ranked-scan recovery and transparent incomplete-result diagnosis. */
+.live-meta-incomplete {
+  padding: 16px;
+  border: 1px solid #e2a154;
+  border-radius: 11px;
+  background: linear-gradient(125deg, #4b301e, #2c2538);
+  color: #ffe7bf;
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+.live-meta-incomplete strong { color: #fff1c2; font-size: 14px; }
+.live-meta-incomplete p { margin: 0; font-size: 12px; line-height: 1.65; }
+.live-meta-incomplete .btn { margin-top: 3px; }
+.live-meta-failed {
+  border: 1px solid #987d54;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #322a2b;
+}
+.live-meta-failed summary {
+  color: #ffe2ac;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.live-meta-failed ul { padding-left: 16px; margin: 10px 0 0; }
+.live-meta-failed li {
+  padding: 9px 0;
+  color: #e6e1da;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.live-meta-failed li + li { border-top: 1px solid #69574a; }
+.live-meta-failed li strong { color: #ffe6b1; }
+.live-meta-failed li span { color: #b8d0e3; }
+.live-meta-failed li p { margin: 5px 0 0; }
+@media(max-width: 650px) {
+  .live-meta-incomplete { padding: 12px; }
+  .live-meta-incomplete .btn { width: 100%; justify-content: center; }
+}

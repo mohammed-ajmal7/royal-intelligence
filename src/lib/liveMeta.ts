@@ -4,6 +4,9 @@ export const ROLE_VERSION = "2026-11-16.1";
 export type RankedDeck = {
   rank: number; tag: string; name: string; rating: number | null;
   battleTime: string; fetchedAt: string; cards: Card[]; towerNames: string[];
+  /** Which fresh top-100 battle log proved this played deck. */
+  evidenceOrigin?: "own-log" | "other-top100-log";
+  evidenceSourceRank?: number;
 };
 export type Usage = {
   id: number; name: string; count: number; roles: string[];
@@ -23,7 +26,7 @@ export type LabProgress = { stage: 1 | 2 | 3 | 4; completed: number; total: numb
 export type LabEvent =
   | { type: "progress"; progress: LabProgress }
   | { type: "complete"; meta: LiveMeta; player: Snapshot }
-  | { type: "error"; error: string; failed?: { rank: number; name: string; reason: string }[] };
+  | { type: "error"; error: string; failed?: { rank: number; tag?: string; name: string; reason: string }[] };
 
 /** Each ranked ACCOUNT contributes one deck, including duplicate deck compositions.
  * Base-card counts combine forms; forms are also counted separately. Role deck

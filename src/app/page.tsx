@@ -309,7 +309,7 @@ export default function App() {
   const [liveMeta,setLiveMeta]=useState<LiveMeta|null>(null);
   const [labProgress,setLabProgress]=useState<LabProgress|null>(null);
   const [labError,setLabError]=useState("");
-  const [labFailed,setLabFailed]=useState<{rank:number;name:string;reason:string}[]>([]);
+  const [labFailed,setLabFailed]=useState<{rank:number;tag?:string;name:string;reason:string}[]>([]);
   const labRun=useRef(0);
   const labAbort=useRef<AbortController|null>(null);
   function cancelLab() {
@@ -1538,11 +1538,14 @@ export default function App() {
                   {s.mode === "demo" ? " Load your real tag to use this workflow." : ""}
                 </p>
                 <LiveMetaPanel meta={liveMeta} progress={labProgress} busy={busy}
-                  error={labError} failed={labFailed} cancel={cancelLab}/>
+                  error={labError} failed={labFailed} cancel={cancelLab}
+                  retry={()=>{void optimize();}}/>
                 <div className="smart-overview">
                   <div className="smart-overview-head">
                     <div>
-                      <div className="eyebrow">{liveChoice ? "LIVE-SCAN RECOMMENDATION" : "MANUALLY SELECTED / CURRENT DECK"}</div>
+                      <div className="eyebrow">{liveChoice ? "VERIFIED LIVE-SCAN RECOMMENDATION" :
+                        labError ? "YOUR CURRENT DECK — TOP-100 SCAN INCOMPLETE" :
+                        "MANUALLY SELECTED / CURRENT DECK"}</div>
                       <h3>{name(deck)}</h3>
                       <span className="muted">
                         {deck.length}/8 cards · picked from {s.cards.length} owned base cards
