@@ -100,7 +100,7 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
   const e=candidate.evidence;
   return <details className="live-meta-evidence"><summary>Why these eight? Live evidence and substitutions</summary>
     <p>{e.adaptationMethod==="observed-usage-fallback"
-      ? "Built from observed global card usage and your eligible collection; closest observed source:"
+      ? "Owned-level alternative built from observed global card usage; closest observed source:"
       : "Adapted from observed Ranked deck:"}
       {" "}#{e.sourceRank} {e.sourceName} ({e.sourceTag}); retains {e.sharedCards}/8 base cards.
       {" "}This exact base-card combination appeared in {e.exactBaseDeckAccounts}/{e.observedCount} verified source decks
@@ -119,10 +119,12 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
     </div>
     {e.adaptationMethod==="observed-usage-fallback"&&
       <p className="live-meta-replacement-caution">
-        Built from observed global card usage and your collection because
-        direct eight-slot adaptation was not eligible. This is not a verified
-        one-to-one match of the pro player's deck; owned-level and average
-        elixir constraints still apply.
+        Independently assembled from global observed card usage, card pairs
+        and your eligible owned levels. It competes with direct pro-deck
+        adaptations, but it is not a verified one-to-one replacement of a
+        professional deck. The exact +1-per-source-slot rule applies to
+        direct substitutions only; the owned-card alternative still obeys
+        the max average elixir and minimum level you selected.
       </p>}
     {e.substitutions.length>0?
       <div className="live-meta-replacement-grid">
@@ -151,7 +153,13 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
     <p>{e.cardUsage.map(c=>`${c.name}: ${c.count}/${e.observedCount}`).join(" · ")}</p>
     <ul>{e.components.map(c=><li key={c.name}>{c.name}: {c.score.toFixed(1)}/100, weight {c.weight}%.</li>)}</ul>
     {e.formDifferences.length>0&&<ul>{e.formDifferences.map(s=><li key={s}>{s}</li>)}</ul>}
-    <p className="micro">Observed popularity is not a win rate. Adaptations are new hypotheses, not proven pro decks.
-      Special-form abilities, tower synergy and exact battle interactions are not simulated.</p>
+    <p className="micro">Combat-reference HP/damage information is available
+      for {e.measuredCombatCoverage}/8 recommended cards at their owned levels
+      (at least one value per card; the source can be outdated). Missing
+      numbers are never manufactured. Owned levels and elixir costs come
+      from your live Supercell account and catalog; target-capability labels
+      fall back to editorial role definitions when numeric combat data is
+      missing. Form effects, precise matchups and battle outcomes are not
+      simulated. A 100/100 rating is not a 100% win chance.</p>
   </details>;
 }
