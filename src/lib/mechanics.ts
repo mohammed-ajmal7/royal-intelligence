@@ -1,4 +1,5 @@
 import { recentCardReference } from "./recentCardMechanics";
+import { sourcedGroupReference, withGroupComposition } from "./groupCardReferences";
 
 /**
  * Mechanics are a SECOND, community-maintained dataset, not a Supercell player
@@ -9,6 +10,23 @@ export const MECHANICS_SOURCE = "https://github.com/RoyaleAPI/cr-api-data";
 export const MECHANICS_DATA_BASE =
   "https://royaleapi.github.io/cr-api-data/json";
 export type MechanicsKind = "Troop" | "Building" | "Spell" | "Other";
+
+/** Each base-deployment group member has independent HP, targeting and attacks. */
+export type MechanicsGroupUnit = {
+  name: string;
+  count: number | null;
+  hpByLevel: number[] | null;
+  damageByLevel: number[] | null;
+  dpsByLevel?: number[] | null;
+  shieldHpByLevel?: number[] | null;
+  hitSpeedSeconds: number | null;
+  targetsAir?: boolean | null;
+  targetsGround?: boolean | null;
+  rangeTiles?: number | null;
+  rangeLabel?: string;
+  moveSpeedLabel?: string;
+  sourceUrl?: string;
+};
 
 export type MechanicsCard = {
   id: number;
@@ -26,6 +44,8 @@ export type MechanicsCard = {
   buildingsOnly: boolean | null;
   areaRadiusTiles: number | null;
   unitCount: number | null;
+  /** Base deployment composition; HP is NEVER a shared group health bar. */
+  groupUnits?: MechanicsGroupUnit[];
   deploySeconds: number | null;
   firstHitSeconds: number | null;
   specialAbility: boolean;
@@ -319,22 +339,29 @@ export function getMechanicsRecord(
   card: { id: number; name?: string },
   catalog?: MechanicsCatalog | null,
 ): MechanicsCard | undefined {
-  const recent = recentCardReference(card);
-  // Goblin Barrel needs its separate spawned-Goblin semantics. Never
-  // misinterpret the barrel as a single damaging troop.
-  if (recent && card.name?.toLowerCase() === "goblin barrel") return recent;
-  if (!catalog) return recent;
+  const recent = sourcedGroupReference(card) ?? recentCardReference(card);
+  // Goblin Barrel spawns three separate Goblins. Its per-Goblin statistics
+  // must never be replaced by an old "spell impact damage" record.
+  if (recent && card.name?.toLowerCase() === "goblin barrel")
+    return withGroupComposition(recent);
+  if (!catalog) return recent && withGroupComposition(recent);
   let index = mechanicsIndices.get(catalog);
   if (!index) {
-    index = new Map(catalog.cards.map((c) => [c.id, c]));
-    mechanicsIndices.set(catalog, index);
+    index = new Map(catalog.cards.map(c => [c.id,c]));
+    mechanicsIndices.set(catalog,index);
   }
   const sourced = index.get(card.id);
-  if (sourced?.provenance === "crtool-game-data" && sourced.sourceUpdatedAt) {
-    if (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? ""))
-      return sourced;
-  }
-  return recent ?? sourced;
+  const useSourced = sourced?.provenance === "crtool-game-data" &&
+    !!sourced.sourceUpdatedAt &&
+    // A new page with only the first member must not overwrite a complete
+    // known mixed squad (e.g. Goblin Gang or Rascals).
+    (!recent?.groupUnits || recent.groupUnits.length < 2 ||
+      (sourced.groupUnits?.length ?? 0) >= recent.groupUnits.length) &&
+    (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? "") ||
+      (sourced.sourceUpdatedAt === recent.sourceUpdatedAt &&
+        !!sourced.groupUnits?.length && !!sourced.extraStatsByLevel));
+  const chosen = useSourced ? sourced : recent ?? sourced;
+  return chosen ? withGroupComposition(chosen) : undefined;
 }
 
 export function resolveMechanics(

@@ -4,6 +4,7 @@ import { ArrowLeftRight, Crown, Shield, Swords, X } from "lucide-react";
 import type { Card } from "../lib/model";
 import {
   resolveMechanics,
+  getMechanicsRecord,
   MECHANICS_SOURCE,
   type MechanicsCatalog,
 } from "../lib/mechanics";
@@ -15,6 +16,8 @@ import {
   type CardStat,
 } from "../lib/cardDetails";
 import { verifiedStats } from "../lib/references";
+import { defaultItemOptions, rankDeckItems } from "../lib/deckItem";
+import { GroupUnitDetails } from "./GroupUnitDetails";
 
 type Props = {
   card: Card;
@@ -148,8 +151,16 @@ export function CardDetails({
   const incoming = damage.trim() ? Number(damage) : NaN;
   const a = detailStats(left, mechanics, leftLevel, incoming);
   const b = right ? detailStats(right, mechanics, rightLevel, incoming) : [];
-  const source = mechanics?.cards.find((c) => c.id === left.id);
-  const otherSource = mechanics?.cards.find((c) => c.id === right?.id);
+  const source = getMechanicsRecord(left,mechanics);
+  const otherSource = right ? getMechanicsRecord(right,mechanics) : undefined;
+  const groupOptions = (atLevel:number) => ({
+    ...defaultItemOptions,levelMode:"comparison" as const,
+    referenceLevel:atLevel,incomingDamage:incoming,
+  });
+  const groupLeft = leftLevel !== null
+    ? rankDeckItems([left],mechanics,groupOptions(leftLevel))[0] : null;
+  const groupRight = right && rightLevel !== null
+    ? rankDeckItems([right],mechanics,groupOptions(rightLevel))[0] : null;
   const choices = useMemo(
     () =>
       cards
@@ -350,6 +361,14 @@ export function CardDetails({
         {(!Number.isFinite(incoming) || incoming < 1 || incoming > 100000) && (
           <p role="alert">Enter damage between 1 and 100,000.</p>
         )}
+        {groupLeft?.groupUnits.length ? (
+          <GroupUnitDetails item={groupLeft} source={source}
+            incomingDamage={incoming} playerCap={16}/>
+        ) : null}
+        {groupRight?.groupUnits.length ? (
+          <GroupUnitDetails item={groupRight} source={otherSource}
+            incomingDamage={incoming} playerCap={16}/>
+        ) : null}
         <h3>Targeting & collection</h3>
         <div className={`detail-trait-columns ${right ? "is-comparing" : ""}`}>
           <div>

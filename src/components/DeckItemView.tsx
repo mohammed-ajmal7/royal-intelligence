@@ -6,6 +6,7 @@ import {
   ChevronUp, Layers3, SlidersHorizontal, BookOpen,
 } from "lucide-react";
 import type { Card, Snapshot } from "../lib/model";
+import { GroupUnitDetails } from "./GroupUnitDetails";
 import { getMechanicsRecord, type MechanicsCatalog, type MechanicsCard } from "../lib/mechanics";
 import {
   defaultItemOptions,
@@ -69,14 +70,17 @@ function ItemLevelDetails({
           <BookOpen size={15}/> Card details
         </button>
       </div>
-      {item.statSubject === "spawned-unit" && (
+      {item.groupUnits.length > 0 && (
+        <GroupUnitDetails item={item} source={raw}
+          incomingDamage={incomingDamage} playerCap={cap}/>
+      )}
+      {item.groupUnits.length === 0 && item.statSubject === "spawned-unit" && (
         <p className="deck-item-spawn-note">
           <Info size={16}/>
           This card summons {item.unitCount ?? "multiple"} {item.statSubjectLabel ?? "units"}s.
           Hitpoints, damage, DPS, targeting and hit endurance below describe
           <strong> one spawned {item.statSubjectLabel ?? "unit"}</strong>,
-          not the barrel or the combined damage of every spawned unit.
-          Goblin Barrel deals no direct impact damage.
+          not a shared health pool for the entire card.
         </p>
       )}
       {item.sourceUrl && (
@@ -117,8 +121,12 @@ function ItemLevelDetails({
       </div>
       <div className="deck-item-level-head">
         <div>
-          <h4>All reference levels</h4>
-          <small>{known} level rows with numeric HP or damage · {levels.length} level slots</small>
+          <h4>{item.groupUnits.length
+            ? "Primary source member reference levels"
+            : "All reference levels"}</h4>
+          <small>{known} level rows with numeric HP or damage · {levels.length} level slots
+            {item.groupUnits.length ? " · Full per-member tables are above" : ""}
+          </small>
         </div>
       </div>
       <div className="deck-item-level-scroll" role="region"
@@ -421,6 +429,11 @@ export function DeckItemView({
               onChange={e=>set({ownedOnly:e.target.checked})}/>
             <span>Only cards I own</span>
           </label>
+          <label className="deck-item-owned">
+            <input type="checkbox" checked={options.groupOnly}
+              onChange={e=>set({groupOnly:e.target.checked})}/>
+            <span>Group cards only</span>
+          </label>
         </div>
         <p className="deck-item-level-disclosure">
           <SlidersHorizontal size={16}/>
@@ -562,6 +575,13 @@ export function DeckItemView({
                         <span className="deck-item-source-label">
                           Game data {item.sourceUpdatedAt ?? "undated"}
                           {item.statSubject === "spawned-unit" ? " · per spawned unit" : ""}
+                        </span>
+                      )}
+                      {item.groupUnits.length > 0 && (
+                        <span className="deck-item-group-tag">
+                          {item.groupUnits.map(unit=>
+                            (unit.count??"?")+"× "+unit.name).join(" + ")}
+                          {" · Each unit has separate HP"}
                         </span>
                       )}
                       <span className="deck-item-owned-label">

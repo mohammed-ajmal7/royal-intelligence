@@ -3222,3 +3222,191 @@ footer p { color: #afcbe4; }
   .deck-item-refresh .btn { width: 100%; max-width: none; min-height: 48px; }
   .deck-item-all-fields { margin-top: 16px; }
 }
+
+/* Group-card intelligence: every independently targetable troop has its own HP. */
+.deck-item-group-tag {
+  color: #ffdf8f;
+  display: block;
+  font-size: 10px;
+  line-height: 1.45;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.group-stat-section {
+  margin: 5px 0 22px;
+  padding: 17px;
+  border: 2px solid #6e9ed0;
+  border-radius: 13px;
+  background: linear-gradient(140deg, #123e71, #0b2e59 75%);
+  box-shadow: inset 0 1px 0 #c3e8ff45, 0 4px 0 #082340;
+}
+.group-stat-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.group-stat-kicker {
+  font-size: 10px;
+  color: #ffdf8f;
+  font-weight: 850;
+  letter-spacing: .8px;
+}
+.group-stat-heading h4 {
+  font-weight: 850;
+  font-size: 18px;
+  color: #fff0c0;
+  margin: 7px 0 4px;
+}
+.group-stat-heading p {
+  margin: 0;
+  color: #d4e9f9;
+  line-height: 1.5;
+  font-size: 12px;
+}
+.group-sum-disclosure {
+  border: 1px solid #5587bb;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #06274c;
+  display: grid;
+  text-align: right;
+  gap: 2px;
+}
+.group-sum-disclosure small {
+  color: #b8ddf7;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .4px;
+}
+.group-sum-disclosure strong {
+  color: #ffdd8c;
+  font-weight: 900;
+  font-size: 22px;
+}
+.group-sum-disclosure span { color: #b4d2ed; font-size: 9px; }
+.group-stat-alert {
+  border-left: 3px solid #ffd36c;
+  border-radius: 0 8px 8px 0;
+  background: #4e3a16;
+  color: #ffedc2;
+  padding: 12px;
+  margin: 14px 0;
+  font-size: 11px;
+  line-height: 1.75;
+}
+.group-member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(215px,1fr));
+  gap: 10px;
+}
+.group-member-card {
+  padding: 13px;
+  border: 1px solid #5489ba;
+  border-radius: 10px;
+  background: #092a51;
+  min-width: 0;
+}
+.group-member-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #325f8b;
+}
+.group-member-card-title strong {
+  font-size: 14px;
+  color: #fff4cf;
+}
+.group-member-card-title span {
+  border: 1px solid #e2c385;
+  background: #5b4319;
+  border-radius: 7px;
+  color: #ffe3a0;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+.group-member-metrics {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 7px;
+}
+.group-member-metrics > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border-radius: 7px;
+  background: #123963;
+  border: 1px solid #2a6595;
+}
+.group-member-metrics small {
+  color: #b9d9ed;
+  line-height: 1.35;
+  font-size: 8px;
+  letter-spacing: .2px;
+  font-weight: 750;
+}
+.group-member-metrics strong {
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  color: #ffe4aa;
+  font-weight: 900;
+}
+.group-member-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 11px;
+  border-top: 1px solid #2c5c89;
+  padding-top: 11px;
+  margin-top: 11px;
+  color: #c6e0f4;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.group-stat-level-title {
+  color: #ffe6aa;
+  margin: 19px 0 9px;
+  font-size: 14px;
+}
+.group-member-levels {
+  margin-top: 9px;
+  border-radius: 9px;
+  border: 1px solid #4178a5;
+  background: #0a2c55;
+  padding: 9px;
+}
+.group-member-levels summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 11px;
+  min-height: 39px;
+  font-size: 12px;
+  font-weight: 850;
+  color: #ffe1a1;
+  cursor: pointer;
+}
+.group-member-levels summary small { color: #c9e1f4; font-size: 10px; }
+.group-member-levels .deck-item-level-scroll { margin-top: 8px; }
+.group-stat-source {
+  margin: 12px 0 0;
+  line-height: 1.6;
+  color: #bfd8ed;
+  font-size: 10px;
+}
+.group-stat-source a { color: #ffe69b; font-weight: 850; }
+@media(max-width:650px) {
+  .group-stat-section { padding: 10px; margin: 7px 0 17px; }
+  .group-stat-heading { flex-direction: column; align-items: stretch; }
+  .group-stat-heading h4 { font-size: 16px; }
+  .group-sum-disclosure { text-align: left; }
+  .group-member-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .group-member-card { padding: 11px; }
+  .group-member-metrics strong { font-size: 17px; }
+  .deck-item-group-tag { font-size: 9px; }
+}
