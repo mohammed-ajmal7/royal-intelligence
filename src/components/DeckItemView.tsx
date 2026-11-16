@@ -6,7 +6,7 @@ import {
   ChevronUp, Layers3, SlidersHorizontal, BookOpen,
 } from "lucide-react";
 import type { Card, Snapshot } from "../lib/model";
-import { getMechanicsRecord, type MechanicsCatalog } from "../lib/mechanics";
+import { getMechanicsRecord, type MechanicsCatalog, type MechanicsCard } from "../lib/mechanics";
 import {
   defaultItemOptions,
   hitsToDefeat,
@@ -170,28 +170,82 @@ export function DeckItemView({
   const [options, setOptions] = useState<ItemRankingOptions>(defaultItemOptions);
   const [damageText, setDamageText] = useState("200");
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [current, setCurrent] = useState<Record<number, MechanicsCard>>({});
+  const [unavailable, setUnavailable] = useState<number[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [progress, setProgress] = useState({done:0,total:0});
+  const [errorNote, setErrorNote] = useState("");
   const set = (patch: Partial<ItemRankingOptions>) =>
     setOptions(previous=>({...previous,...patch}));
 
+  const merged = useMemo<MechanicsCatalog | null>(() => {
+    const refreshed = Object.values(current);
+    if (!mechanics && refreshed.length === 0) return null;
+    const byId = new Map<number, MechanicsCard>(
+      (mechanics?.cards ?? []).map(card=>[card.id,card])
+    );
+    for (const card of refreshed) byId.set(card.id,card);
+    return {
+      source: mechanics?.source ?? "https://crtool.app/en/units/",
+      fetchedAt: mechanics?.fetchedAt ?? new Date().toISOString(),
+      sourceUpdatedAt: mechanics?.sourceUpdatedAt ?? null,
+      warnings: mechanics?.warnings ?? [],
+      cards:[...byId.values()],
+    };
+  },[mechanics,current]);
+  async function loadCurrent(card:Card):Promise<void> {
+    try {
+      const params = new URLSearchParams({name:card.name,id:String(card.id)});
+      const response = await fetch("/api/card-reference?" + params);
+      const data = await response.json();
+      if (!response.ok || data?.card?.id !== card.id ||
+          data.card?.provenance !== "crtool-game-data") {
+        throw new Error(data?.error ?? "A current card reference is unavailable.");
+      }
+      setCurrent(previous=>({...previous,[card.id]:data.card as MechanicsCard}));
+    } catch (reason) {
+      setUnavailable(previous=>previous.includes(card.id)?previous:[...previous,card.id]);
+      setErrorNote(reason instanceof Error ? reason.message : "Some cards could not be refreshed.");
+    }
+  }
+  async function syncCatalog() {
+    if (syncing) return;
+    const requested = player.catalog.filter(card=>!card.tower && !current[card.id]
+      && !unavailable.includes(card.id));
+    setSyncing(true);
+    setProgress({done:0,total:requested.length});
+    setErrorNote("");
+    try {
+      // Three parallel requests at a time; the server caches each public source
+      // for one day. No Supercell token or new player API calls are involved.
+      for (let i=0;i<requested.length;i+=3) {
+        const batch=requested.slice(i,i+3);
+        await Promise.all(batch.map(loadCurrent));
+        setProgress({done:Math.min(i+batch.length,requested.length),total:requested.length});
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
   const rows = useMemo(
-    () => rankDeckItems(player.catalog, mechanics, options),
-    [player.catalog, mechanics, options],
+    () => rankDeckItems(player.catalog, merged, options),
+    [player.catalog, merged, options],
   );
   const maxLevel = useMemo(() => Math.min(30, Math.max(
     player.cap,
     16,
-    ...(mechanics?.cards.map(card=>Math.max(
+    ...(merged?.cards.map(card=>Math.max(
       card.hpByLevel?.length ?? 0,
       card.damageByLevel?.length ?? 0,
     )) ?? []),
     ...player.catalog.map(card=>{
-      const reference = getMechanicsRecord(card, mechanics);
+      const reference = getMechanicsRecord(card, merged);
       return Math.max(
         reference?.hpByLevel?.length ?? 0,
         reference?.damageByLevel?.length ?? 0,
       );
     }),
-  )), [mechanics, player.cap, player.catalog]);
+  )), [merged, player.cap, player.catalog]);
   const rankedCount = rows.filter(item=>item.available).length;
   const first = rows.find(item=>item.available);
   const isDefense = options.category === "defense";
@@ -327,6 +381,33 @@ export function DeckItemView({
           {mechanics.warnings.map((warning,i)=><p key={i}>{warning}</p>)}
         </details>
       )}
+      <div className="deck-item-refresh">
+        <div>
+          <strong>2026 card reference coverage</strong>
+          <p>
+            {Object.keys(current).length} of {player.catalog.filter(c=>!c.tower).length} cards
+            refreshed from individual published game-data pages.
+            {" "}{unavailable.length} current references unavailable.
+            Unrefreshed cards retain their historical data where it exists.
+          </p>
+          {syncing && <progress aria-label="Card reference sync progress"
+            value={progress.done} max={Math.max(1,progress.total)}/>}
+          {errorNote && <small role="status">{errorNote}</small>}
+        </div>
+        <button type="button" className="btn secondary"
+          disabled={syncing || mechanicsLoading}
+          onClick={()=>{
+            if (unavailable.length) setUnavailable([]);
+            void syncCatalog();
+          }}>
+          <Layers3 size={17}/>
+          {syncing
+            ? "Loading "+progress.done+"/"+progress.total+" cards…"
+            : Object.keys(current).length
+              ? "Refresh remaining card data"
+              : "Get all available card stats"}
+        </button>
+      </div>
       <p className="deck-item-explainer">
         {isDefense
           ? options.defenseMetric === "hits"
@@ -426,14 +507,18 @@ export function DeckItemView({
                     className="deck-item-expand"
                     aria-expanded={expanded===item.card.id}
                     aria-controls={"item-levels-"+item.card.id}
-                    onClick={()=>setExpanded(value=>value===item.card.id?null:item.card.id)}>
+                    onClick={()=>{
+                      setExpanded(value=>value===item.card.id?null:item.card.id);
+                      if(!current[item.card.id] && !unavailable.includes(item.card.id))
+                        void loadCurrent(item.card);
+                    }}>
                     <Layers3 size={15}/>
                     {expanded===item.card.id?"Hide level stats":"All levels + full card stats"}
                     {expanded===item.card.id?<ChevronUp size={16}/>:<ChevronDown size={16}/>}
                   </button>
                   {expanded===item.card.id &&
                     <div id={"item-levels-"+item.card.id}>
-                      <ItemLevelDetails item={item} catalog={mechanics}
+                      <ItemLevelDetails item={item} catalog={merged}
                         incomingDamage={options.incomingDamage} cap={player.cap}
                         onSelect={onSelect}/>
                     </div>}
@@ -469,7 +554,7 @@ export function DeckItemView({
               not falsely labeled as unlocked. Open any item to view every
               available reference level and its raw source fields.
             </p>
-            <a href={mechanics?.source ?? "https://github.com/RoyaleAPI/cr-api-data"}
+            <a href="https://crtool.app/en/units/"
               target="_blank" rel="noreferrer">Community source data ↗</a>
             <small>
               Source updated: {mechanics?.sourceUpdatedAt?.slice(0,10) ?? "Unverified"}.
