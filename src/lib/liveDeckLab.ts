@@ -8,7 +8,8 @@ export type LiveCandidate = {
   cards: Card[]; evaluation: ReturnType<typeof evaluate>;
   strategy: ReturnType<typeof assessStrategy>; recommendationScore: number;
   evidence: {
-    scanId: string; sourceRank: number; sourceName: string; sourceTag: string;
+    scanId: string; observedCount: number; requestedCount: number;
+    sourceRank: number; sourceName: string; sourceTag: string;
     sourceCards: Card[]; sharedCards: number; exactBaseDeckAccounts: number;
     substitutions: { out: string; in: string }[]; formDifferences: string[];
     components: { name: string; score: number; weight: number }[];
@@ -32,10 +33,15 @@ function similarity(source:Card,target:Card) {
 export async function recommendFromTop100(collection:Card[], q:Constraints, meta:LiveMeta,
   mechanics?:MechanicsCatalog|null, reasoning:ReasoningContext={}, signal?:AbortSignal):Promise<LiveCandidate[]> {
   const yieldToUI=async()=>{await new Promise(resolve=>setTimeout(resolve,0));signal?.throwIfAborted();};
-  if(meta.sampleSize!==100 || meta.players.length!==100 || new Set(meta.players.map(p=>p.tag)).size!==100)
-    throw new Error("A complete live top-100 scan is required.");
+  if(![100,200,300].includes(meta.requestedCount) ||
+     meta.sampleSize<1 || meta.sampleSize>meta.requestedCount ||
+     meta.players.length!==meta.sampleSize ||
+     new Set(meta.players.map(p=>p.tag)).size!==meta.sampleSize ||
+     meta.players.some(p=>p.rank<1 || p.rank>meta.requestedCount ||
+       p.cards.length!==8 || new Set(p.cards.map(c=>c.id)).size!==8))
+    throw new Error("This scan lacks enough validated live Ranked evidence to recommend a deck.");
   if(Date.now()-Date.parse(meta.completedAt)>60000 || !Number.isFinite(Date.parse(meta.completedAt)))
-    throw new Error("This scan expired before generation. Fetch the top 100 again.");
+    throw new Error("This live scan expired before generation. Fetch the selected global top players again.");
   if(q.include.length>8 || new Set(q.include).size!==q.include.length ||
     q.include.some(id=>q.exclude.includes(id)) || !Number.isFinite(q.maxElixir)||q.maxElixir<=0)
     throw new Error("Your include/exclude or elixir constraints conflict.");
@@ -134,7 +140,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       {name:"Live deck similarity and card combinations",score:cohesion,weight:35},
       {name:"Tactical coverage, mode and chosen focus",score:tactical,weight:30},
       {name:"Readiness at your owned levels",score:readiness,weight:25},
-      {name:"Card frequency in this top 100",score:popularity,weight:10},
+      {name:"Card frequency in the verified global sample",score:popularity,weight:10},
     ];
     const out=source.cards.filter(c=>!cards.some(x=>x.id===c.id));
     const added=cards.filter(c=>!source.cards.some(x=>x.id===c.id));
@@ -146,7 +152,8 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       .map(c=>`${c.name}: source ${c.active}; recommendation uses base form. Special-form effects are not assumed.`);
     rows.push({cards,evaluation:evaluate(cards,q,mechanics),strategy,
       recommendationScore:Math.round(components.reduce((sum,c)=>sum+c.score*c.weight/100,0)*10)/10,
-      evidence:{scanId:meta.id,sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
+      evidence:{scanId:meta.id,observedCount:meta.sampleSize,requestedCount:meta.requestedCount,
+        sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
         sourceCards:source.cards,sharedCards:shared,
         exactBaseDeckAccounts:meta.players.filter(p=>key(p.cards)===key(cards)).length,
         substitutions,formDifferences,components,
