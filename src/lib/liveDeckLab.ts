@@ -9,6 +9,7 @@ export type LiveCandidate = {
   strategy: ReturnType<typeof assessStrategy>; recommendationScore: number;
   evidence: {
     scanId: string; observedCount: number; requestedCount: number;
+    adaptationMethod: "source-deck" | "observed-usage-fallback";
     sourceRank: number; sourceName: string; sourceTag: string;
     sourceCards: Card[]; sharedCards: number; exactBaseDeckAccounts: number;
     substitutions: { out: string; in: string }[]; formDifferences: string[];
@@ -69,12 +70,15 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
   const eligible=(cs:Card[])=>legal(cs)&&locked.every(c=>cs.some(x=>x.id===c.id))&&
     cs.some(c=>c.roles.includes("Win condition"))&&
     cs.reduce((sum,c)=>sum+(c.elixir??0),0)<=q.maxElixir*8;
-  const seeds=new Map<string,{cards:Card[];source:RankedDeck}>();
-  const add=(cs:Card[],source:RankedDeck)=>{
+  const seeds=new Map<string,{cards:Card[];source:RankedDeck;
+    method:"source-deck"|"observed-usage-fallback"}>();
+  const add=(cs:Card[],source:RankedDeck,
+    method:"source-deck"|"observed-usage-fallback"="source-deck")=>{
     if(!eligible(cs))return;
     const id=key(cs),previous=seeds.get(id);
     const shared=(p:RankedDeck)=>cs.filter(c=>p.cards.some(x=>x.id===c.id)).length;
-    if(!previous||shared(source)>shared(previous.source))seeds.set(id,{cards:cs,source});
+    if(!previous||shared(source)>shared(previous.source))
+      seeds.set(id,{cards:cs,source,method});
   };
   for(const source of meta.players) {
     if(source.rank%5===1)await yieldToUI();
@@ -114,8 +118,47 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     const exact=source.cards.map(c=>pool.find(p=>p.id===c.id));
     if(exact.every((c):c is Card=>!!c))add(exact,source);
   }
+  // If adapting individual observed decks yields no legal eight-card team,
+  // use observed card usage / co-occurrence to assemble a collection-compatible
+  // candidate. This is labelled separately and never described as a pro deck.
+  if(seeds.size===0 && meta.players.length>0 && pool.length>=8) {
+    let beam:{cards:Card[];value:number}[]=[{cards:[...locked],value:0}];
+    for(let slot=locked.length;slot<8;slot++) {
+      const trials:{cards:Card[];value:number}[]=[];
+      for(const state of beam)for(const option of pool) {
+        if(state.cards.some(c=>c.id===option.id))continue;
+        const needsWin=!state.cards.some(c=>c.roles.includes("Win condition"));
+        if(slot===7 && needsWin && !option.roles.includes("Win condition"))continue;
+        const cards=[...state.cards,option];
+        if(cards.reduce((sum,c)=>sum+(c.elixir??0),0)>q.maxElixir*8)continue;
+        const newRoles=option.roles.filter(role=>!state.cards.some(c=>c.roles.includes(role))).length;
+        const together=state.cards.reduce((sum,c)=>
+          sum+(pairs.get(pairKey(c.id,option.id))??0),0);
+        const value=state.value+
+          (usage.get(option.id)??0)/maxUsage*36+
+          (option.level??0)/highestLevel*34+
+          Math.min(3,newRoles)*8+
+          together/Math.max(1,state.cards.length*maxUsage)*14;
+        trials.push({cards,value});
+      }
+      const distinct=new Map<string,{cards:Card[];value:number}>();
+      for(const trial of trials.sort((a,b)=>b.value-a.value||
+        key(a.cards).localeCompare(key(b.cards))))
+        if(!distinct.has(key(trial.cards)))distinct.set(key(trial.cards),trial);
+      beam=[...distinct.values()].slice(0,36);
+      if(!beam.length)break;
+      await yieldToUI();
+    }
+    for(const state of beam) {
+      if(!eligible(state.cards))continue;
+      const nearest=[...meta.players].sort((a,b)=>
+        state.cards.filter(c=>b.cards.some(x=>x.id===c.id)).length-
+        state.cards.filter(c=>a.cards.some(x=>x.id===c.id)).length)[0];
+      add(state.cards,nearest,"observed-usage-fallback");
+    }
+  }
   const rows:LiveCandidate[]=[];
-  for(const {cards,source} of seeds.values()) {
+  for(const {cards,source,method} of seeds.values()) {
     if(rows.length%20===0)await yieldToUI();
     const strategy=assessStrategy(cards,mechanics,{...reasoning,
       focus:q.mode==="Fast cycle"&&reasoning.focus==="balanced"?"cycle":reasoning.focus});
@@ -153,7 +196,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     rows.push({cards,evaluation:evaluate(cards,q,mechanics),strategy,
       recommendationScore:Math.round(components.reduce((sum,c)=>sum+c.score*c.weight/100,0)*10)/10,
       evidence:{scanId:meta.id,observedCount:meta.sampleSize,requestedCount:meta.requestedCount,
-        sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
+        adaptationMethod:method,sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
         sourceCards:source.cards,sharedCards:shared,
         exactBaseDeckAccounts:meta.players.filter(p=>key(p.cards)===key(cards)).length,
         substitutions,formDifferences,components,
