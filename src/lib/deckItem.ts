@@ -6,6 +6,7 @@ import {
   type MechanicsCatalog,
   type MechanicsCard,
   type MechanicsKind,
+  type MechanicsGroupUnit,
   type ResolvedMechanics,
 } from "./mechanics";
 
@@ -55,6 +56,9 @@ export type RankedItem = {
   hitsToDefeat: number | null;
   hitsSurvived: number | null;
   unitCount: number | null;
+  /** One entry per distinct member type, not an aggregate health bar. */
+  groupUnits: RankedGroupUnit[];
+  primaryUnitName: string | null;
   attackInterval: number | null;
   rangeTiles: number | null;
   moveSpeedRaw: number | null;
@@ -73,6 +77,53 @@ export type RankedItem = {
   available: boolean;
   missingReason: string | null;
 };
+
+export type RankedGroupUnit = {
+  name: string;
+  count: number | null;
+  hp: number | null;
+  damage: number | null;
+  dps: number | null;
+  shieldHp: number | null;
+  hitSpeedSeconds: number | null;
+  targetsAir: boolean | null;
+  targetsGround: boolean | null;
+  rangeTiles: number | null;
+  rangeLabel: string | null;
+  moveSpeedLabel: string | null;
+  hitsToDefeat: number | null;
+  hitsSurvived: number | null;
+  sourceUrl: string | null;
+};
+
+/** Resolves one body of each unit type. A group's HP cannot be pooled. */
+export function groupAtLevel(
+  members: MechanicsGroupUnit[] | undefined,
+  level: number | null,
+  incomingDamage: number,
+): RankedGroupUnit[] {
+  return (members ?? []).map(member => {
+    const hp = statForLevel(member.hpByLevel,level);
+    const damage = statForLevel(member.damageByLevel,level);
+    const explicitDps = statForLevel(member.dpsByLevel ?? null,level);
+    const dps = explicitDps ?? (
+      damage !== null && member.hitSpeedSeconds !== null &&
+      member.hitSpeedSeconds > 0 ? damage / member.hitSpeedSeconds : null);
+    const shieldHp = statForLevel(member.shieldHpByLevel ?? null,level);
+    const hits = hitsToDefeat(hp,incomingDamage);
+    return {
+      name:member.name,count:member.count,hp,damage,dps,shieldHp,
+      hitSpeedSeconds:member.hitSpeedSeconds,
+      targetsAir:member.targetsAir ?? null,
+      targetsGround:member.targetsGround ?? null,
+      rangeTiles:member.rangeTiles ?? null,
+      rangeLabel:member.rangeLabel ?? null,
+      moveSpeedLabel:member.moveSpeedLabel ?? null,
+      hitsToDefeat:hits,hitsSurvived:hits===null?null:hits-1,
+      sourceUrl:member.sourceUrl ?? null,
+    };
+  });
+}
 
 export type ItemLevelRow = {
   level: number;
@@ -198,10 +249,21 @@ export function rankDeckItems(
         ? classified.kind === null || classified.kind === "Other"
         : classified.kind === options.kind)
     ) continue;
-    const hp = m?.hitpoints ?? null;
-    const damage = m?.damage ?? null;
-    const dps = m?.dps ?? null;
-    const hits = hitsToDefeat(hp, options.incomingDamage);
+    const groupUnits = groupAtLevel(record?.groupUnits, chosen.level,
+      options.incomingDamage);
+    // For mixed squads a leaderboard shows the strongest INDIVIDUAL member
+    // for the selected metric, never sum of all separate HP bars.
+    const metric = (member: RankedGroupUnit): number | null =>
+      options.category === "defense"
+        ? options.defenseMetric === "hits" ? member.hitsToDefeat : member.hp
+        : options.attackMetric === "hit" ? member.damage : member.dps;
+    const primary = groupUnits.length > 0
+      ? [...groupUnits].sort((a,b) =>
+          (metric(b) ?? -1) - (metric(a) ?? -1))[0] : null;
+    const hp = primary?.hp ?? m?.hitpoints ?? null;
+    const damage = primary?.damage ?? m?.damage ?? null;
+    const dps = primary?.dps ?? m?.dps ?? null;
+    const hits = primary?.hitsToDefeat ?? hitsToDefeat(hp, options.incomingDamage);
     const value = options.category === "defense"
       ? options.defenseMetric === "hits" ? hits : hp
       : options.attackMetric === "hit" ? damage : dps;
@@ -214,18 +276,26 @@ export function rankDeckItems(
       levelOrigin: chosen.origin,
       rank: null,
       value,
-      unit: options.category === "defense"
-        ? options.defenseMetric === "hits"
-          ? record?.statSubject === "spawned-unit" ? "hits to defeat one " + (record.statSubjectLabel ?? "summoned unit") : "hits to defeat"
-          : record?.statSubject === "spawned-unit" ? "HP per " + (record.statSubjectLabel ?? "summoned unit") : "HP per unit"
-        : options.attackMetric === "hit"
-          ? record?.statSubject === "spawned-unit" ? "damage per " + (record.statSubjectLabel ?? "summoned unit") + " hit" : "damage per hit"
-          : record?.statSubject === "spawned-unit" ? "DPS per " + (record.statSubjectLabel ?? "summoned unit") : "DPS per unit",
+      unit: groupUnits.length > 0
+        ? options.category === "defense"
+          ? options.defenseMetric === "hits"
+            ? "hits to defeat one " + (primary?.name ?? "unit")
+            : "HP per " + (primary?.name ?? "unit")
+          : options.attackMetric === "hit"
+            ? "damage per " + (primary?.name ?? "unit") + " hit"
+            : "DPS per " + (primary?.name ?? "unit")
+        : options.category === "defense"
+          ? options.defenseMetric === "hits" ? "hits to defeat" : "HP per unit"
+          : options.attackMetric === "hit" ? "damage per hit" : "DPS per unit",
       hp, damage, dps,
       hitsToDefeat: hits,
       hitsSurvived: hits === null ? null : hits - 1,
-      unitCount: m?.unitCount ?? null,
-      attackInterval: m?.hitSpeedSeconds ?? null,
+      unitCount: groupUnits.length && groupUnits.every(u=>u.count!==null)
+        ? groupUnits.reduce((sum,u)=>sum+(u.count??0),0)
+        : m?.unitCount ?? null,
+      groupUnits,
+      primaryUnitName:primary?.name ?? null,
+      attackInterval: primary?.hitSpeedSeconds ?? m?.hitSpeedSeconds ?? null,
       rangeTiles: m?.rangeTiles ?? null,
       moveSpeedRaw: m?.moveSpeedRaw ?? null,
       targetsAir: m?.targetsAir ?? null,
@@ -235,8 +305,8 @@ export function rankDeckItems(
       deploySeconds: m?.deploySeconds ?? null,
       firstHitSeconds: m?.firstHitSeconds ?? null,
       specialAbility: m?.specialAbility ?? null,
-      statSubject: record?.statSubject ?? "card",
-      statSubjectLabel: record?.statSubjectLabel ?? null,
+      statSubject: groupUnits.length ? "spawned-unit" : record?.statSubject ?? "card",
+      statSubjectLabel: primary?.name ?? record?.statSubjectLabel ?? null,
       sourceUrl: record?.sourceUrl ?? null,
       sourceUpdatedAt: record?.sourceUpdatedAt ?? null,
       available,
