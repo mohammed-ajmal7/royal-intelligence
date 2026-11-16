@@ -136,10 +136,23 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
           </div>
           <div className="live-meta-replacement-facts">
             <span>Global player: <b>Lv {c.sourceLevel??"unknown"}</b></span>
-            <span>Your card: <b>Lv {c.ownedLevel??"unknown"}</b></span>
+            <span>Your {c.out}: <b>{c.originalOwnedLevel===null
+              ?"Not owned / unknown":"Lv "+c.originalOwnedLevel}</b></span>
+            <span>Your {c.in}: <b>Lv {c.ownedLevel??"unknown"}</b></span>
             <span>Elixir: <b>{c.sourceElixir??"?"} → {c.ownedElixir??"?"}</b></span>
           </div>
           <p>{c.reason}</p>
+          <p className="live-meta-replacement-combat">
+            <b>Owned-level combat reference (where published)</b>
+            <span>{c.out}: {c.originalOwnedStats.hp??"—"} HP,
+              {" "}{c.originalOwnedStats.damage??"—"} damage/hit,
+              {" "}{c.originalOwnedStats.dps===null?"—":
+                c.originalOwnedStats.dps.toFixed(1)} DPS</span>
+            <span>{c.in}: {c.replacementStats.hp??"—"} HP,
+              {" "}{c.replacementStats.damage??"—"} damage/hit,
+              {" "}{c.replacementStats.dps===null?"—":
+                c.replacementStats.dps.toFixed(1)} DPS</span>
+          </p>
           {c.preserved.length>0&&<p><b>Preserved:</b> {c.preserved.join(", ")}</p>}
           {c.gained.length>0&&<p><b>Additional benefits:</b> {c.gained.join("; ")}</p>}
           {c.limitations.length>0&&<p className="micro">
