@@ -45,7 +45,10 @@ card inspector additionally shows **all numeric base-card columns** present
 in the source: HP, attack/area damage, shields, crown-tower damage, damage/sec,
 spawn/death/charge effects and other values *where actually published*.
 Text attributes such as movement-speed category and melee-range description
-are preserved without converting them to fabricated numbers.
+are preserved without converting them to fabricated numbers. Where the newer
+source publishes Evolution, Hero or secondary-unit level tables, those fields
+appear in separate expandable sections so base attack and base HP are never
+silently combined with alternate-form or summoned-unit mechanics.
 
 The default historic dataset remains as a fallback for cards that cannot be
 refreshed. A missing web page, unparseable table, complex secondary-unit
