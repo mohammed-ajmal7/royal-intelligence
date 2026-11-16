@@ -14,8 +14,11 @@ export type LiveCandidate = {
     sourceRank: number; sourceName: string; sourceTag: string;
     sourceCards: Card[]; sharedCards: number; exactBaseDeckAccounts: number;
     substitutions: {
-      out:string; in:string; sourceLevel:number|null; ownedLevel:number|null;
+      out:string; in:string; sourceLevel:number|null;
+      originalOwnedLevel:number|null; ownedLevel:number|null;
       sourceElixir:number|null; ownedElixir:number|null; score:number|null;
+      originalOwnedStats:{hp:number|null;damage:number|null;dps:number|null};
+      replacementStats:{hp:number|null;damage:number|null;dps:number|null};
       preserved:string[]; gained:string[]; limitations:string[]; reason:string;
     }[];
     formDifferences: string[];
@@ -58,7 +61,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
   }
   if(pool.length<8 || forced.length>8)return [];
   const locked=forced as Card[];
-  const analyzer=createReplacementAnalyzer(pool,mechanics);
+  const analyzer=createReplacementAnalyzer(pool,mechanics,collection);
   const usage=new Map(meta.usage.map(c=>[c.id,c.count]));
   const highestLevel=Math.max(...pool.map(c=>c.level??0));
   const maxUsage=Math.max(1,...meta.usage.map(c=>c.count));
@@ -229,9 +232,12 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
         .map(row=>({
           out:row.source.name,in:row.replacement.name,
           sourceLevel:row.assessment.sourceLevel,
+          originalOwnedLevel:row.assessment.originalOwnedLevel,
           ownedLevel:row.assessment.ownedLevel,
           sourceElixir:row.assessment.sourceElixir,
           ownedElixir:row.assessment.ownedElixir,
+          originalOwnedStats:row.assessment.originalOwnedStats,
+          replacementStats:row.assessment.replacementStats,
           score:row.assessment.score,
           preserved:row.assessment.preserved,
           gained:row.assessment.gained,
