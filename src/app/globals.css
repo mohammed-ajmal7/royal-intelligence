@@ -3827,3 +3827,48 @@ footer p { color: #afcbe4; }
   .live-meta-incomplete { padding: 12px; }
   .live-meta-incomplete .btn { width: 100%; justify-content: center; }
 }
+
+/* Global Ranked 100 / 200 / 300 sample selector and sample-coverage label. */
+.global-top-picker {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(210px,310px);
+  gap:14px;
+  align-items:center;
+  background:linear-gradient(135deg,#123f70,#08284d);
+  border:1px solid #558bbf;
+  border-radius:11px;
+  padding:14px;
+  margin:14px 0;
+}
+.global-top-picker label {font-size:13px;font-weight:850;color:#ffe5b0;}
+.global-top-picker p {margin:6px 0 0;font-size:11px;line-height:1.6;color:#c2deed;}
+.global-top-picker select {
+  width:100%;
+  min-width:0;
+  min-height:46px;
+  padding:9px 13px;
+  border:1px solid #86b6dd;
+  border-radius:9px;
+  background:#082649;
+  color:#fff0c7;
+  font-weight:800;
+  font-size:14px;
+}
+.global-top-picker select:disabled {opacity:.65;cursor:wait;}
+.live-meta-partial {
+  border:1px solid #b5975b;
+  border-left:4px solid #f2ce7b;
+  border-radius:10px;
+  background:#312e3b;
+  padding:12px 15px;
+  color:#ffe5b8;
+  display:grid;
+  gap:7px;
+}
+.live-meta-partial strong {font-size:13px;color:#ffe6ae;}
+.live-meta-partial p {font-size:11px;line-height:1.6;margin:0;}
+@media(max-width:650px){
+  .global-top-picker {grid-template-columns:minmax(0,1fr);padding:12px;}
+  .global-top-picker select {font-size:16px;}
+  .live-meta-partial {padding:11px;}
+}
