@@ -61,9 +61,9 @@ export function parseCurrentReference(
   const first=tables.find(t=>t.headers.some(x=>/(hitpoints|damage)/i.test(x)));
   if(!first)return null;
   const otherSections:Record<string,Record<string,number[]>>={};
-  const headings=[...body.matchAll(/<h[234][^>]*>([sS]*?)</h[234]>/gi)]
+  const headings=[...body.matchAll(/<h[234]\b[^>]*>([\s\S]*?)<\/h[234]>/gi)]
     .map(h=>({at:h.index??0,label:htmlText(h[1])}));
-  for(const match of body.matchAll(/<table[^>]*>([sS]*?)</table>/gi)) {
+  for(const match of body.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)) {
     if((match.index??0)<base.length)continue;
     const other=tableFrom(match[0]);
     if(!other)continue;
