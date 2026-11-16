@@ -3,9 +3,10 @@
 import type { LabProgress, LiveMeta } from "../lib/liveMeta";
 import type { LiveCandidate } from "../lib/liveDeckLab";
 
-export function LiveMetaPanel({meta,progress,busy,error,failed,cancel}:{
+export function LiveMetaPanel({meta,progress,busy,error,failed,cancel,retry}:{
   meta:LiveMeta|null;progress:LabProgress|null;busy:boolean;error:string;
-  failed:{rank:number;name:string;reason:string}[];cancel:()=>void;
+  failed:{rank:number;tag?:string;name:string;reason:string}[];
+  cancel:()=>void;retry:()=>void;
 }) {
   const steps=["Fetch current global top 100","Read 100 Ranked battle decks","Count cards, forms and roles","Adapt decks to your collection"];
   return <section className="live-meta" aria-label="Live top 100 deck analysis" aria-busy={busy}>
@@ -20,9 +21,24 @@ export function LiveMetaPanel({meta,progress,busy,error,failed,cancel}:{
       "Each click starts a new scan. Unavailable data stops the recommendation; no saved top-100 result is reused."}</p>
     {busy&&<><progress max={progress?.total??100} value={progress?.completed??0}/>
       <button type="button" className="btn secondary" onClick={cancel}>Cancel scan</button></>}
-    {error&&<p className="reasoned-ai-error" role="alert">{error}</p>}
-    {failed.length>0&&<details><summary>Unavailable accounts ({failed.length})</summary>
-      <ul>{failed.map(p=><li key={p.rank}>#{p.rank} {p.name}: {p.reason}</li>)}</ul></details>}
+    {error&&<div className="live-meta-incomplete" role="alert">
+      <strong>Strict scan incomplete — no recommendation was generated.</strong>
+      <p>{error}</p>
+      <p className="micro">The current deck shown below is your existing selection,
+        not a result from the incomplete scan. An unavailable Ranked battle cannot
+        be replaced with a profile deck or a player outside the current top 100.</p>
+      {!busy&&<button type="button" className="btn" onClick={retry}>
+        Retry a completely fresh top-100 scan
+      </button>}
+    </div>}
+    {failed.length>0&&<details className="live-meta-failed" open>
+      <summary>Missing Ranked battle evidence ({failed.length})</summary>
+      <ul>{failed.map(p=><li key={p.rank}>
+        <strong>Rank #{p.rank} — {p.name?.trim()||p.tag||"Unnamed account"}</strong>
+        {p.tag&&<span> {p.tag}</span>}
+        <p>{p.reason||"No verifiable Ranked 1v1 battle available in sampled logs."}</p>
+      </li>)}</ul>
+    </details>}
     {meta&&<>
       <p className="micro">Collected {new Date(meta.startedAt).toLocaleString()} – {new Date(meta.completedAt).toLocaleTimeString()}.
         {" "}This is the completed scan, not a continuously updating leaderboard. Click again to fetch a new one.</p>
@@ -42,7 +58,12 @@ export function LiveMetaPanel({meta,progress,busy,error,failed,cancel}:{
         <div className="live-meta-scroll"><table><thead><tr><th>Rank / account</th><th>Latest available Ranked battle</th><th>Eight cards</th><th>Tower</th></tr></thead>
           <tbody>{meta.players.map(p=><tr key={p.tag}>
             <td>#{p.rank} <a href={`https://royaleapi.com/player/${encodeURIComponent(p.tag.slice(1))}/battles`} target="_blank" rel="noreferrer">{p.name}</a><small>{p.tag}</small></td>
-            <td>{new Date(p.battleTime).toLocaleString()}<small>Fetched {new Date(p.fetchedAt).toLocaleTimeString()}</small></td>
+            <td>{new Date(p.battleTime).toLocaleString()}
+              <small>Fetched {new Date(p.fetchedAt).toLocaleTimeString()}</small>
+              <small>{p.evidenceOrigin==="other-top100-log"
+                ? "Confirmed as opponent in top-100 rank #"+p.evidenceSourceRank+" Ranked battle"
+                : "From this player's Ranked battle log"}</small>
+            </td>
             <td>{p.cards.map(c=>`${c.name}${c.active!=="base"?` [${c.active}]`:""}`).join(" · ")}</td>
             <td>{p.towerNames.join(" · ")||"Not provided"}</td>
           </tr>)}</tbody></table></div>
