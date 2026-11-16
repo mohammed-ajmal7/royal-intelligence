@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Globe2,
   Sparkles,
+  BrainCircuit,
   Settings,
   Search,
   RefreshCw,
@@ -51,6 +52,11 @@ import {
 } from "../lib/engine";
 import { verifiedStats } from "../lib/references";
 import type { MechanicsCatalog } from "../lib/mechanics";
+import {
+  assessStrategy, compareStrategy, focusChoices, observedThreats,
+  type StrategyFocus,
+} from "../lib/deckStrategy";
+import { DeckStrategyPanel } from "../components/DeckStrategyPanel";
 import { CardDetails } from "../components/CardDetails";
 import { DeckItemView } from "../components/DeckItemView";
 const nav = [
@@ -239,6 +245,11 @@ function Empty({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+type AIComparisonReview = {
+  choiceIndex:number; verdict:string; evidence:string[]; risks:string[];
+  substitutions:string[]; opening:string; defense:string;
+  counterpush:string; limitations:string; model:string;
+};
 function name(cs: Card[]) {
   return (
     (cs.find((c) => c.roles.includes("Win condition"))?.name ?? "Custom") +
@@ -258,6 +269,11 @@ export default function App() {
     [selected, setSelected] = useState<Card | null>(null),
     [q, setQ] = useState<Constraints>(defaults),
     [candidates, setCandidates] = useState<ReturnType<typeof generate>>([]),
+    [focus, setFocus] = useState<StrategyFocus>("balanced"),
+    [aiAccessCode, setAiAccessCode] = useState(""),
+    [aiReview, setAiReview] = useState<AIComparisonReview | null>(null),
+    [aiReviewLoading, setAiReviewLoading] = useState(false),
+    [aiReviewError, setAiReviewError] = useState(""),
     [loading, setLoading] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -418,7 +434,10 @@ export default function App() {
     ),
     st = stats(battles),
     ev = evaluate(deck, q, mechanics),
-    current = evaluate(s.deck, { ...defaults, cap: s.cap }, mechanics);
+    current = evaluate(s.deck, { ...defaults, cap: s.cap }, mechanics),
+    strategic = assessStrategy(deck,mechanics,{focus,battles:s.battles}),
+    strategicSwaps = compareStrategy(s.deck,deck,mechanics,{focus}),
+    recommendationScore = Math.round((ev.score*0.58+strategic.score*0.42)*10)/10;
   const visible = s.catalog
     .filter(
       (c) =>
@@ -476,6 +495,8 @@ export default function App() {
           window.location.hash,
       );
       setDeck(result.deck);
+      setAiReview(null);
+      setAiReviewError("");
       setQ({ ...defaults, cap: result.cap });
       setCandidates([]);
       setEnemy([]);
@@ -509,8 +530,11 @@ export default function App() {
     setError("");
     setTimeout(() => {
       try {
-        const cs = generate(s.cards, q, deck, mechanics);
+        const cs = generate(s.cards, q, deck, mechanics,
+          {focus,battles:s.battles});
         setCandidates(cs);
+        setAiReview(null);
+        setAiReviewError("");
         if (cs.length) setDeck(cs[0].cards);
         else
           setError(
@@ -522,6 +546,47 @@ export default function App() {
         setBusy(false);
       }
     }, 30);
+  }
+  async function requestAIReview(){
+    if(!candidates.length || aiReviewLoading)return;
+    setAiReviewLoading(true);
+    setAiReviewError("");
+    setAiReview(null);
+    // Send only 8-card metadata and anonymous aggregated battle patterns.
+    // Do not transmit player tag, identity, clan, raw profile or replay data.
+    const brief=(cards:Card[],recommendationScore?:number)=>{
+      const numeric=evaluate(cards,q,mechanics);
+      const tactical=assessStrategy(cards,mechanics,{focus,battles:s.battles});
+      return {
+        cards:cards.map(c=>({id:c.id,name:c.name,level:c.level,
+          elixir:c.elixir,roles:c.roles,active:c.active})),
+        numericalScore:numeric.score,tacticalScore:tactical.score,
+        recommendationScore:recommendationScore ??
+          Math.round((numeric.score*0.58+tactical.score*0.42)*10)/10,
+        avgElixir:numeric.avg,cycle:numeric.cycle,
+        threatRatings:tactical.scenarios.map(t=>({name:t.label,score:t.score})),
+        risks:tactical.risks,
+      };
+    };
+    try{
+      const response=await fetch("/api/deck-ai",{
+        method:"POST",
+        headers:{"Content-Type":"application/json",
+          "x-deck-ai-access":aiAccessCode},
+        body:JSON.stringify({
+          focus,current:brief(s.deck),
+          candidates:candidates.map(c=>brief(c.cards,c.recommendationScore)),
+          observations:observedThreats(s.battles),
+        }),
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error??"The AI review failed.");
+      if(!result.review||typeof result.review.choiceIndex!=="number")
+        throw new Error("The AI returned an invalid recommendation.");
+      setAiReview({...result.review,model:result.model??"AI model"});
+    }catch(error){
+      setAiReviewError(error instanceof Error?error.message:"AI review failed.");
+    }finally{setAiReviewLoading(false);}
   }
   function add(c: Card) {
     if (deck.some((x) => x.id === c.id))
@@ -596,13 +661,15 @@ export default function App() {
   }
   function answer(text: string) {
     const e = evaluate(deck, q, mechanics);
+    const strategy=assessStrategy(deck,mechanics,{focus,battles:s.battles});
+    const air=strategy.scenarios.find(x=>x.id==="air");
     const a = /air|balloon|lava/i.test(text)
-      ? `Your selected deck has ${e.air} sustained air-defense options. ${e.air < 2 ? "Add a second reliable air defender; cycle units alone are fragile." : "Avoid spending both air answers together before identifying the opponent’s win condition."} Protect your air defenders from spell value. This is role guidance, not a simulated matchup.`
+      ? `Air-defense estimate ${air?.score ?? "unknown"}/100: ${air?.explanation ?? "No usable data."} ${air?.caution ?? ""} ${strategy.risks.slice(0,2).join(" ")} This is not a simulated fight or a win probability.`
       : /upgrade/i.test(text)
         ? "Prioritize the cards in your chosen deck, especially spells and your win condition. Check actual costs and interactions in-game; this app does not have a complete upgrade-cost dataset."
         : /win|lost|lose|mistake/i.test(text)
-          ? `The loaded filter contains ${st.wins} wins, ${st.losses} losses and ${st.unknown} unknown outcomes. Battle summaries cannot reveal placement or timing mistakes. Review replays yourself and compare more matches in the same mode.`
-          : `${name(deck)} averages ${ev.avg?.toFixed(2) ?? "unknown"} elixir. ${ev.warnings.join(" ") || "The annotated roles cover the basic checklist."} Use a low-commitment opening, preserve counters, and turn surviving defenders into pressure. Score ${ev.score}/100 is editorial, not a win probability.`;
+          ? `The loaded filter contains ${st.wins} wins, ${st.losses} losses and ${st.unknown} unknown outcomes. Observed matchup appearances: ${strategy.battleSignals.map(x=>x.name+" in "+x.seen+" games ("+x.losses+" losses)").join("; ")}. Those observations alone cannot establish why a battle was lost. Replays are needed for timing and placement.`
+          : `${name(deck)} averages ${ev.avg?.toFixed(2) ?? "unknown"} elixir. Tactical coverage is ${strategy.score}/100: ${strategy.headline} ${strategy.risks.slice(0,3).join(" ")} ${strategy.synergies.slice(0,2).join(" ")} Neither this nor the numerical ${ev.score}/100 is a proven win rate.`;
     setAnswers([...answers, { q: text, a }]);
     setQuestion("");
   }
@@ -1367,6 +1434,22 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                <div className="reasoned-focus-picker">
+                  <div>
+                    <label htmlFor="deck-reasoning-focus">What should this deck beat?</label>
+                    <p>Choose your actual weakness. A different objective can give a
+                      different correct recommendation.</p>
+                  </div>
+                  <select id="deck-reasoning-focus" value={focus}
+                    onChange={event=>{
+                      setFocus(event.target.value as StrategyFocus);
+                      setCandidates([]);
+                      setAiReview(null);
+                    }}>
+                    {focusChoices.map(item=><option key={item.value}
+                      value={item.value}>{item.label}</option>)}
+                  </select>
+                </div>
                 <div className="actions">
                   <button className="btn smart-find" disabled={busy || loading || mechanicsLoading || s.cards.length < 8}
                     onClick={optimize}>
@@ -1378,6 +1461,7 @@ export default function App() {
                     onClick={() => {
                       setQ({ ...defaults, cap: s.cap, mode: q.mode });
                       setCandidates([]);
+                      setAiReview(null);
                       setDeck(s.deck);
                       setError("");
                     }}>
@@ -1385,8 +1469,10 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Scores are transparent estimates from card roles, levels, elixir,
-                  synergy and defensive coverage—not proven win rates.
+                  Recommendations now weigh numerical card analysis (58%) and
+                  matchup-aware tactical reasoning (42%): air pressure, tanks,
+                  swarms, defense, tower pressure, cycle, overlap and your
+                  chosen strategic focus. Still not simulated wins.
                   No deck beats every possible opponent.
                   {s.mode === "demo" ? " DEMO MODE: Load your real tag to optimize your actual collection." : ""}
                 </p>
@@ -1402,10 +1488,16 @@ export default function App() {
                     <div className="smart-score">
                       <strong>{ev.score}</strong>
                       <span>/100</span>
-                      <small>HEURISTIC SCORE</small>
+                      <small>NUMERICAL SCORE</small>
                     </div>
                   </div>
                   <Deck cards={deck} onClick={setSelected}/>
+                  <div className="reasoned-recommendation-score">
+                    <span><BrainCircuit size={18}/> Strategy-informed recommendation</span>
+                    <strong>{recommendationScore.toFixed(1)}<small>/100</small></strong>
+                    <p>Numerical {ev.score}/100 · Tactical {strategic.score}/100.
+                      These are relative heuristic scores, never predicted win rates.</p>
+                  </div>
                   <div className="smart-resource-metrics" aria-label="Elixir and rotation cost">
                     <div className="smart-resource-metric">
                       <span className="resource-gem"><Zap size={17}/></span>
@@ -1759,6 +1851,70 @@ export default function App() {
                 </Panel>
                 </div>
               </details>
+              <Panel title="Explain my deck" kicker="WHY THESE EIGHT · MATCHUPS · TRADE-OFFS">
+                <DeckStrategyPanel report={strategic}
+                  comparison={strategicSwaps} />
+              </Panel>
+              {candidates.length > 0 && (
+                <Panel title="AI second opinion"
+                  kicker="OPTIONAL REAL LANGUAGE MODEL · OWNER-ONLY">
+                  <p className="micro">
+                    The free strategy evaluation above works without any AI key.
+                    Real model reasoning is optional, requires a separately billed
+                    OpenAI API key on the server and a private access code.
+                    It can choose any shortlisted deck or recommend keeping your
+                    current deck. Nothing is applied automatically.
+                  </p>
+                  <div className="reasoned-ai-controls">
+                    <label>AI access code
+                      <input type="password" autoComplete="off"
+                        value={aiAccessCode}
+                        onChange={event=>setAiAccessCode(event.target.value)}
+                        placeholder="Private owner access code"/>
+                    </label>
+                    <button className="btn" type="button"
+                      disabled={aiReviewLoading||!aiAccessCode.trim()}
+                      onClick={()=>void requestAIReview()}>
+                      <BrainCircuit size={17}/>
+                      {aiReviewLoading?"Comparing decks…":"Ask real AI to compare decks"}
+                    </button>
+                  </div>
+                  {aiReviewError&&<p className="reasoned-ai-error" role="alert">
+                    {aiReviewError}
+                  </p>}
+                  {aiReview&&<div className="reasoned-ai-result">
+                    <div className="reasoned-ai-result-head">
+                      <strong>{aiReview.choiceIndex===-1
+                        ?"AI suggests keeping your current deck"
+                        :"AI prefers alternative #"+(aiReview.choiceIndex+1)}</strong>
+                      <small>Model: {aiReview.model} · Evidence-based opinion</small>
+                    </div>
+                    <p>{aiReview.verdict}</p>
+                    <h4>Reasons</h4>
+                    <ul>{aiReview.evidence.map((x,i)=><li key={i}>{x}</li>)}</ul>
+                    <h4>Risks and counterarguments</h4>
+                    <ul>{aiReview.risks.map((x,i)=><li key={i}>{x}</li>)}</ul>
+                    {aiReview.substitutions.length>0&&<>
+                      <h4>Card changes</h4>
+                      <ul>{aiReview.substitutions.map((x,i)=><li key={i}>{x}</li>)}</ul>
+                    </>}
+                    <div className="reasoned-ai-play">
+                      <p><b>Opening:</b> {aiReview.opening}</p>
+                      <p><b>Defense:</b> {aiReview.defense}</p>
+                      <p><b>Counterpush:</b> {aiReview.counterpush}</p>
+                    </div>
+                    <p className="reasoned-micro">{aiReview.limitations}</p>
+                    <button className="btn" type="button"
+                      onClick={()=>{
+                        const target=aiReview.choiceIndex===-1?s.deck:
+                          candidates[aiReview.choiceIndex]?.cards;
+                        if(target)setDeck(target);
+                      }}>
+                      Use the AI-selected eight cards
+                    </button>
+                  </div>}
+                </Panel>
+              )}
               {candidates.length > 0 && (
                 <Panel
                   title="Top alternative teams"
@@ -1769,7 +1925,7 @@ export default function App() {
                       <div className="candidate" key={key(c.cards)}>
                         <div className="deck-meta">
                           <Pill>0{i + 1}</Pill>
-                          <strong>{c.evaluation.score}/100 · {c.evaluation.audit.passed}/{c.evaluation.audit.total} checks</strong>
+                          <strong>{c.recommendationScore.toFixed(1)}/100 recommendation · {c.evaluation.audit.passed}/{c.evaluation.audit.total} checks</strong>
                         </div>
                         <h4>{name(c.cards)}</h4>
                         <Deck cards={c.cards} onClick={setSelected} />
@@ -1778,9 +1934,16 @@ export default function App() {
                           4-card cycle {c.evaluation.cycle ?? "—"} ·
                           {" "}{c.evaluation.air} reliable air defenders
                         </p>
+                        <p className="micro">
+                          Numerical: {c.evaluation.score}/100 · Tactical:
+                          {" "}{c.strategy?.score ?? "—"}/100.
+                        </p>
+                        {c.strategy?.risks.slice(0,2).map((risk,i)=>(
+                          <p className="micro" key={i}>{risk}</p>
+                        ))}
                         {c.evaluation.audit.missing.length > 0 && (
                           <p className="micro">
-                            Trade-offs: {c.evaluation.audit.missing.join(", ")}.
+                            Structural flags: {c.evaluation.audit.missing.join(", ")}.
                           </p>
                         )}
                         <button
@@ -2349,11 +2512,14 @@ export default function App() {
           {page === "AI Coach" && (
             <Panel
               title="Your personal strategy desk"
-              kicker="GROUNDED RULE-BASED COACH"
+              kicker="GROUNDED STRATEGIC ANALYSIS"
             >
               <Notice>
-                This release uses a deterministic coach, not a connected
-                language model. It explains the loaded data and editorial roles.
+                This coach uses the same tactical scenarios as Deck Laboratory:
+                air pressure, tanks, swarms, ground defense, tower pressure,
+                elixir and battle evidence. It is deterministic, not the
+                paid language-model review. For an optional actual AI comparison
+                of five eligible decks, open Deck Laboratory.
               </Notice>
               <div className="prompt-grid">
                 {[

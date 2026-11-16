@@ -1,6 +1,7 @@
 import { Card, Battle, roleGroups } from "./model";
 import type { MechanicsCatalog } from "./mechanics";
 import { scoreDeckMechanics } from "./mechanicsScoring";
+import { assessStrategy, type ReasoningContext } from "./deckStrategy";
 export const modes = [
   "Best overall",
   "Maximum defense",
@@ -380,6 +381,7 @@ export function generate(
   q: Constraints,
   currentDeck: Card[] = [],
   mechanics?: MechanicsCatalog | null,
+  reasoning?: ReasoningContext,
 ) {
   if (
     q.include.length > 8 ||
@@ -412,7 +414,21 @@ export function generate(
     cs.some(c => hasRole(c, "Win condition")) &&
     cs.reduce((sum, c) => sum + (c.elixir ?? 0), 0) <= q.maxElixir * 8 + 1e-7
   );
-  const fitness = (cs: Card[]) => evaluate(cs, q, mechanics).score;
+  // Numeric strength is not enough: inspect tactical matchup coverage,
+  // redundancies, cycle and specific strategic goals before selecting eight.
+  // Use an exact stable-key memo, because the optimizer evaluates many swaps.
+  const scores = new Map<string, number>();
+  const fitness = (cs: Card[]) => {
+    const id = key(cs);
+    const old = scores.get(id);
+    if (old !== undefined) return old;
+    const base = evaluate(cs, q, mechanics).score;
+    const tactical = reasoning
+      ? assessStrategy(cs,mechanics,{focus:reasoning.focus}).score : base;
+    const blended = Math.round((base*(reasoning?0.58:1)+tactical*(reasoning?0.42:0))*10)/10;
+    scores.set(id,blended);
+    return blended;
+  };
   const candidates = new Map<string, Card[]>();
   const addCandidate = (cs: Card[]) => {
     if (permitted(cs)) candidates.set(key(cs), cs);
@@ -552,9 +568,13 @@ export function generate(
   for (const cs of seeds) optimized.set(key(cs), cs);
   const ranked = [...optimized.values()]
     .filter(permitted)
-    .map(cs => ({ cards: cs.map(c => ({ ...c, active: "base" })),
-      evaluation: evaluate(cs, q, mechanics) }))
-    .sort((a,b) => b.evaluation.score - a.evaluation.score ||
+    .map(cs => ({
+      cards: cs.map(c => ({ ...c, active: "base" })),
+      evaluation: evaluate(cs, q, mechanics),
+      recommendationScore: fitness(cs),
+      strategy: reasoning ? assessStrategy(cs,mechanics,reasoning) : null,
+    }))
+    .sort((a,b) => b.recommendationScore - a.recommendationScore ||
       key(a.cards).localeCompare(key(b.cards)));
   const result: typeof ranked = [];
   for (const choice of ranked) {
