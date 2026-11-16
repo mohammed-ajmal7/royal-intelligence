@@ -52,6 +52,8 @@ function ItemLevelDetails({
     .filter(([, series]) => series.some(value=>value>0));
   const fullLength = Math.min(30,Math.max(levels.length,
     ...allSourceFields.map(([,series])=>series.length),0));
+  const alternateForms = Object.entries(raw?.extraFormsByLevel ?? {})
+    .filter(([,fields])=>Object.values(fields).some(series=>series.some(value=>value>0)));
   return (
     <div className="deck-item-expanded">
       <div className="deck-item-expanded-title">
@@ -175,6 +177,40 @@ function ItemLevelDetails({
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+      {alternateForms.length>0 && (
+        <section className="deck-item-form-sections">
+          <h4>Other forms, abilities and summoned units</h4>
+          <p className="deck-item-note">
+            These values are separate from the base-card attack and HP.
+            They are not added to direct damage or treated as one combined unit.
+          </p>
+          {alternateForms.map(([form,fields])=>(
+            <details key={form} className="deck-item-raw">
+              <summary>{form} · {Object.keys(fields).length} numeric fields</summary>
+              <div className="deck-item-level-scroll" tabIndex={0}
+                role="region" aria-label={item.card.name + " " + form + " statistics"}>
+                <table className="deck-item-level-table">
+                  <thead><tr><th>Level</th>
+                    {Object.keys(fields).map(label=><th key={label}>{label}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {Array.from({length:Math.min(30,Math.max(0,
+                      ...Object.values(fields).map(series=>series.length)))},
+                      (_,i)=>i+1).map(level=>(
+                      <tr key={level} className={level===item.level?"deck-item-current-level":""}>
+                        <td>Lv {level}</td>
+                        {Object.entries(fields).map(([label,series])=>(
+                          <td key={label}>{series[level-1]>0?fmt(series[level-1],2):"—"}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          ))}
         </section>
       )}
       {!raw && (
