@@ -1,4 +1,5 @@
-import type { MechanicsCard, MechanicsKind } from "./mechanics";
+import type { MechanicsCard, MechanicsGroupUnit, MechanicsKind } from "./mechanics";
+import { rosterFor } from "./groupCardReferences";
 
 export const REFERENCE_BASE = "https://crtool.app/en/units/";
 const clean = (v:string) => v.toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -108,6 +109,59 @@ export function parseCurrentReference(
   const date=m?Date.parse([m[1],m[2],m[3]].join(" ")):NaN;
   const updatedAt=Number.isFinite(date)?new Date(date).toISOString().slice(0,10):null;
   const lowered=target?.toLowerCase()??null;
+  // Cards with separately named members (Goblin Gang, Rascals) publish
+  // separate base-unit tables. Read each as an independent health pool.
+  const roster=rosterFor(card.name);
+  let groupUnits:MechanicsGroupUnit[]|undefined;
+  if(roster && roster.length>1) {
+    const sections=[...base.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi)]
+      .map(h=>({at:h.index??0,name:htmlText(h[1])}));
+    const unitTables=[...base.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)];
+    const members=roster.map(member=>{
+      const match=unitTables.find(t=>{
+        const section=sections.filter(h=>h.at<(t.index??0)).at(-1);
+        return section && clean(section.name)===clean(member.name);
+      });
+      if(!match)return null;
+      const table=tableFrom(match[0]);
+      if(!table)return null;
+      const heading=sections.filter(h=>h.at<(match.index??0)).at(-1);
+      if(!heading)return null;
+      const labels=table.headers.slice(1);
+      const hpIndex=labels.findIndex(x=>/^(hitpoints|hit points|hp)$/i.test(x));
+      const damageIndex=labels.findIndex(x=>
+        /^(damage|ranged damage|area damage|melee damage)$/i.test(x));
+      const shieldIndex=labels.findIndex(x=>/^shield hitpoints$/i.test(x));
+      const dpsIndex=labels.findIndex(x=>
+        /^(damage\/sec|damage\/s|damage per second|dps)$/i.test(x));
+      const getSeries=(column:number):number[]|null=>{
+        if(column<0)return null;
+        const out:number[]=[];
+        for(const row of table.rows)out[row.level-1]=row.stats[column]??0;
+        return Array.from({length:Math.max(0,...table.rows.map(r=>r.level))},
+          (_,i)=>out[i]||0);
+      };
+      const part=htmlText(base.slice(heading.at,match.index??0));
+      const rate=seconds(readField(part,"Hit Speed","[\\d.]+\\s*sec"));
+      const rangeText=readField(part,"Range","Melee:\\s*(?:Short|Medium|Long)|[\\d.]+");
+      const targetText=readField(part,"Targets","Air\\s*(?:&|and)\\s*Ground|Buildings|Ground|Air");
+      const unitTarget=targetText?.toLowerCase()??null;
+      return {
+        name:member.name,count:member.count,
+        hpByLevel:getSeries(hpIndex),damageByLevel:getSeries(damageIndex),
+        dpsByLevel:getSeries(dpsIndex),shieldHpByLevel:getSeries(shieldIndex),
+        hitSpeedSeconds:rate,
+        targetsAir:unitTarget?unitTarget.includes("air"):null,
+        targetsGround:unitTarget?
+          unitTarget.includes("ground")||unitTarget.includes("buildings"):null,
+        rangeTiles:rangeText && /^\d+(?:\.\d+)?$/.test(rangeText)
+          ? Number(rangeText):null,
+        rangeLabel:rangeText??undefined,sourceUrl,
+      } satisfies MechanicsGroupUnit;
+    });
+    if(members.every((x):x is MechanicsGroupUnit=>x!==null))
+      groupUnits=members;
+  }
   const record:MechanicsCard={
     id:card.id,name:card.name,kind,
     hpByLevel:hp?.some(v=>v>0)?hp:null,
@@ -118,10 +172,15 @@ export function parseCurrentReference(
     moveSpeedRaw:null,targetsAir:lowered?lowered.includes("air"):null,
     targetsGround:lowered?lowered.includes("ground")||lowered.includes("buildings"):null,
     buildingsOnly:lowered?lowered.includes("buildings"):null,
-    areaRadiusTiles:null,unitCount:count?Number(count):null,
+    areaRadiusTiles:null,
+    unitCount:groupUnits?.length
+      ? groupUnits.reduce((sum,member)=>sum+(member.count??0),0)
+      : count?Number(count):null,
+    groupUnits,
     deploySeconds:seconds(deploy),firstHitSeconds:null,
     specialAbility:false,provenance:"crtool-game-data",
-    statSubject:"card",statSubjectLabel:card.name,
+    statSubject:groupUnits?.length?"spawned-unit":"card",
+    statSubjectLabel:groupUnits?.[0]?.name??card.name,
     sourceUrl,sourceUpdatedAt:updatedAt??undefined,
     moveSpeedLabel:movement??undefined,rangeLabel:range??undefined,
     extraStatsByLevel:Object.fromEntries(Object.entries(series).map(([key,a])=>[key,padded(a)??[]])),
