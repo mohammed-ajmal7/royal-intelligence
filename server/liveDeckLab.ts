@@ -151,7 +151,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
           const tags=sides.map(side=>cleanTag(side?.tag));
           if(!tags.includes(ranks[sourceIndex].tag))return false;
           const timestamp=battle.battleTime.replace(
-            /^(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})(?:\\.\\d+)?Z$/,
+            /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.\d+)?Z$/,
             "$1-$2-$3T$4:$5:$6Z"
           );
           const milliseconds=Date.parse(timestamp);
