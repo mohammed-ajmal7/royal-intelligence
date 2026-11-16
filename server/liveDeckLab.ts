@@ -11,7 +11,6 @@ const rankSchema = z.object({ items: z.array(z.object({
 }).passthrough().optional() });
 const catalogSchema = z.object({ items: z.array(rawCard), supportItems: z.array(rawCard).optional() });
 const ladderBase = "/locations/global/pathoflegend/players";
-const supportedSizes: readonly GlobalRankedLimit[] = [100,200,300];
 const inFlight = new Set<string>();
 const lastStarted = new Map<string, number>();
 
@@ -26,7 +25,7 @@ const jsonError = (error: string, status: number) => Response.json({ error }, {
  * profile-deck substitute, previous-season endpoint or shared completed result.
  */
 export async function liveDeckLab(req: Request, env: Env, bucket: string, fetcher: typeof fetch = fetch) {
-  if (!env.CLASH_API_TOKEN) return jsonError("Live top-100 analysis needs a configured Clash Royale API token. No offline recommendation was generated.", 503);
+  if (!env.CLASH_API_TOKEN) return jsonError("Live global Ranked analysis needs a configured Clash Royale API token. No offline recommendation was generated.", 503);
   const base = env.CLASH_API_BASE ?? "https://api.clashroyale.com/v1";
   if (!["https://api.clashroyale.com/v1", "https://proxy.royaleapi.dev/v1"].includes(base))
     return jsonError("Unsupported game API base URL.", 500);
@@ -169,7 +168,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
       };
       void (async () => {
         const startedAt=new Date().toISOString();
-        const scanSoftDeadline=Date.now()+170000;
+        const scanSoftDeadline=Date.now()+167000;
         progress(1,0,requestedCount,
           "Fetching the current global Ranked top "+requestedCount+" and your collection…");
         const [leaderboardData,catalogInput,profile] = await Promise.all([
@@ -197,7 +196,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
           catch {return null;}
         };
         /** Both sides of a real Ranked 1v1 battle are valid played decks.
-         * If top-100 account A's own recent log lacks Ranked games but A
+         * If ranked account A's own recent log lacks Ranked games but A
          * appears as opponent in B's Ranked log, recover A's actual played
          * cards from that observed battle. No profile deck or old cache. */
         const observe=(input:unknown,sourceIndex:number):boolean=>{
@@ -321,7 +320,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
           observedPlayers.length*8+" verified card slots…");
         let changedRanks:number|null=null;
         let consistencyWarning:string|null=null;
-        if(Date.now()<scanSoftDeadline+38000) {
+        if(Date.now()<scanSoftDeadline+5000) {
           try {
             const check=await leaderboard();
             const current=new Map(check.ranks.map(r=>[r.rank,r.tag]));
@@ -368,7 +367,7 @@ export async function liveDeckLab(req: Request, env: Env, bucket: string, fetche
               changedRanks+" leaderboard ranks changed during the scan. Observations are from the opening leaderboard, not a synchronized current snapshot."
             ]:[]),
             ...(unknown?["Some cards lack editorial role definitions: "+unknown.cards.map(c=>c.name).join(", ")+". Their known card identities and other roles remain counted."]:[]),
-            ...(recovered?[`${recovered} decks were verified from a Ranked opponent in another top-100 account\u0027s fresh battle log. No profile deck was substituted.`]:[]),
+            ...(recovered?[`${recovered} decks were verified from a Ranked opponent in another selected ranked account\u0027s fresh battle log. No profile deck was substituted.`]:[]),
             "Card and form usage are observed counts. Role labels, substitutions and recommendation scores are editorial estimates, not win probabilities.",
             ...(old?[`${old} accounts last played an available Ranked battle more than 24 hours ago; individual battle times are shown.`]:[]),
           ],
