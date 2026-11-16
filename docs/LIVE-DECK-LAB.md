@@ -55,9 +55,9 @@ to ranks outside the chosen Top 100, 200 or 300.
 An incomplete top group produces a recommendation from the decks that were
 actually verified; it never silently treats missing accounts as zero card
 usage or invents their deck lists. The app displays the requested count,
-actual leaderboard ranks obtained, actual verified deck sample, missing
-player ranks/tags and reasons, and warnings for leaderboard changes,
-role-data gaps, or old Ranked matches.
+actual leaderboard ranks obtained, verified deck count and number skipped,
+plus warnings for leaderboard changes, role-data gaps or old Ranked matches.
+Unavailable account rank/name/tag details are not displayed in the public UI.
 
 A missing next-page cursor, upstream error or time-budget limitation can
 reduce the observed sample. If no valid ranked 1v1 played deck is available,
