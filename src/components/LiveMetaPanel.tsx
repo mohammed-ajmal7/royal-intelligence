@@ -100,17 +100,79 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
   const e=candidate.evidence;
   return <details className="live-meta-evidence"><summary>Why these eight? Live evidence and substitutions</summary>
     <p>{e.adaptationMethod==="observed-usage-fallback"
-      ? "Built from observed global card usage and your eligible collection; closest observed source:"
+      ? "Owned-level alternative built from observed global card usage; closest observed source:"
       : "Adapted from observed Ranked deck:"}
       {" "}#{e.sourceRank} {e.sourceName} ({e.sourceTag}); retains {e.sharedCards}/8 base cards.
       {" "}This exact base-card combination appeared in {e.exactBaseDeckAccounts}/{e.observedCount} verified source decks
       (from a requested global top {e.requestedCount}).</p>
-    <p className="micro">Source: {e.sourceCards.map(c=>`${c.name} [${c.active}]`).join(" · ")}</p>
-    {e.substitutions.length>0?<ul>{e.substitutions.map(c=><li key={c.out}>{c.out} → {c.in}</li>)}</ul>:<p>All eight base cards retained.</p>}
+    <p className="micro">Observed source: {e.sourceCards.map(c=>
+      c.name+" [Lv "+(c.level??"unknown")+", "+(c.elixir??"?")+
+      " elixir, "+c.active+"]").join(" · ")}</p>
+    <div className="live-meta-replacement-heading">
+      <strong>Actual owned levels and replacement rules</strong>
+      <p>Level benchmark: <b>Lv {e.ownedLevelBenchmark}</b> (upper-quartile of
+        eligible owned cards). Lowest recommended card: <b>Lv {e.lowestOwnedLevel}</b>.
+        Direct slot replacements must preserve the required attack/defense
+        functions and cost at most <b>+{e.maxSlotElixirIncrease} elixir</b>
+        compared with the observed source card. Overall average elixir
+        remains limited by your selected filter.</p>
+    </div>
+    {e.adaptationMethod==="observed-usage-fallback"&&
+      <p className="live-meta-replacement-caution">
+        Independently assembled from global observed card usage, card pairs
+        and your eligible owned levels. It competes with direct pro-deck
+        adaptations, but it is not a verified one-to-one replacement of a
+        professional deck. The exact +1-per-source-slot rule applies to
+        direct substitutions only; the owned-card alternative still obeys
+        the max average elixir and minimum level you selected.
+      </p>}
+    {e.substitutions.length>0?
+      <div className="live-meta-replacement-grid">
+        {e.substitutions.map((c,i)=><article key={c.out+":"+c.in+":"+i}
+          className="live-meta-replacement">
+          <div className="live-meta-replacement-pair">
+            <strong>{c.out} <span>→</span> {c.in}</strong>
+            <small>Functional fit {c.score?.toFixed(1)??"—"}/100 · heuristic</small>
+          </div>
+          <div className="live-meta-replacement-facts">
+            <span>Global player: <b>Lv {c.sourceLevel??"unknown"}</b></span>
+            <span>Your {c.out}: <b>{c.originalOwnedLevel===null
+              ?"Not owned / unknown":"Lv "+c.originalOwnedLevel}</b></span>
+            <span>Your {c.in}: <b>Lv {c.ownedLevel??"unknown"}</b></span>
+            <span>Elixir: <b>{c.sourceElixir??"?"} → {c.ownedElixir??"?"}</b></span>
+          </div>
+          <p>{c.reason}</p>
+          <p className="live-meta-replacement-combat">
+            <b>Owned-level combat reference (where published)</b>
+            <span>{c.out}: {c.originalOwnedStats.hp??"—"} HP,
+              {" "}{c.originalOwnedStats.damage??"—"} damage/hit,
+              {" "}{c.originalOwnedStats.dps===null?"—":
+                c.originalOwnedStats.dps.toFixed(1)} DPS</span>
+            <span>{c.in}: {c.replacementStats.hp??"—"} HP,
+              {" "}{c.replacementStats.damage??"—"} damage/hit,
+              {" "}{c.replacementStats.dps===null?"—":
+                c.replacementStats.dps.toFixed(1)} DPS</span>
+          </p>
+          {c.preserved.length>0&&<p><b>Preserved:</b> {c.preserved.join(", ")}</p>}
+          {c.gained.length>0&&<p><b>Additional benefits:</b> {c.gained.join("; ")}</p>}
+          {c.limitations.length>0&&<p className="micro">
+            <b>Data gaps:</b> {c.limitations.join("; ")}</p>}
+        </article>)}
+      </div>
+    :e.adaptationMethod==="source-deck"?
+      <p>All eight original base-card identities are retained at your actual
+        owned levels. Their strengths are not assumed equal to those of the
+        global player's higher-level or special-form cards.</p>:null}
     <p>{e.cardUsage.map(c=>`${c.name}: ${c.count}/${e.observedCount}`).join(" · ")}</p>
     <ul>{e.components.map(c=><li key={c.name}>{c.name}: {c.score.toFixed(1)}/100, weight {c.weight}%.</li>)}</ul>
     {e.formDifferences.length>0&&<ul>{e.formDifferences.map(s=><li key={s}>{s}</li>)}</ul>}
-    <p className="micro">Observed popularity is not a win rate. Adaptations are new hypotheses, not proven pro decks.
-      Special-form abilities, tower synergy and exact battle interactions are not simulated.</p>
+    <p className="micro">Combat-reference HP/damage information is available
+      for {e.measuredCombatCoverage}/8 recommended cards at their owned levels
+      (at least one value per card; the source can be outdated). Missing
+      numbers are never manufactured. Owned levels and elixir costs come
+      from your live Supercell account and catalog; target-capability labels
+      fall back to editorial role definitions when numeric combat data is
+      missing. Form effects, precise matchups and battle outcomes are not
+      simulated. A 100/100 rating is not a 100% win chance.</p>
   </details>;
 }

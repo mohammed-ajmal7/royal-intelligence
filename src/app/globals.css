@@ -3872,3 +3872,95 @@ footer p { color: #afcbe4; }
   .global-top-picker select {font-size:16px;}
   .live-meta-partial {padding:11px;}
 }
+
+/* Owned-level-first, hard-cost, role-preserving global Ranked replacements. */
+.live-meta-replacement-heading {
+  padding:12px 14px;
+  margin:12px 0;
+  border:1px solid #6598c8;
+  border-radius:9px;
+  background:linear-gradient(135deg,#133e70,#08284e);
+}
+.live-meta-replacement-heading strong{
+  display:block;color:#ffdf9a;font-size:13px;margin-bottom:6px;
+}
+.live-meta-replacement-heading p{
+  margin:0;color:#d4e9f6;font-size:11px;line-height:1.75;
+}
+.live-meta-replacement-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:10px;
+  margin:11px 0;
+}
+.live-meta-replacement{
+  min-width:0;
+  border:1px solid #568cb7;
+  border-radius:9px;
+  background:#0e3159;
+  padding:12px;
+}
+.live-meta-replacement-pair{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:9px;
+}
+.live-meta-replacement-pair strong{
+  color:#ffe6a6;font-size:12px;line-height:1.6;
+}
+.live-meta-replacement-pair span{color:#92c8f5;}
+.live-meta-replacement-pair small{
+  font-weight:750;color:#c8e3f2;font-size:10px;
+}
+.live-meta-replacement-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:10px;
+  line-height:1.5;
+  color:#c9e1f4;
+}
+.live-meta-replacement-facts span{
+  padding:6px 8px;
+  background:#072745;
+  border:1px solid #366c94;
+  border-radius:6px;
+}
+.live-meta-replacement-facts b{color:#ffe2a0;}
+.live-meta-replacement p{
+  color:#cbe2f1;font-size:10px;line-height:1.65;margin:9px 0 0;
+}
+.live-meta-replacement p b{color:#ffdfab;}
+.live-meta-replacement-caution{
+  color:#ffe0ab;
+  border-left:3px solid #e6b568;
+  background:#4b341f;
+  padding:11px;
+  border-radius:0 8px 8px 0;
+  font-size:11px;
+  line-height:1.7;
+}
+@media(max-width:650px){
+  .live-meta-replacement-grid{grid-template-columns:minmax(0,1fr);}
+  .live-meta-replacement{padding:10px;}
+}
+
+.live-meta-replacement-combat {
+  display:grid;
+  gap:5px;
+  padding:9px;
+  background:#082849;
+  border:1px solid #376994;
+  border-radius:7px;
+  font-size:10px;
+  line-height:1.6;
+}
+.live-meta-replacement-combat b {color:#ffe0a0;}
+.live-meta-replacement-combat span {
+  display:block;
+  font-variant-numeric:tabular-nums;
+  color:#d5e9f6;
+}

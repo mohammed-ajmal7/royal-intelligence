@@ -1,5 +1,79 @@
 # Global Ranked Deck Laboratory — Top 100, 200 or 300
 
+## Per-card replacement accuracy policy (2026-11-16)
+
+The original algorithm considered role overlap, card frequency and the player's
+owned level, but did **not** require a per-card elixir limit. It could select
+an expensive or functionally unrelated replacement simply because of
+popularity or a high player-level advantage. This has been corrected.
+
+For every actual eight-card global Ranked source deck, the adaptation engine
+now compares each individual source card to the user's actual **owned** cards.
+Each direct replacement must satisfy **all hard criteria**:
+
+1. **Owned and eligible:** The player owns the card. It is not a tower troop
+   or an unsupported champion, its normalized level is known and meets the
+   selected minimum level, and it is not excluded or already occupying
+   another deck slot.
+2. **Elixir:** The official cost is known, and the substitute costs no
+   more than **1 additional elixir** compared with that observed source
+   card. A 2-elixir slot permits replacements costing at most 3; a
+   3-elixir slot permits at most 4, including cheaper alternatives. The
+   sum of the entire eight-card team must also satisfy the user's
+   selected maximum average elixir.
+3. **Function:** It preserves the source's identifiable required
+   capabilities: targeting air and/or ground, swarm/splash response,
+   main win condition, tank-killing function and mini-tank duty. Spells
+   remain spells, buildings remain buildings, heavy-spell answers remain
+   heavy spells, and recognized flying attackers remain flying attackers.
+   When source combat data is missing, editorial role taxonomy is used;
+   such uncertainty is explicitly disclosed.
+4. **Level strength:** The actual current player level is used, **never
+   the top-ranked player's level as if the user owned that level**. The
+   upper quartile of eligible owned cards sets a feasible benchmark.
+   The optimizer gives substantial preference to cards near that
+   benchmark, penalizes cards several levels behind it, and gives an
+   extra warning/penalty where the global source was much higher level.
+   It never invents HP or damage via guessed level scaling.
+5. **Eight-card integrity:** A bounded complete-slot assignment algorithm
+   checks all valid combinations of the source's eight slot roles and
+   the proposed eight owned cards. Every directly adapted candidate
+   has a consistent one-to-one mapping before it can enter the final
+   leaderboard; no card is assigned twice. Locked cards, exclusions,
+   minimum level, original global role structure and overall max
+   average elixir still apply.
+
+The final relative recommendation score prioritizes actual readiness:
+**20% observed combination cohesion, 25% tactical coverage, 40% owned
+level readiness (including its single weakest card), 5% observed
+popularity, and 10% function/elixir replacement fidelity.** This is a
+transparent heuristic weighting, **not** a measured prediction of wins.
+
+In addition to direct source-deck adaptations, the engine always
+considers independently assembled, owned-level-oriented teams
+based on verified current card counts, pairs and roles. Such an
+**observed-usage alternative** has no claimed one-for-one pro-deck
+substitutions: it is shown separately, preserves the player's
+ownership/level/global average-elixir restrictions, and competes on
+the same measured deck scoring. These are estimated decks, never
+falsely claimed to be the exact composition of a global player.
+
+The recommendation evidence panel now shows, for every direct
+replacement, the source's observed card level, the user's actual
+owned level, both elixir costs, source role coverage retained,
+additional benefits, observed source level, the player's level of
+the original card, the replacement's actual level, source-backed combat
+values where available, the heuristic slot-equivalence estimate and
+data limitations. It also displays the weakest owned-card level
+and benchmark. Unknown combat stats or special-form benefits are
+disclosed as unknown.
+
+**Limits:** No static role algorithm or game-stat registry can
+provide 100% real match win guarantees or prove that its output is
+mathematically optimal over all Clash Royale matchups. Balance patches,
+Evolution/Hero effects, matchup frequencies, placement, timing, and
+conditional mechanics can invalidate heuristic counter assumptions.
+
 ## Product behavior
 
 The deck finder has a **Global Ranked player sample** dropdown:
@@ -30,16 +104,18 @@ After pressing **Find best deck**, the system:
 4. At the final step, **adapts the verified observed decks to the user's
    actually owned and available cards**, respecting the chosen strategic
    focus, mode, locked/excluded cards, minimum levels, and max average elixir.
-   Scoring uses observed live combinations (35%), tactical coverage (30%),
-   owned-level readiness (25%), and observed card frequency (10%). Source
-   player rank, source deck, similarities, substitutions, score breakdown,
-   and relevant uncertainty are displayed. If direct observed-deck
-   adaptation produces no legal candidate, the engine also attempts a
-   bounded owned-card combination search scored by **actual observed usage,
-   card pairs, levels and complementary roles**. That last-resort team is
-   explicitly labelled "observed-usage fallback" and linked to the closest
-   source deck for comparison; it is never represented as a deck actually
-   played by that professional account.
+   Scoring uses observed pair/role cohesion (20%), strategic coverage
+   (25%), the user's actual owned levels including a weak-card penalty
+   (40%), verified observed usage (5%), and per-slot replacement fidelity
+   (10%). Source rank, played card levels, the player's owned level of
+   each original card, replacement levels, elixir differences, preserved
+   combat functions, explicit source-backed HP/DPS when available, and
+   caveats are all shown. The optimizer **always** considers a bounded
+   independently assembled owned-card alternative using observed usage,
+   card pairs, levels and complementary roles, even when direct pro-deck
+   adaptation succeeds. Those alternatives are labelled separately and
+   never represented as an exact global-player deck or a one-to-one
+   substitution that the algorithm did not verify.
 
 ## Partial-data and accuracy policy
 
