@@ -48,6 +48,10 @@ function ItemLevelDetails({
   const raw = getMechanicsRecord(item.card, catalog);
   const levels = itemLevelRows(item.card, catalog, incomingDamage, cap);
   const known = levels.filter(level => level.hasNumericalStats).length;
+  const allSourceFields = Object.entries(raw?.extraStatsByLevel ?? {})
+    .filter(([, series]) => series.some(value=>value>0));
+  const fullLength = Math.min(30,Math.max(levels.length,
+    ...allSourceFields.map(([,series])=>series.length),0));
   return (
     <div className="deck-item-expanded">
       <div className="deck-item-expanded-title">
@@ -88,8 +92,10 @@ function ItemLevelDetails({
           [item.statSubject === "spawned-unit" ? "Damage / " + (item.statSubjectLabel ?? "unit") + " hit" : "Damage / hit", fmt(item.damage)],
           [item.statSubject === "spawned-unit" ? "DPS / " + (item.statSubjectLabel ?? "unit") : "DPS / unit", fmt(item.dps, 1)],
           ["Hit interval", item.attackInterval === null ? "—" : fmt(item.attackInterval, 2) + " s"],
-          ["Range", item.rangeTiles === null ? "—" : fmt(item.rangeTiles, 2) + " tiles"],
-          ["Movement", item.moveSpeedRaw === null ? "—" : fmt(item.moveSpeedRaw) + " (raw)"],
+          ["Range", item.rangeTiles === null
+            ? raw?.rangeLabel ?? "—" : fmt(item.rangeTiles,2) + " tiles"],
+          ["Movement", raw?.moveSpeedLabel ??
+            (item.moveSpeedRaw === null ? "—" : fmt(item.moveSpeedRaw) + " (raw)")],
           ["Targets air", yesNo(item.targetsAir)],
           ["Targets ground", yesNo(item.targetsGround)],
           ["Buildings only", yesNo(item.buildingsOnly)],
@@ -141,6 +147,36 @@ function ItemLevelDetails({
           </tbody>
         </table>
       </div>
+      {allSourceFields.length>0 && (
+        <section className="deck-item-all-fields">
+          <div className="deck-item-level-head">
+            <div>
+              <h4>Every sourced numeric field, by level</h4>
+              <small>{allSourceFields.length} source columns · including special damage,
+                shields, tower damage or duration where published</small>
+            </div>
+          </div>
+          <div className="deck-item-level-scroll" role="region"
+            aria-label={item.card.name + " all numeric source fields"} tabIndex={0}>
+            <table className="deck-item-level-table">
+              <thead><tr><th>Level</th>
+                {allSourceFields.map(([label])=><th key={label}>{label}</th>)}
+              </tr></thead>
+              <tbody>
+                {Array.from({length:fullLength},(_,i)=>i+1).map(level=>(
+                  <tr key={level}
+                    className={level===item.level?"deck-item-current-level":""}>
+                    <td>Lv {level}</td>
+                    {allSourceFields.map(([label,series])=>(
+                      <td key={label}>{series[level-1]>0?fmt(series[level-1],2):"—"}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       {!raw && (
         <p className="deck-item-note">
           This card is in the official catalog, but the community data source
@@ -208,10 +244,10 @@ export function DeckItemView({
       setErrorNote(reason instanceof Error ? reason.message : "Some cards could not be refreshed.");
     }
   }
-  async function syncCatalog() {
+  async function syncCatalog(retryFailed = false) {
     if (syncing) return;
     const requested = player.catalog.filter(card=>!card.tower && !current[card.id]
-      && !unavailable.includes(card.id));
+      && (retryFailed || !unavailable.includes(card.id)));
     setSyncing(true);
     setProgress({done:0,total:requested.length});
     setErrorNote("");
@@ -398,7 +434,7 @@ export function DeckItemView({
           disabled={syncing || mechanicsLoading}
           onClick={()=>{
             if (unavailable.length) setUnavailable([]);
-            void syncCatalog();
+            void syncCatalog(true);
           }}>
           <Layers3 size={17}/>
           {syncing
