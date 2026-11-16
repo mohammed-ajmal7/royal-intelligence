@@ -1,12 +1,13 @@
 import type { MechanicsCard } from "./mechanics";
 
 /**
- * Dated GAME-DATA reference for two cards that cannot be evaluated correctly
+ * Dated GAME-DATA reference for selected cards that cannot be evaluated correctly
  * from the original (historical) RoyaleAPI/cr-api-data JSON files.
  *
  * Primary per-level source: crtool game data 16.635.1, published 2026-11-09.
  * https://crtool.app/en/units/minion-giant/
  * https://crtool.app/en/units/goblin-barrel/
+ * https://crtool.app/en/units/sparky/
  *
  * Cross-check at level 11: https://www.royaletools.com/cards/minion-giant
  * https://www.royaletools.com/cards/goblin-barrel
@@ -41,6 +42,43 @@ const goblinDamage = levels(6, [
 ]);
 
 const records: Record<string, Omit<MechanicsCard, "id">> = {
+  sparky: {
+    name: "Sparky",
+    kind: "Troop",
+    hpByLevel: levels(9, [1202,1321,1451,1593,1752,1922,2109,2319,2551,2806,3090,3402]),
+    damageByLevel: levels(9, [1102,1211,1331,1461,1606,1762,1934,2126,2340,2574,2834,3120]),
+    hitSpeedSeconds: 4,
+    rangeTiles: 5,
+    rangeLabel: "5",
+    moveSpeedRaw: null,
+    moveSpeedLabel: "Slow",
+    targetsAir: false,
+    targetsGround: true,
+    buildingsOnly: false,
+    areaRadiusTiles: null,
+    unitCount: 1,
+    deploySeconds: null,
+    firstHitSeconds: null,
+    specialAbility: false,
+    provenance: "crtool-game-data",
+    statSubject: "card",
+    statSubjectLabel: "Sparky",
+    sourceUrl: "https://crtool.app/en/units/sparky/",
+    sourceUpdatedAt,
+    description: "Area attack against ground units. November 2026 source records 1,451 HP and 1,331 area damage at level 11.",
+    extraStatsByLevel: {
+      "Area Damage": levels(9, [1102,1211,1331,1461,1606,1762,1934,2126,2340,2574,2834,3120]),
+      "Hitpoints": levels(9, [1202,1321,1451,1593,1752,1922,2109,2319,2551,2806,3090,3402]),
+    },
+    sourceRecords: {
+      reference: {
+        source:"crtool", gameDataVersion:sourceVersion, lastUpdated:sourceUpdatedAt,
+        url:"https://crtool.app/en/units/sparky/",
+        levelRange:"9–20",
+        note:"Exact 2026 level entries; do not extrapolate missing lower levels.",
+      },
+    },
+  },
   miniongiant: {
     name: "Minion Giant",
     kind: "Troop",
