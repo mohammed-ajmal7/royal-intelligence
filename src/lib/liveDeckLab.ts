@@ -8,7 +8,9 @@ export type LiveCandidate = {
   cards: Card[]; evaluation: ReturnType<typeof evaluate>;
   strategy: ReturnType<typeof assessStrategy>; recommendationScore: number;
   evidence: {
-    scanId: string; sourceRank: number; sourceName: string; sourceTag: string;
+    scanId: string; observedCount: number; requestedCount: number;
+    adaptationMethod: "source-deck" | "observed-usage-fallback";
+    sourceRank: number; sourceName: string; sourceTag: string;
     sourceCards: Card[]; sharedCards: number; exactBaseDeckAccounts: number;
     substitutions: { out: string; in: string }[]; formDifferences: string[];
     components: { name: string; score: number; weight: number }[];
@@ -32,10 +34,15 @@ function similarity(source:Card,target:Card) {
 export async function recommendFromTop100(collection:Card[], q:Constraints, meta:LiveMeta,
   mechanics?:MechanicsCatalog|null, reasoning:ReasoningContext={}, signal?:AbortSignal):Promise<LiveCandidate[]> {
   const yieldToUI=async()=>{await new Promise(resolve=>setTimeout(resolve,0));signal?.throwIfAborted();};
-  if(meta.sampleSize!==100 || meta.players.length!==100 || new Set(meta.players.map(p=>p.tag)).size!==100)
-    throw new Error("A complete live top-100 scan is required.");
+  if(![100,200,300].includes(meta.requestedCount) ||
+     meta.sampleSize<1 || meta.sampleSize>meta.requestedCount ||
+     meta.players.length!==meta.sampleSize ||
+     new Set(meta.players.map(p=>p.tag)).size!==meta.sampleSize ||
+     meta.players.some(p=>p.rank<1 || p.rank>meta.requestedCount ||
+       p.cards.length!==8 || new Set(p.cards.map(c=>c.id)).size!==8))
+    throw new Error("This scan lacks enough validated live Ranked evidence to recommend a deck.");
   if(Date.now()-Date.parse(meta.completedAt)>60000 || !Number.isFinite(Date.parse(meta.completedAt)))
-    throw new Error("This scan expired before generation. Fetch the top 100 again.");
+    throw new Error("This live scan expired before generation. Fetch the selected global top players again.");
   if(q.include.length>8 || new Set(q.include).size!==q.include.length ||
     q.include.some(id=>q.exclude.includes(id)) || !Number.isFinite(q.maxElixir)||q.maxElixir<=0)
     throw new Error("Your include/exclude or elixir constraints conflict.");
@@ -63,12 +70,15 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
   const eligible=(cs:Card[])=>legal(cs)&&locked.every(c=>cs.some(x=>x.id===c.id))&&
     cs.some(c=>c.roles.includes("Win condition"))&&
     cs.reduce((sum,c)=>sum+(c.elixir??0),0)<=q.maxElixir*8;
-  const seeds=new Map<string,{cards:Card[];source:RankedDeck}>();
-  const add=(cs:Card[],source:RankedDeck)=>{
+  const seeds=new Map<string,{cards:Card[];source:RankedDeck;
+    method:"source-deck"|"observed-usage-fallback"}>();
+  const add=(cs:Card[],source:RankedDeck,
+    method:"source-deck"|"observed-usage-fallback"="source-deck")=>{
     if(!eligible(cs))return;
     const id=key(cs),previous=seeds.get(id);
     const shared=(p:RankedDeck)=>cs.filter(c=>p.cards.some(x=>x.id===c.id)).length;
-    if(!previous||shared(source)>shared(previous.source))seeds.set(id,{cards:cs,source});
+    if(!previous||shared(source)>shared(previous.source))
+      seeds.set(id,{cards:cs,source,method});
   };
   for(const source of meta.players) {
     if(source.rank%5===1)await yieldToUI();
@@ -108,8 +118,47 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     const exact=source.cards.map(c=>pool.find(p=>p.id===c.id));
     if(exact.every((c):c is Card=>!!c))add(exact,source);
   }
+  // If adapting individual observed decks yields no legal eight-card team,
+  // use observed card usage / co-occurrence to assemble a collection-compatible
+  // candidate. This is labelled separately and never described as a pro deck.
+  if(seeds.size===0 && meta.players.length>0 && pool.length>=8) {
+    let beam:{cards:Card[];value:number}[]=[{cards:[...locked],value:0}];
+    for(let slot=locked.length;slot<8;slot++) {
+      const trials:{cards:Card[];value:number}[]=[];
+      for(const state of beam)for(const option of pool) {
+        if(state.cards.some(c=>c.id===option.id))continue;
+        const needsWin=!state.cards.some(c=>c.roles.includes("Win condition"));
+        if(slot===7 && needsWin && !option.roles.includes("Win condition"))continue;
+        const cards=[...state.cards,option];
+        if(cards.reduce((sum,c)=>sum+(c.elixir??0),0)>q.maxElixir*8)continue;
+        const newRoles=option.roles.filter(role=>!state.cards.some(c=>c.roles.includes(role))).length;
+        const together=state.cards.reduce((sum,c)=>
+          sum+(pairs.get(pairKey(c.id,option.id))??0),0);
+        const value=state.value+
+          (usage.get(option.id)??0)/maxUsage*36+
+          (option.level??0)/highestLevel*34+
+          Math.min(3,newRoles)*8+
+          together/Math.max(1,state.cards.length*maxUsage)*14;
+        trials.push({cards,value});
+      }
+      const distinct=new Map<string,{cards:Card[];value:number}>();
+      for(const trial of trials.sort((a,b)=>b.value-a.value||
+        key(a.cards).localeCompare(key(b.cards))))
+        if(!distinct.has(key(trial.cards)))distinct.set(key(trial.cards),trial);
+      beam=[...distinct.values()].slice(0,36);
+      if(!beam.length)break;
+      await yieldToUI();
+    }
+    for(const state of beam) {
+      if(!eligible(state.cards))continue;
+      const nearest=[...meta.players].sort((a,b)=>
+        state.cards.filter(c=>b.cards.some(x=>x.id===c.id)).length-
+        state.cards.filter(c=>a.cards.some(x=>x.id===c.id)).length)[0];
+      add(state.cards,nearest,"observed-usage-fallback");
+    }
+  }
   const rows:LiveCandidate[]=[];
-  for(const {cards,source} of seeds.values()) {
+  for(const {cards,source,method} of seeds.values()) {
     if(rows.length%20===0)await yieldToUI();
     const strategy=assessStrategy(cards,mechanics,{...reasoning,
       focus:q.mode==="Fast cycle"&&reasoning.focus==="balanced"?"cycle":reasoning.focus});
@@ -134,7 +183,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       {name:"Live deck similarity and card combinations",score:cohesion,weight:35},
       {name:"Tactical coverage, mode and chosen focus",score:tactical,weight:30},
       {name:"Readiness at your owned levels",score:readiness,weight:25},
-      {name:"Card frequency in this top 100",score:popularity,weight:10},
+      {name:"Card frequency in the verified global sample",score:popularity,weight:10},
     ];
     const out=source.cards.filter(c=>!cards.some(x=>x.id===c.id));
     const added=cards.filter(c=>!source.cards.some(x=>x.id===c.id));
@@ -146,7 +195,8 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
       .map(c=>`${c.name}: source ${c.active}; recommendation uses base form. Special-form effects are not assumed.`);
     rows.push({cards,evaluation:evaluate(cards,q,mechanics),strategy,
       recommendationScore:Math.round(components.reduce((sum,c)=>sum+c.score*c.weight/100,0)*10)/10,
-      evidence:{scanId:meta.id,sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
+      evidence:{scanId:meta.id,observedCount:meta.sampleSize,requestedCount:meta.requestedCount,
+        adaptationMethod:method,sourceRank:source.rank,sourceName:source.name,sourceTag:source.tag,
         sourceCards:source.cards,sharedCards:shared,
         exactBaseDeckAccounts:meta.players.filter(p=>key(p.cards)===key(cards)).length,
         substitutions,formDifferences,components,

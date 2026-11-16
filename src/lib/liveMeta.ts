@@ -1,6 +1,10 @@
 import { rolesFor, type Card, type Snapshot } from "./model";
 
 export const ROLE_VERSION = "2026-11-16.1";
+export type GlobalRankedLimit = 100 | 200 | 300;
+export type UnavailableRankedAccount = {
+  rank: number; tag?: string; name: string; reason: string;
+};
 export type RankedDeck = {
   rank: number; tag: string; name: string; rating: number | null;
   battleTime: string; fetchedAt: string; cards: Card[]; towerNames: string[];
@@ -18,7 +22,15 @@ export type RoleUsage = {
 };
 export type LiveMeta = {
   id: string; startedAt: string; leaderboardAt: string; completedAt: string;
-  source: string; sampleSize: 100; roleVersion: string;
+  source: string;
+  /** Requested leaderboard size; sampled decks are only the verified subset. */
+  requestedCount: GlobalRankedLimit;
+  leaderboardCount: number;
+  sampleSize: number;
+  unavailable: UnavailableRankedAccount[];
+  leaderboardWarning: string | null;
+  changedRanks: number | null;
+  roleVersion: string;
   players: RankedDeck[]; usage: Usage[]; roleUsage: RoleUsage[];
   warnings: string[];
 };
@@ -26,7 +38,7 @@ export type LabProgress = { stage: 1 | 2 | 3 | 4; completed: number; total: numb
 export type LabEvent =
   | { type: "progress"; progress: LabProgress }
   | { type: "complete"; meta: LiveMeta; player: Snapshot }
-  | { type: "error"; error: string; failed?: { rank: number; tag?: string; name: string; reason: string }[] };
+  | { type: "error"; error: string; failed?: UnavailableRankedAccount[] };
 
 /** Each ranked ACCOUNT contributes one deck, including duplicate deck compositions.
  * Base-card counts combine forms; forms are also counted separately. Role deck

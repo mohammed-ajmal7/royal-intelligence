@@ -57,7 +57,7 @@ import {
 } from "../lib/deckStrategy";
 import { DeckStrategyPanel } from "../components/DeckStrategyPanel";
 import { recommendFromTop100, type LiveCandidate } from "../lib/liveDeckLab";
-import type { LabEvent, LabProgress, LiveMeta } from "../lib/liveMeta";
+import type { GlobalRankedLimit, LabEvent, LabProgress, LiveMeta } from "../lib/liveMeta";
 import { LiveMetaPanel, LiveCandidateEvidence } from "../components/LiveMetaPanel";
 import { CardDetails } from "../components/CardDetails";
 import { DeckItemView } from "../components/DeckItemView";
@@ -271,6 +271,7 @@ export default function App() {
     [selected, setSelected] = useState<Card | null>(null),
     [q, setQ] = useState<Constraints>(defaults),
     [candidates, setCandidates] = useState<LiveCandidate[]>([]),
+    [globalTopLimit, setGlobalTopLimit] = useState<GlobalRankedLimit>(100),
     [focus, setFocus] = useState<StrategyFocus>("balanced"),
     [aiAccessCode, setAiAccessCode] = useState(""),
     [aiReview, setAiReview] = useState<AIComparisonReview | null>(null),
@@ -321,7 +322,7 @@ export default function App() {
   useEffect(()=>{
     cancelLab();
     return ()=>{labRun.current++;labAbort.current?.abort();};
-  },[s.tag,q,focus]);
+  },[s.tag,q,focus,globalTopLimit]);
   useEffect(() => {
     const change = () => {
       try {
@@ -548,7 +549,7 @@ export default function App() {
   async function optimize() {
     if(busy)return;
     cancelLab();setError("");setAiReviewError("");
-    if(s.mode!=="live") {setLabError("Load your real player tag before requesting live top-100 recommendations.");return;}
+    if(s.mode!=="live") {setLabError("Load your real player tag before requesting live Ranked recommendations.");return;}
     if(q.mode.includes("2v2")) {setLabError("Global Ranked is a 1v1 sample. Select a 1v1 mode for this strict workflow.");return;}
     const run=++labRun.current, controller=new AbortController();
     labAbort.current=controller;setBusy(true);setDeck(s.deck);
@@ -559,7 +560,7 @@ export default function App() {
       const response=await fetch("/api/deck-lab",{
         method:"POST",cache:"no-store",signal:controller.signal,
         headers:{"Content-Type":"application/json",...(access?{"x-app-access-key":access}:{})},
-        body:JSON.stringify({tag:s.tag}),
+        body:JSON.stringify({tag:s.tag,top:globalTopLimit}),
       });
       if(!response.ok) {const value=await response.json();throw new Error(value.error??"Live scan failed.");}
       if(!response.body)throw new Error("Streaming data is unavailable. No offline result was used.");
@@ -575,18 +576,34 @@ export default function App() {
           if(event.player.tag!==s.tag||event.player.mode!=="live"||event.player.stale)
             throw new Error("Fresh collection data did not match the requested account.");
           received=true;
-          setLabProgress({stage:4,completed:0,total:100,message:"Adapting the observed top-100 decks to your freshly fetched collection…"});
+          setLabProgress({stage:4,completed:0,total:event.meta.sampleSize,
+            message:"Comparing "+event.meta.sampleSize+"/"+event.meta.requestedCount+
+              " verified global Ranked decks against your card levels and filters…"});
           // Yield once so the final progress stage paints before bounded search.
           await new Promise<void>(resolve=>window.setTimeout(resolve,0));
           if(run!==labRun.current||controller.signal.aborted)return;
-          const choices=await recommendFromTop100(event.player.cards,{...q,cap:event.player.cap},event.meta,mechanics,{focus},controller.signal);
-          if(run!==labRun.current||controller.signal.aborted)return;
+          // Keep the observed scan visible even if the user's constraints
+          // prevent a legal eight-card adaptation.
           setS({...event.player,battles:s.battles,chests:s.chests,
-            warnings:[...event.player.warnings,"Deck Lab refreshed your profile and collection; battle history and chests retain their previous refresh."]});
-          setLiveMeta(event.meta);setCandidates(choices);
-          setLabProgress({stage:4,completed:100,total:100,message:"Live analysis complete."});
-          if(choices.length)setDeck(choices[0].cards);
-          else setLabError("All 100 decks were analyzed, but no adapted eight-card deck meets your collection and filters. Adjust the filters and run a fresh scan.");
+            warnings:[...event.player.warnings,
+              "Deck Lab refreshed your profile; battle history and chests retain their previous refresh."]});
+          setLiveMeta(event.meta);
+          try {
+            const choices=await recommendFromTop100(event.player.cards,
+              {...q,cap:event.player.cap},event.meta,mechanics,{focus},controller.signal);
+            if(run!==labRun.current||controller.signal.aborted)return;
+            setCandidates(choices);
+            setLabProgress({stage:4,completed:event.meta.sampleSize,
+              total:event.meta.sampleSize,
+              message:"Completed "+event.meta.sampleSize+" observed-deck analyses."});
+            if(choices.length)setDeck(choices[0].cards);
+            else setLabError("The scan completed, but no suitable eight-card deck meets your ownership, levels, locked cards and elixir limits. Adjust those filters; the verified global sample is displayed above.");
+          } catch(error) {
+            if(run!==labRun.current||controller.signal.aborted)return;
+            setCandidates([]);
+            setLabError(error instanceof Error ? error.message :
+              "No eligible recommendation could be built from this sample.");
+          }
         }
       };
       while(true) {
@@ -596,7 +613,8 @@ export default function App() {
         for(const line of lines)await consume(line);
         if(done){await consume(buffer);break;}
       }
-      if(!received&&run===labRun.current)throw new Error("The live scan ended before all required data arrived. No fallback recommendation was generated.");
+      if(!received&&run===labRun.current)throw new Error(
+        "The fresh global Ranked scan ended without usable played decks. No fabricated recommendation was generated.");
     } catch(e) {
       controller.abort();
       if(run===labRun.current) {
@@ -1473,13 +1491,35 @@ export default function App() {
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
-              <Panel title="Find the best deck for your collection" kicker="FRESH GLOBAL TOP 100 · STRICT MODE">
+              <Panel title="Find the best deck for your collection"
+                kicker={"FRESH GLOBAL TOP "+globalTopLimit+" · AVAILABLE-DATA RECOMMENDATIONS"}>
                 <p className="smart-intro">
-                  Every search fetches the current global Ranked top 100, reads each
-                  account's latest available Ranked deck, counts cards and roles, then
-                  adapts those decks to your owned cards and levels. All 100 decks are
-                  required. This 1v1 workflow does not use Trophy Road or 2v2 rankings.
+                  Choose the current global Ranked top 100, 200 or 300 accounts.
+                  Each click fetches the available real Ranked 1v1 battle decks,
+                  counts played cards and roles, and finds the best suitable eight
+                  cards from your collection using your levels and selected conditions.
+                  Missing battle logs are disclosed, but verified decks still
+                  contribute. No Trophy Road, 2v2, old snapshot or fabricated deck.
                 </p>
+                <div className="global-top-picker">
+                  <div>
+                    <label htmlFor="global-ranked-size">Global Ranked player sample</label>
+                    <p>Larger scans use more API requests and may have more unavailable
+                      accounts. Only verified played decks contribute to recommendations.</p>
+                  </div>
+                  <select id="global-ranked-size" value={globalTopLimit}
+                    disabled={busy}
+                    onChange={event=>{
+                      const chosen=Number(event.target.value);
+                      if(chosen!==100&&chosen!==200&&chosen!==300)return;
+                      setGlobalTopLimit(chosen);
+                      setDeck(s.deck);
+                    }}>
+                    <option value={100}>Top 100 global players</option>
+                    <option value={200}>Top 200 global players</option>
+                    <option value={300}>Top 300 global players</option>
+                  </select>
+                </div>
                 <div className="mode-tabs smart-modes" aria-label="Choose deck playstyle">
                   {[
                     ["Best overall", "Balanced"],
@@ -1517,7 +1557,8 @@ export default function App() {
                   <button className="btn smart-find" disabled={busy || loading || s.mode !== "live" || s.cards.length < 8}
                     onClick={optimize}>
                     <Sparkles size={17} />
-                    {busy ? "Reading the live top 100…" : "Find the best deck — fresh top 100"}
+                    {busy ? "Reading top "+globalTopLimit+"…" :
+                      "Find best deck — fresh top "+globalTopLimit}
                   </button>
                   <button className="btn secondary"
                     onClick={() => {
@@ -1531,20 +1572,22 @@ export default function App() {
                   </button>
                 </div>
                 <p className="micro">
-                  Recommendations use observed top-100 deck combinations, card and role
-                  counts, your levels, tactical coverage and your chosen focus.
-                  Counts are exact for a completed sample; recommendations are estimates,
+                  Recommendations use observed top-{globalTopLimit} Ranked deck combinations,
+                  card and role counts, owned levels, tactical coverage and chosen focus.
+                  Missing accounts are excluded. All percentages use the verified
+                  observed count, not the requested count. Recommendations are estimates,
                   not measured win rates or a guarantee of the globally best deck.
                   {s.mode === "demo" ? " Load your real tag to use this workflow." : ""}
                 </p>
                 <LiveMetaPanel meta={liveMeta} progress={labProgress} busy={busy}
                   error={labError} failed={labFailed} cancel={cancelLab}
-                  retry={()=>{void optimize();}}/>
+                  retry={()=>{void optimize();}} target={globalTopLimit}/>
                 <div className="smart-overview">
                   <div className="smart-overview-head">
                     <div>
-                      <div className="eyebrow">{liveChoice ? "VERIFIED LIVE-SCAN RECOMMENDATION" :
-                        labError ? "YOUR CURRENT DECK — TOP-100 SCAN INCOMPLETE" :
+                      <div className="eyebrow">{liveChoice ? "RECOMMENDED FROM "+liveMeta?.sampleSize+
+                        "/"+liveMeta?.requestedCount+" VERIFIED RANKED DECKS" :
+                        labError ? "YOUR CURRENT DECK — NO ELIGIBLE RECOMMENDATION" :
                         "MANUALLY SELECTED / CURRENT DECK"}</div>
                       <h3>{name(deck)}</h3>
                       <span className="muted">
