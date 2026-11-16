@@ -28,7 +28,44 @@ The **Deck Item** page has a mobile-first attack/defense leaderboard with a sepa
 
 Every card row opens a separate **All levels + full card stats** panel with HP/unit, damage/hit, DPS, hit interval, attack range, movement (raw units), air/ground/building targeting, splash radius, unit count, deploy time, attack preload, special-mechanics flag and configurable hit endurance. A horizontally scrollable table lists every available reference-level HP/damage/DPS/hit-endurance value. Unsupported levels display `—` rather than interpolated values. The collapsible **all available community source fields (JSON)** section exposes the underlying registry/unit/deployment/projectile data when the record exists.
 
-### Updated 2026 data for Minion Giant and Goblin Barrel
+### Expanding every published field and level from newer reference pages
+
+Deck Item now offers **Get all available card stats**, a user-initiated refresh
+that requests the current public card reference pages in controlled groups of
+three, displays progress and updates the card ranking as sourced data arrives.
+The per-card **All levels + full card stats** action also tries to retrieve the
+individual current source automatically. Vercel caches public reference
+downloads for one day; the route never uses or exposes the player's Supercell
+API token.
+
+The newer reference URL is [crtool's individual card pages](https://crtool.app/en/units/).
+The server accepts only validated card slugs and official numeric IDs. It
+extracts **explicit published level rows**, not extrapolated scaling. The
+card inspector additionally shows **all numeric base-card columns** present
+in the source: HP, attack/area damage, shields, crown-tower damage, damage/sec,
+spawn/death/charge effects and other values *where actually published*.
+Text attributes such as movement-speed category and melee-range description
+are preserved without converting them to fabricated numbers. Where the newer
+source publishes Evolution, Hero or secondary-unit level tables, those fields
+appear in separate expandable sections so base attack and base HP are never
+silently combined with alternate-form or summoned-unit mechanics.
+
+The default historic dataset remains as a fallback for cards that cannot be
+refreshed. A missing web page, unparseable table, complex secondary-unit
+layout, or absent level remains visibly unavailable. Evolution, Hero and
+secondary spawned-unit tables are **not silently mixed with base stats**.
+An independently maintained website is not an official Supercell endpoint:
+availability and layout of those pages can change, so complete real-time
+coverage of every card is **not guaranteed**.
+
+**Sparky correction:** The dated November 9, 2026 reference reports
+**1,451 hitpoints** (not 1,452) and **1,331 area damage** at level 11.
+Exact values for levels 9–20 are included directly as a fallback.
+Instant spells no longer receive a misleading sustained DPS calculated from
+internal cast timing; explicit damage-per-second values are used only when
+published.
+
+### Updated 2026 data for Sparky, Minion Giant and Goblin Barrel
 
 These two cards were previously missing numeric leaderboards because the older
 community files predate Minion Giant and treat Goblin Barrel primarily as a

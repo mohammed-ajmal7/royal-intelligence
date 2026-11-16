@@ -6,7 +6,7 @@ import {
   ChevronUp, Layers3, SlidersHorizontal, BookOpen,
 } from "lucide-react";
 import type { Card, Snapshot } from "../lib/model";
-import { getMechanicsRecord, type MechanicsCatalog } from "../lib/mechanics";
+import { getMechanicsRecord, type MechanicsCatalog, type MechanicsCard } from "../lib/mechanics";
 import {
   defaultItemOptions,
   hitsToDefeat,
@@ -48,6 +48,12 @@ function ItemLevelDetails({
   const raw = getMechanicsRecord(item.card, catalog);
   const levels = itemLevelRows(item.card, catalog, incomingDamage, cap);
   const known = levels.filter(level => level.hasNumericalStats).length;
+  const allSourceFields = Object.entries(raw?.extraStatsByLevel ?? {})
+    .filter(([, series]) => series.some(value=>value>0));
+  const fullLength = Math.min(30,Math.max(levels.length,
+    ...allSourceFields.map(([,series])=>series.length),0));
+  const alternateForms = Object.entries(raw?.extraFormsByLevel ?? {})
+    .filter(([,fields])=>Object.values(fields).some(series=>series.some(value=>value>0)));
   return (
     <div className="deck-item-expanded">
       <div className="deck-item-expanded-title">
@@ -88,8 +94,10 @@ function ItemLevelDetails({
           [item.statSubject === "spawned-unit" ? "Damage / " + (item.statSubjectLabel ?? "unit") + " hit" : "Damage / hit", fmt(item.damage)],
           [item.statSubject === "spawned-unit" ? "DPS / " + (item.statSubjectLabel ?? "unit") : "DPS / unit", fmt(item.dps, 1)],
           ["Hit interval", item.attackInterval === null ? "—" : fmt(item.attackInterval, 2) + " s"],
-          ["Range", item.rangeTiles === null ? "—" : fmt(item.rangeTiles, 2) + " tiles"],
-          ["Movement", item.moveSpeedRaw === null ? "—" : fmt(item.moveSpeedRaw) + " (raw)"],
+          ["Range", item.rangeTiles === null
+            ? raw?.rangeLabel ?? "—" : fmt(item.rangeTiles,2) + " tiles"],
+          ["Movement", raw?.moveSpeedLabel ??
+            (item.moveSpeedRaw === null ? "—" : fmt(item.moveSpeedRaw) + " (raw)")],
           ["Targets air", yesNo(item.targetsAir)],
           ["Targets ground", yesNo(item.targetsGround)],
           ["Buildings only", yesNo(item.buildingsOnly)],
@@ -141,6 +149,70 @@ function ItemLevelDetails({
           </tbody>
         </table>
       </div>
+      {allSourceFields.length>0 && (
+        <section className="deck-item-all-fields">
+          <div className="deck-item-level-head">
+            <div>
+              <h4>Every sourced numeric field, by level</h4>
+              <small>{allSourceFields.length} source columns · including special damage,
+                shields, tower damage or duration where published</small>
+            </div>
+          </div>
+          <div className="deck-item-level-scroll" role="region"
+            aria-label={item.card.name + " all numeric source fields"} tabIndex={0}>
+            <table className="deck-item-level-table">
+              <thead><tr><th>Level</th>
+                {allSourceFields.map(([label])=><th key={label}>{label}</th>)}
+              </tr></thead>
+              <tbody>
+                {Array.from({length:fullLength},(_,i)=>i+1).map(level=>(
+                  <tr key={level}
+                    className={level===item.level?"deck-item-current-level":""}>
+                    <td>Lv {level}</td>
+                    {allSourceFields.map(([label,series])=>(
+                      <td key={label}>{series[level-1]>0?fmt(series[level-1],2):"—"}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+      {alternateForms.length>0 && (
+        <section className="deck-item-form-sections">
+          <h4>Other forms, abilities and summoned units</h4>
+          <p className="deck-item-note">
+            These values are separate from the base-card attack and HP.
+            They are not added to direct damage or treated as one combined unit.
+          </p>
+          {alternateForms.map(([form,fields])=>(
+            <details key={form} className="deck-item-raw">
+              <summary>{form} · {Object.keys(fields).length} numeric fields</summary>
+              <div className="deck-item-level-scroll" tabIndex={0}
+                role="region" aria-label={item.card.name + " " + form + " statistics"}>
+                <table className="deck-item-level-table">
+                  <thead><tr><th>Level</th>
+                    {Object.keys(fields).map(label=><th key={label}>{label}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {Array.from({length:Math.min(30,Math.max(0,
+                      ...Object.values(fields).map(series=>series.length)))},
+                      (_,i)=>i+1).map(level=>(
+                      <tr key={level} className={level===item.level?"deck-item-current-level":""}>
+                        <td>Lv {level}</td>
+                        {Object.entries(fields).map(([label,series])=>(
+                          <td key={label}>{series[level-1]>0?fmt(series[level-1],2):"—"}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          ))}
+        </section>
+      )}
       {!raw && (
         <p className="deck-item-note">
           This card is in the official catalog, but the community data source
@@ -170,28 +242,82 @@ export function DeckItemView({
   const [options, setOptions] = useState<ItemRankingOptions>(defaultItemOptions);
   const [damageText, setDamageText] = useState("200");
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [current, setCurrent] = useState<Record<number, MechanicsCard>>({});
+  const [unavailable, setUnavailable] = useState<number[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [progress, setProgress] = useState({done:0,total:0});
+  const [errorNote, setErrorNote] = useState("");
   const set = (patch: Partial<ItemRankingOptions>) =>
     setOptions(previous=>({...previous,...patch}));
 
+  const merged = useMemo<MechanicsCatalog | null>(() => {
+    const refreshed = Object.values(current);
+    if (!mechanics && refreshed.length === 0) return null;
+    const byId = new Map<number, MechanicsCard>(
+      (mechanics?.cards ?? []).map(card=>[card.id,card])
+    );
+    for (const card of refreshed) byId.set(card.id,card);
+    return {
+      source: mechanics?.source ?? "https://crtool.app/en/units/",
+      fetchedAt: mechanics?.fetchedAt ?? new Date().toISOString(),
+      sourceUpdatedAt: mechanics?.sourceUpdatedAt ?? null,
+      warnings: mechanics?.warnings ?? [],
+      cards:[...byId.values()],
+    };
+  },[mechanics,current]);
+  async function loadCurrent(card:Card):Promise<void> {
+    try {
+      const params = new URLSearchParams({name:card.name,id:String(card.id)});
+      const response = await fetch("/api/card-reference?" + params);
+      const data = await response.json();
+      if (!response.ok || data?.card?.id !== card.id ||
+          data.card?.provenance !== "crtool-game-data") {
+        throw new Error(data?.error ?? "A current card reference is unavailable.");
+      }
+      setCurrent(previous=>({...previous,[card.id]:data.card as MechanicsCard}));
+    } catch (reason) {
+      setUnavailable(previous=>previous.includes(card.id)?previous:[...previous,card.id]);
+      setErrorNote(reason instanceof Error ? reason.message : "Some cards could not be refreshed.");
+    }
+  }
+  async function syncCatalog(retryFailed = false) {
+    if (syncing) return;
+    const requested = player.catalog.filter(card=>!card.tower && !current[card.id]
+      && (retryFailed || !unavailable.includes(card.id)));
+    setSyncing(true);
+    setProgress({done:0,total:requested.length});
+    setErrorNote("");
+    try {
+      // Three parallel requests at a time; the server caches each public source
+      // for one day. No Supercell token or new player API calls are involved.
+      for (let i=0;i<requested.length;i+=3) {
+        const batch=requested.slice(i,i+3);
+        await Promise.all(batch.map(loadCurrent));
+        setProgress({done:Math.min(i+batch.length,requested.length),total:requested.length});
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
   const rows = useMemo(
-    () => rankDeckItems(player.catalog, mechanics, options),
-    [player.catalog, mechanics, options],
+    () => rankDeckItems(player.catalog, merged, options),
+    [player.catalog, merged, options],
   );
   const maxLevel = useMemo(() => Math.min(30, Math.max(
     player.cap,
     16,
-    ...(mechanics?.cards.map(card=>Math.max(
+    ...(merged?.cards.map(card=>Math.max(
       card.hpByLevel?.length ?? 0,
       card.damageByLevel?.length ?? 0,
     )) ?? []),
     ...player.catalog.map(card=>{
-      const reference = getMechanicsRecord(card, mechanics);
+      const reference = getMechanicsRecord(card, merged);
       return Math.max(
         reference?.hpByLevel?.length ?? 0,
         reference?.damageByLevel?.length ?? 0,
       );
     }),
-  )), [mechanics, player.cap, player.catalog]);
+  )), [merged, player.cap, player.catalog]);
   const rankedCount = rows.filter(item=>item.available).length;
   const first = rows.find(item=>item.available);
   const isDefense = options.category === "defense";
@@ -327,6 +453,33 @@ export function DeckItemView({
           {mechanics.warnings.map((warning,i)=><p key={i}>{warning}</p>)}
         </details>
       )}
+      <div className="deck-item-refresh">
+        <div>
+          <strong>2026 card reference coverage</strong>
+          <p>
+            {Object.keys(current).length} of {player.catalog.filter(c=>!c.tower).length} cards
+            refreshed from individual published game-data pages.
+            {" "}{unavailable.length} current references unavailable.
+            Unrefreshed cards retain their historical data where it exists.
+          </p>
+          {syncing && <progress aria-label="Card reference sync progress"
+            value={progress.done} max={Math.max(1,progress.total)}/>}
+          {errorNote && <small role="status">{errorNote}</small>}
+        </div>
+        <button type="button" className="btn secondary"
+          disabled={syncing || mechanicsLoading}
+          onClick={()=>{
+            if (unavailable.length) setUnavailable([]);
+            void syncCatalog(true);
+          }}>
+          <Layers3 size={17}/>
+          {syncing
+            ? "Loading "+progress.done+"/"+progress.total+" cards…"
+            : Object.keys(current).length
+              ? "Refresh remaining card data"
+              : "Get all available card stats"}
+        </button>
+      </div>
       <p className="deck-item-explainer">
         {isDefense
           ? options.defenseMetric === "hits"
@@ -426,14 +579,18 @@ export function DeckItemView({
                     className="deck-item-expand"
                     aria-expanded={expanded===item.card.id}
                     aria-controls={"item-levels-"+item.card.id}
-                    onClick={()=>setExpanded(value=>value===item.card.id?null:item.card.id)}>
+                    onClick={()=>{
+                      setExpanded(value=>value===item.card.id?null:item.card.id);
+                      if(!current[item.card.id] && !unavailable.includes(item.card.id))
+                        void loadCurrent(item.card);
+                    }}>
                     <Layers3 size={15}/>
                     {expanded===item.card.id?"Hide level stats":"All levels + full card stats"}
                     {expanded===item.card.id?<ChevronUp size={16}/>:<ChevronDown size={16}/>}
                   </button>
                   {expanded===item.card.id &&
                     <div id={"item-levels-"+item.card.id}>
-                      <ItemLevelDetails item={item} catalog={mechanics}
+                      <ItemLevelDetails item={item} catalog={merged}
                         incomingDamage={options.incomingDamage} cap={player.cap}
                         onSelect={onSelect}/>
                     </div>}
@@ -469,7 +626,7 @@ export function DeckItemView({
               not falsely labeled as unlocked. Open any item to view every
               available reference level and its raw source fields.
             </p>
-            <a href={mechanics?.source ?? "https://github.com/RoyaleAPI/cr-api-data"}
+            <a href="https://crtool.app/en/units/"
               target="_blank" rel="noreferrer">Community source data ↗</a>
             <small>
               Source updated: {mechanics?.sourceUpdatedAt?.slice(0,10) ?? "Unverified"}.

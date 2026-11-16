@@ -3185,3 +3185,40 @@ footer p { color: #afcbe4; }
   }
   .deck-item-source-label { font-size: 9px; }
 }
+
+/* Full sourced combat-stat columns and controlled reference hydration. */
+.deck-item-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px;
+  border: 1px solid #4e8fb8;
+  background: linear-gradient(135deg,#114371,#0c2b50);
+  box-shadow: inset 0 1px #d0edff32, 0 3px #092442;
+  border-radius: 11px;
+}
+.deck-item-refresh > div { min-width: 0; flex: 1; }
+.deck-item-refresh strong { color: #ffe9b2; font-size: 13px; font-weight: 850; }
+.deck-item-refresh p { margin: 5px 0; font-size: 11px; line-height: 1.6; }
+.deck-item-refresh small { display: block; color: #f9cda9; font-size: 10px; line-height: 1.5; }
+.deck-item-refresh progress {
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: #09213f;
+  overflow: hidden;
+  accent-color: #c67bff;
+  margin-top: 5px;
+}
+.deck-item-refresh .btn { flex: 0 0 auto; font-size: 12px; max-width: 265px; }
+.deck-item-all-fields { margin: 22px 0 14px; }
+.deck-item-all-fields .deck-item-level-scroll { max-height: 460px; }
+.deck-item-all-fields .deck-item-level-table { min-width: 640px; }
+.deck-item-all-fields th { white-space: normal; min-width: 87px; }
+.deck-item-all-fields td { white-space: nowrap; }
+@media (max-width: 650px) {
+  .deck-item-refresh { flex-direction: column; align-items: stretch; padding: 12px; }
+  .deck-item-refresh .btn { width: 100%; max-width: none; min-height: 48px; }
+  .deck-item-all-fields { margin-top: 16px; }
+}

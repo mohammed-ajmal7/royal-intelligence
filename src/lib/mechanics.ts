@@ -16,6 +16,8 @@ export type MechanicsCard = {
   kind: MechanicsKind;
   hpByLevel: number[] | null;
   damageByLevel: number[] | null;
+  /** Explicit damage-per-second array, if the source publishes it. */
+  dpsByLevel?: number[] | null;
   hitSpeedSeconds: number | null;
   rangeTiles: number | null;
   moveSpeedRaw: number | null;
@@ -34,6 +36,13 @@ export type MechanicsCard = {
   statSubjectLabel?: string;
   sourceUrl?: string;
   sourceUpdatedAt?: string;
+  /** Direct source labels for non-numeric movement and melee range. */
+  moveSpeedLabel?: string;
+  rangeLabel?: string;
+  /** Every numeric level column in the chosen public reference. */
+  extraStatsByLevel?: Record<string, number[]>;
+  /** Other explicitly labelled source sections: Evolutions, Heroes, summons. */
+  extraFormsByLevel?: Record<string, Record<string, number[]>>;
   description?: string;
   /** Public source records, kept separate to preserve units and provenance. */
   sourceRecords?: Record<string, Record<string, unknown>>;
@@ -311,14 +320,21 @@ export function getMechanicsRecord(
   catalog?: MechanicsCatalog | null,
 ): MechanicsCard | undefined {
   const recent = recentCardReference(card);
-  if (recent) return recent;
-  if (!catalog) return undefined;
+  // Goblin Barrel needs its separate spawned-Goblin semantics. Never
+  // misinterpret the barrel as a single damaging troop.
+  if (recent && card.name?.toLowerCase() === "goblin barrel") return recent;
+  if (!catalog) return recent;
   let index = mechanicsIndices.get(catalog);
   if (!index) {
     index = new Map(catalog.cards.map((c) => [c.id, c]));
     mechanicsIndices.set(catalog, index);
   }
-  return index.get(card.id);
+  const sourced = index.get(card.id);
+  if (sourced?.provenance === "crtool-game-data" && sourced.sourceUpdatedAt) {
+    if (!recent || sourced.sourceUpdatedAt > (recent.sourceUpdatedAt ?? ""))
+      return sourced;
+  }
+  return recent ?? sourced;
 }
 
 export function resolveMechanics(
@@ -329,10 +345,16 @@ export function resolveMechanics(
   if (!item) return null;
   const hitpoints = statForLevel(item.hpByLevel, card.level);
   const damage = statForLevel(item.damageByLevel, card.level);
-  const dps =
-    damage !== null && item.hitSpeedSeconds !== null && item.hitSpeedSeconds > 0
-      ? damage / item.hitSpeedSeconds
-      : null;
+  const explicitDps = statForLevel(item.dpsByLevel ?? null, card.level);
+  const dps = explicitDps ?? (
+    // One-shot spells do not have a sustained attack interval. For example,
+    // Lightning's cast timing must not be treated as a 2,000+ DPS value.
+    item.kind === "Spell" && item.statSubject !== "spawned-unit"
+      ? null
+      : damage !== null && item.hitSpeedSeconds !== null && item.hitSpeedSeconds > 0
+        ? damage / item.hitSpeedSeconds
+        : null
+  );
   const major = [
     hitpoints,
     damage,

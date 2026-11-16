@@ -293,8 +293,13 @@ export function itemLevelRows(
     const hp = statForLevel(reference?.hpByLevel ?? null, level);
     const damage = statForLevel(reference?.damageByLevel ?? null, level);
     const interval = reference?.hitSpeedSeconds ?? null;
-    const dps = damage !== null && interval !== null && interval > 0
-      ? damage / interval : null;
+    const explicitDps=statForLevel(reference?.dpsByLevel ?? null,level);
+    const dps=explicitDps ?? (
+      reference?.kind === "Spell" && reference?.statSubject !== "spawned-unit"
+        ? null
+        : damage !== null && interval !== null && interval > 0
+          ? damage / interval : null
+    );
     const hits = hitsToDefeat(hp, incomingDamage);
     rows.push({
       level, hp, damage, dps,
