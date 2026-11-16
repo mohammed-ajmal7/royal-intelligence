@@ -33,7 +33,13 @@ After pressing **Find best deck**, the system:
    Scoring uses observed live combinations (35%), tactical coverage (30%),
    owned-level readiness (25%), and observed card frequency (10%). Source
    player rank, source deck, similarities, substitutions, score breakdown,
-   and relevant uncertainty are displayed.
+   and relevant uncertainty are displayed. If direct observed-deck
+   adaptation produces no legal candidate, the engine also attempts a
+   bounded owned-card combination search scored by **actual observed usage,
+   card pairs, levels and complementary roles**. That last-resort team is
+   explicitly labelled "observed-usage fallback" and linked to the closest
+   source deck for comparison; it is never represented as a deck actually
+   played by that professional account.
 
 ## Partial-data and accuracy policy
 
