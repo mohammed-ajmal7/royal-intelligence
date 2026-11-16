@@ -30,12 +30,17 @@ type Capabilities = {
   air: boolean; ground: boolean; splash: boolean;
   win: boolean; tank: boolean; spell: boolean;
   building: boolean; cycle: boolean; miniTank: boolean;
+  heavySpell:boolean; flying:boolean;
   kind: string;
   uncertain: boolean;
 };
 const clamp=(value:number)=>Math.max(0,Math.min(100,value));
 const important=new Set(["Win condition","Air defense","Ground defense",
   "Tank killer","Swarm control","Mini tank","Building","Spell","Cycle"]);
+const heavySpellCards=new Set(["Fireball","Poison","Lightning","Rocket","Earthquake","Void"]);
+const flyingTroops=new Set(["Baby Dragon","Minions","Minion Horde",
+  "Mega Minion","Electro Dragon","Inferno Dragon","Lava Hound","Balloon",
+  "Flying Machine","Bats","Phoenix","Skeleton Dragons"]);
 const has=(card:Card,role:string)=>card.roles.includes(role);
 const exactLevel=(card:Card)=>card.level!==null&&Number.isInteger(card.level)&&card.level>0;
 
@@ -73,6 +78,8 @@ export function createReplacementAnalyzer(
       tank:has(card,"Tank killer"),
       spell,building,cycle:has(card,"Cycle"),
       miniTank:has(card,"Mini tank"),
+      heavySpell:heavySpellCards.has(card.name),
+      flying:flyingTroops.has(card.name),
       uncertain:m===null || (m.targetsAir===null && m.targetsGround===null),
     },mechanics:m};
     profileCache.set(k,result);
@@ -115,6 +122,10 @@ export function createReplacementAnalyzer(
       blocked.push("Loses spell function");
     if(sourceCaps.building&&!targetCaps.building)
       blocked.push("Loses building function");
+    if(sourceCaps.heavySpell&&!targetCaps.heavySpell)
+      blocked.push("Loses the heavy-spell response");
+    if(sourceCaps.flying&&!targetCaps.flying)
+      blocked.push("Loses the flying troop's ground-attack immunity");
     if(!same && !source.roles.some(r=>important.has(r)) &&
       sourceCaps.kind==="Other")
       blocked.push("Not enough functional data to verify a replacement");
@@ -122,11 +133,15 @@ export function createReplacementAnalyzer(
       sourceCaps[flag]===true&&targetCaps[flag]===true).map(([,label])=>label);
     if(sourceCaps.spell&&targetCaps.spell)preserved.push("spell");
     if(sourceCaps.building&&targetCaps.building)preserved.push("building");
+    if(sourceCaps.heavySpell&&targetCaps.heavySpell)preserved.push("heavy-spell answer");
+    if(sourceCaps.flying&&targetCaps.flying)preserved.push("flying troop role");
     const gained:string[]=[];
     if(!sourceCaps.splash&&targetCaps.splash)
       gained.push("adds splash/swarm-control utility");
     if(!sourceCaps.air&&targetCaps.air)
       gained.push("adds air defense");
+    if(!sourceCaps.flying&&targetCaps.flying)
+      gained.push("adds a flying option");
     if(!sourceCaps.tank&&targetCaps.tank)
       gained.push("adds a tank-killing role");
     if(source.elixir!==null&&target.elixir!==null&&target.elixir<source.elixir)
@@ -160,8 +175,7 @@ export function createReplacementAnalyzer(
       known?.damage!==null&&known?.damage!==undefined?2:0;
     const value=clamp(fidelity*45+levelQuality*0.42+
       costBonus+measured-
-      Math.min(18,globalGap*3)-
-      (same?0:0)+
+      Math.min(18,globalGap*3)+
       (!sourceCaps.splash&&targetCaps.splash?3:0));
     const eligible=blocked.length===0;
     const reason=eligible
