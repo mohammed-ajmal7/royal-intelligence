@@ -158,6 +158,71 @@ numeric game-data sources are not available.
 
 These are comparisons of *available historical reference fields*, not verified current game values, individual one-shot outcomes under all effects, whole-swarm HP, exact live DPS for multi-stage effects, or a full combat simulation. Shields, buffs, abilities, spawn effects, charge damage and building decay require separate verified mechanics.
 
+## ChatGPT-style deck reasoning (grounded strategy + optional real AI)
+
+**Build with Intelligence now reasons about matchups instead of only maximizing a
+card-stat score.** The system uses two clearly distinguished layers:
+
+1. **No-cost deterministic tactical reasoning**, available to everyone:
+   after the collection-derived search generates candidates, it combines
+   the existing statistical/structural evaluation (58%) with a transparent
+   matchup/strategy assessment (42%) while searching candidate swaps. Select
+   Balanced, Counter heavy air, Stop giant tanks, Punish swarms and bait,
+   Low-elixir defense, or Build around Royal Giant. It examines separately
+   six situations: air-heavy pushes, ground tanks, swarms/bait, ground defense,
+   reliable tower pressure, and average-elixir/four-cheapest-card rotation.
+   The new tactic report shows the supporting cards, identified risks,
+   composition overlap (especially over-investment in expensive splash
+   support), conditional counters (e.g. Inferno Tower reset risk), complementary
+   roles, and per-card reasons. It compares the chosen eight with the **actual
+   loaded account deck**, explaining improvements and trade-offs. Relative
+   values are editorial heuristic points, **not measured matchup win rates**.
+   Battle-history counts only reveal how often a threat appeared in recorded
+   1v1 wins/losses, *not why a player lost*.
+2. **Optional actual language-model second opinion**, requiring a deliberate
+   user click and a separately funded OpenAI API account. The server compares
+   the **five shortlisted candidate decks against the original loaded deck**
+   (which the model may recommend keeping). The model is asked to scrutinize
+   target matchups, elixir, redundancy, levels, spell coverage, counters and
+   the argument *against* its own choice. It returns a validated structured
+   recommendation with risks, reasons, substitutions, and an opening/defense/
+   counterpush playbook. The response only points to a known candidate or
+   the current deck. It **never automatically applies a deck**.
+
+### Enable owner-only real AI reviews on Vercel (optional)
+
+This needs a **separate paid OpenAI API key**. A ChatGPT subscription does
+not give the website API usage. The free, deterministic reasoning works
+without any model configuration.
+
+Add the following **server-only encrypted** environment variables in the
+Vercel project (Production and Preview), then redeploy:
+
+- `OPENAI_API_KEY` — your OpenAI project key; never use a `NEXT_PUBLIC_`
+  prefix or put it in browser code.
+- `DECK_AI_ACCESS_TOKEN` — a long, random, private owner access code.
+  The user must enter it in Deck Laboratory before requesting a real AI review.
+- `DECK_AI_MODEL` — optional, defaults to `gpt-6.1-sol`. Ensure that
+  your API project has access to the selected model.
+
+The protected endpoint `POST /api/deck-ai` uses the Responses API with
+structured JSON output. It accepts **only anonymous card IDs/names/levels,
+role labels, precomputed candidate scores and aggregated matchup counts**,
+not your name, account tag, raw profile, clan or full battle log. It does not
+store responses in the provider's response history (`store:false`) and
+returns `Cache-Control:no-store`. The key remains on the server.
+
+Set an API budget/usage cap in the provider dashboard before enabling
+production. A best-effort 12-requests-per-day per IP in-memory limit is
+*not* a reliable distributed rate limiter; the private owner access token
+is mandatory to avoid public API spend. When either secret is missing, the
+endpoint returns an explicit disabled message and costs nothing.
+
+The system is **not ChatGPT itself** and cannot guarantee the exact same
+deck or reasoning. The deterministic scorer and the optional paid model
+are distinct; missing or outdated combat stats, unequipped Evolutions and
+imperfect matchups are disclosed rather than fabricated.
+
 ## Mechanics-first deck intelligence
 
 **Actual card statistics come first, never fabricated card values.** The site independently obtains the current player's **owned cards, card levels, deck, and elixir values** from the official Supercell API. A cached server endpoint `GET /api/mechanics` additionally downloads public card game-data tables from the independently maintained [RoyaleAPI/cr-api-data](https://github.com/RoyaleAPI/cr-api-data): card mapping, troop/spawn relationships, characters, buildings, spells and projectiles. These are **community reference files**, not a Supercell-certified live combat API or a guarantee that each entry includes the newest balance changes.
