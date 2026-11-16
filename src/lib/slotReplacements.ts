@@ -13,9 +13,12 @@ export type ReplacementAssessment = {
   eligible: boolean;
   score: number;
   sourceLevel: number | null;
+  originalOwnedLevel: number | null;
   ownedLevel: number | null;
   sourceElixir: number | null;
   ownedElixir: number | null;
+  originalOwnedStats: { hp:number|null; damage:number|null; dps:number|null };
+  replacementStats: { hp:number|null; damage:number|null; dps:number|null };
   preserved: string[];
   gained: string[];
   limitations: string[];
@@ -52,8 +55,11 @@ export function ownedLevelBenchmark(cards: Card[]):number {
 }
 export function createReplacementAnalyzer(
   pool:Card[], mechanics:MechanicsCatalog|null|undefined,
+  fullCollection:Card[]=pool,
 ) {
   const benchmark=ownedLevelBenchmark(pool);
+  const originalOwned=new Map(fullCollection.filter(c=>c.owned)
+    .map(c=>[c.id,c]));
   const profileCache=new Map<string,{caps:Capabilities;mechanics:ResolvedMechanics|null}>();
   const matchCache=new Map<string,ReplacementAssessment>();
   const profile=(card:Card)=>{
@@ -90,6 +96,8 @@ export function createReplacementAnalyzer(
     const cached=matchCache.get(k);
     if(cached)return cached;
     const sourceData=profile(source), targetData=profile(target);
+    const original=originalOwned.get(source.id);
+    const originalData=original ? profile(original) : null;
     const sourceCaps=sourceData.caps,targetCaps=targetData.caps;
     const blocked:string[]=[];
     const same=source.id===target.id;
@@ -153,6 +161,14 @@ export function createReplacementAnalyzer(
       limitations.push("Some attack/target properties use editorial roles because current combat fields are missing");
     if(source.level===null)
       limitations.push("Observed player's card level was not provided");
+    if(!original)
+      limitations.push("The observed card is not in your owned collection");
+    else if(original.level===null)
+      limitations.push("The level of your copy of the observed card is unavailable");
+    else if(original.id!==target.id && target.level!==null &&
+      original.level<target.level)
+      gained.push("Your replacement is "+(target.level-original.level)+
+        " levels above your owned "+source.name);
     if(targetData.mechanics?.hitpoints===null||targetData.mechanics?.damage===null)
       limitations.push("Actual-level HP or damage data is incomplete");
     const sourceRoles=source.roles.filter(r=>important.has(r));
@@ -167,14 +183,29 @@ export function createReplacementAnalyzer(
       Math.max(0,source.level-currentLevel-2);
     const costBonus=source.elixir===null||target.elixir===null?0:
       target.elixir<source.elixir?10:target.elixir===source.elixir?7:2;
-    // Known mechanics contribute only a small bonus. HP/DPS alone do not
-    // prove tactical equivalence, especially for spells and group cards.
+    // Published HP/damage/DPS at the player's actual owned levels are
+    // optional comparison evidence, not estimates generated from level.
+    // Comparing groups or spells as if they were individual DPS units would
+    // be misleading, so add only a small effectiveness adjustment to two
+    // comparable troop records with known stats.
     const known=targetData.mechanics;
+    const origin=originalData?.mechanics;
     const measured=known?.hitpoints!==null&&known?.hitpoints!==undefined
       &&known?.damage!==null&&known?.damage!==undefined?4:
       known?.damage!==null&&known?.damage!==undefined?2:0;
+    const comparable=origin?.kind==="Troop"&&known?.kind==="Troop" &&
+      (original?.elixir??0)>0 && (target.elixir??0)>0 &&
+      original?.id!==target.id;
+    const dpsDifference=comparable&&origin?.dps!==null&&origin?.dps!==undefined&&
+      known?.dps!==null&&known?.dps!==undefined
+      ? known.dps/(target.elixir??1) -
+        origin.dps/(original?.elixir??1) : null;
+    const measuredAdvantage=dpsDifference===null?0:
+      Math.max(-5,Math.min(5,dpsDifference/30));
+    if(dpsDifference!==null)limitations.push(
+      "DPS comparison is per elixir from available community tables; it does not simulate troop count, splash targets or battle outcomes");
     const value=clamp(fidelity*45+levelQuality*0.42+
-      costBonus+measured-
+      costBonus+measured+measuredAdvantage-
       Math.min(18,globalGap*3)+
       (!sourceCaps.splash&&targetCaps.splash?3:0));
     const eligible=blocked.length===0;
@@ -187,8 +218,17 @@ export function createReplacementAnalyzer(
       : blocked.join("; ")+".";
     const answer={
       eligible,score:eligible?Math.round(value*10)/10:0,
-      sourceLevel:source.level,ownedLevel:target.level,
+      sourceLevel:source.level,originalOwnedLevel:original?.level??null,
+      ownedLevel:target.level,
       sourceElixir:source.elixir,ownedElixir:target.elixir,
+      originalOwnedStats:{
+        hp:origin?.hitpoints??null,damage:origin?.damage??null,
+        dps:origin?.dps??null,
+      },
+      replacementStats:{
+        hp:known?.hitpoints??null,damage:known?.damage??null,
+        dps:known?.dps??null,
+      },
       preserved,gained,limitations,reason,
     };
     matchCache.set(k,answer);
