@@ -26,14 +26,6 @@ export type LiveCandidate = {
   };
 };
 const clamp=(n:number)=>Math.max(0,Math.min(100,n));
-const intersection=(a:string[],b:string[])=>a.filter(x=>b.includes(x));
-const meaningful=(c:Card)=>c.roles.filter(r=>!["Spell","Support","Ground defense"].includes(r));
-function similarity(source:Card,target:Card) {
-  if(source.id===target.id)return 1;
-  const wanted=meaningful(source), actual=meaningful(target);
-  if(!wanted.length)return 0;
-  return intersection(wanted,actual).length/new Set([...wanted,...actual]).size;
-}
 
 /** Live-deck adaptation only: no canned templates or offline generation path.
  * Usage percentages are counts, while this bounded search is explicitly an
@@ -156,10 +148,11 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
     const exact=source.cards.map(c=>pool.find(p=>p.id===c.id));
     if(exact.every((c):c is Card=>!!c))add(exact,source);
   }
-  // If adapting individual observed decks yields no legal eight-card team,
-  // use observed card usage / co-occurrence to assemble a collection-compatible
-  // candidate. This is labelled separately and never described as a pro deck.
-  if(seeds.size===0 && meta.players.length>0 && pool.length>=8) {
+  // Independently seek a strong owned-level team using current observed
+  // usage, pairings and role coverage. Include it even when direct pro-deck
+  // adaptations exist, so an underleveled popular card never wins solely
+  // due to matching a source deck. This is clearly NOT a pro player's deck.
+  if(meta.players.length>0 && pool.length>=8) {
     let beam:{cards:Card[];value:number}[]=[{cards:[...locked],value:0}];
     for(let slot=locked.length;slot<8;slot++) {
       const trials:{cards:Card[];value:number}[]=[];
