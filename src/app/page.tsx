@@ -2097,7 +2097,7 @@ export default function App() {
                       onClick={()=>{
                         const target=aiReview.choiceIndex===-1?s.deck:
                           candidates[aiReview.choiceIndex]?.cards;
-                        if(target)setDeck(target);
+                        if(target){setDeck(target);setDeckOrigin(aiReview.choiceIndex===-1?"manual":"global");}
                       }}>
                       Use the AI-selected eight cards
                     </button>
@@ -2143,7 +2143,7 @@ export default function App() {
                         )}
                         <button
                           className="btn secondary"
-                          onClick={() => setDeck(c.cards)}
+                          onClick={() => {setDeck(c.cards);setDeckOrigin("global");}}
                         >
                           {key(deck) === key(c.cards) ? "Selected" : "Use this deck"}
                         </button>
