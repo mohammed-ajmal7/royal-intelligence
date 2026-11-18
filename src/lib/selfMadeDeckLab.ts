@@ -33,6 +33,11 @@ export type SelfSlotId = (typeof SELF_SLOTS)[number]["id"];
 export type SelfCardComparison = {
   card: Card;
   grade: number;
+  /** Relative, role-specific comparison of verified mechanics only. */
+  numericScore: number | null;
+  numericCoverage: number;
+  specialBonus: number;
+  measured: { label: string; value: number; unit: string; relative: number }[];
   hp: number | null;
   damage: number | null;
   dps: number | null;
@@ -94,15 +99,12 @@ export function qualifiesForSelfSlot(
   card: Card,
   mechanics: MechanicsCatalog | null = null,
 ): boolean {
-  const m = resolveMechanics(card, mechanics);
   switch (slot) {
     case "win": return role(card, "Win condition");
-    case "mini": return role(card, "Mini tank") && !role(card, "Spell");
+    case "mini": return role(card, "Mini tank") && !role(card, "Spell") && (card.elixir ?? 99) <= 5;
     case "air": return canSustainAir(card, mechanics);
     case "splash": return canSustainAir(card, mechanics) &&
-      role(card, "Swarm control") && (m?.splashRadiusTiles === null ||
-        m?.splashRadiusTiles === undefined || m.splashRadiusTiles > 0 ||
-        !!getMechanicsRecord(card, mechanics)?.groupUnits?.length);
+      role(card, "Swarm control");
     case "tank": return role(card, "Tank killer") || defensiveBuildings.has(card.name);
     case "ground": return role(card, "Ground defense") && isTroopOrBuilding(card);
     case "small": return role(card, "Small spell");
@@ -110,8 +112,158 @@ export function qualifiesForSelfSlot(
   }
 }
 
-function profile(card: Card, slot: SelfSlotId, benchmark: number,
-  mechanics: MechanicsCatalog | null): SelfCardComparison {
+/**
+ * Compare only the quantities that actually matter for each position.
+ * All percentages are normalised against OTHER ELIGIBLE OWNED CARDS for
+ * the same role, at their actual published level. Damage, HP and DPS are
+ * never added together as if they have the same physical unit.
+ */
+type MetricId =
+  "hp" | "damage" | "dps" | "hpPerElixir" | "dpsPerElixir" |
+  "range" | "splash" | "unitCount" | "elixir";
+type MetricSpec = { id: MetricId; label: string; weight: number; unit: string };
+const METRICS: Record<SelfSlotId, readonly MetricSpec[]> = {
+  win: [
+    { id:"dps", label:"Sustained damage", weight:28, unit:"DPS" },
+    { id:"damage", label:"Damage per strike", weight:20, unit:"damage" },
+    { id:"hp", label:"Survivability", weight:24, unit:"HP" },
+    { id:"dpsPerElixir", label:"Damage efficiency", weight:18, unit:"DPS/elixir" },
+    { id:"elixir", label:"Deployment cost", weight:10, unit:"elixir" },
+  ],
+  mini: [
+    { id:"hp", label:"Damage absorption", weight:42, unit:"HP" },
+    { id:"hpPerElixir", label:"Absorption efficiency", weight:38, unit:"HP/elixir" },
+    { id:"dps", label:"Counterattack", weight:12, unit:"DPS" },
+    { id:"elixir", label:"Deployment cost", weight:8, unit:"elixir" },
+  ],
+  air: [
+    { id:"dps", label:"Anti-air DPS", weight:38, unit:"DPS" },
+    { id:"dpsPerElixir", label:"Anti-air efficiency", weight:22, unit:"DPS/elixir" },
+    { id:"range", label:"Attack range", weight:18, unit:"tiles" },
+    { id:"damage", label:"Damage per strike", weight:12, unit:"damage" },
+    { id:"hp", label:"Survivability", weight:6, unit:"HP" },
+    { id:"elixir", label:"Deployment cost", weight:4, unit:"elixir" },
+  ],
+  splash: [
+    { id:"splash", label:"Area radius", weight:28, unit:"tiles" },
+    { id:"dps", label:"Area defender DPS", weight:27, unit:"DPS" },
+    { id:"range", label:"Attack range", weight:16, unit:"tiles" },
+    { id:"damage", label:"Area hit damage", weight:12, unit:"damage" },
+    { id:"hp", label:"Survivability", weight:9, unit:"HP" },
+    { id:"elixir", label:"Deployment cost", weight:8, unit:"elixir" },
+  ],
+  tank: [
+    { id:"dps", label:"Tank-burning DPS", weight:40, unit:"DPS" },
+    { id:"damage", label:"Damage per strike", weight:21, unit:"damage" },
+    { id:"hp", label:"Survivability", weight:14, unit:"HP" },
+    { id:"range", label:"Attack range", weight:10, unit:"tiles" },
+    { id:"elixir", label:"Deployment cost", weight:15, unit:"elixir" },
+  ],
+  ground: [
+    { id:"hpPerElixir", label:"Defensive durability / elixir", weight:24, unit:"HP/elixir" },
+    { id:"dpsPerElixir", label:"Defensive damage / elixir", weight:24, unit:"DPS/elixir" },
+    { id:"hp", label:"Survivability", weight:15, unit:"HP" },
+    { id:"dps", label:"Damage output", weight:12, unit:"DPS" },
+    { id:"unitCount", label:"Unit count", weight:8, unit:"units" },
+    { id:"elixir", label:"Cycle cost", weight:17, unit:"elixir" },
+  ],
+  small: [
+    { id:"damage", label:"Spell hit damage", weight:56, unit:"damage" },
+    { id:"splash", label:"Area of effect", weight:29, unit:"tiles" },
+    { id:"elixir", label:"Deployment cost", weight:15, unit:"elixir" },
+  ],
+  heavy: [
+    { id:"damage", label:"Spell hit damage", weight:63, unit:"damage" },
+    { id:"splash", label:"Area of effect", weight:24, unit:"tiles" },
+    { id:"elixir", label:"Deployment cost", weight:13, unit:"elixir" },
+  ],
+};
+type Metrics = Record<MetricId, number | null>;
+const knownNumber = (value: number | null | undefined) =>
+  value !== null && value !== undefined && Number.isFinite(value) && value > 0 ?
+    value : null;
+function measuresOf(card: Card, mechanics: MechanicsCatalog | null): Metrics {
+  const m = resolveMechanics(card, mechanics);
+  const record = getMechanicsRecord(card, mechanics);
+  // If the source describes one spawned soldier, never rank a multi-unit
+  // deployment as though its published per-soldier HP/DPS were whole-card totals.
+  const grouped = !!record?.groupUnits?.length &&
+    (record.groupUnits.length > 1 || record.groupUnits.some(x => (x.count ?? 1) > 1));
+  const cost = knownNumber(card.elixir);
+  const hp = grouped ? null : knownNumber(m?.hitpoints);
+  const dps = grouped ? null : knownNumber(m?.dps);
+  return {
+    hp, damage: grouped ? null : knownNumber(m?.damage), dps,
+    hpPerElixir: hp !== null && cost !== null ? hp / cost : null,
+    dpsPerElixir: dps !== null && cost !== null ? dps / cost : null,
+    range: knownNumber(m?.rangeTiles),
+    splash: knownNumber(m?.splashRadiusTiles),
+    unitCount: knownNumber(m?.unitCount),
+    elixir:cost,
+  };
+}
+function roleProfiles(
+  cards: Card[], slot: SelfSlotId, benchmark: number,
+  mechanics: MechanicsCatalog | null,
+): SelfCardComparison[] {
+  const specs=METRICS[slot];
+  const rows=cards.map(card => ({card, values:measuresOf(card, mechanics)}));
+  const peaks=new Map<MetricId, number>();
+  for (const spec of specs) {
+    const observed=rows.map(r=>r.values[spec.id]).filter(
+      (n):n is number=>n!==null);
+    if (observed.length) peaks.set(spec.id, spec.id==="elixir" ?
+      Math.min(...observed) : Math.max(...observed));
+  }
+  const highestLevel=Math.max(benchmark,...cards.map(c=>c.level??0));
+  const combatWeight=specs.filter(x=>x.id!=="elixir")
+    .reduce((sum,x)=>sum+x.weight,0);
+  return rows.map(({card,values})=>{
+    const measured:SelfCardComparison["measured"]=[];
+    let weightedSum=0,observedWeight=0,availableCombat=0;
+    for(const spec of specs) {
+      const value=values[spec.id], peak=peaks.get(spec.id);
+      if(value===null || peak===undefined || peak<=0)continue;
+      const relative=clamp(100*(spec.id==="elixir"?peak/value:value/peak));
+      weightedSum+=relative*spec.weight;
+      observedWeight+=spec.weight;
+      if(spec.id!=="elixir")availableCombat+=spec.weight;
+      measured.push({
+        label:spec.label,value:round(value),unit:spec.unit,
+        relative:round(relative),
+      });
+    }
+    const numericCoverage=combatWeight>0?availableCombat/combatWeight:0;
+    const numericScore=availableCombat>0&&observedWeight>0?
+      weightedSum/observedWeight:null;
+    // Compare levels inside the eligible owned role, not a pro's card level.
+    const levelScore=clamp(100-Math.max(0,highestLevel-(card.level??0))*13);
+    const m=resolveMechanics(card, mechanics);
+    let fit=90;
+    if(slot==="air" || slot==="splash")fit+=m?.targetsAir===true?8:0;
+    if(slot==="splash")fit+=m?.targetsGround===true?2:0;
+    if(slot==="ground")fit+=(card.elixir??99)<=3?8:0;
+    if(slot==="mini")fit+=(card.elixir??99)<=3?6:0;
+    if(slot==="tank")fit+=defensiveBuildings.has(card.name)?4:0;
+    if(slot==="win")fit+=m?.buildingsOnly===true?6:0;
+    // Owning a special form provides flexibility, not an invented combat
+    // multiplier and not proof the special slot has been equipped.
+    const specialBonus=Math.min(5,(card.evo===true?3:0)+
+      (card.hero===true?2:0));
+    const weight=numericScore===null?0:60*numericCoverage;
+    const grade=round(clamp((levelScore*25+clamp(fit)*15+
+      (numericScore??0)*weight)/(40+weight)+specialBonus));
+    return {
+      ...profile(card, mechanics),grade,
+      numericScore:numericScore===null?null:round(numericScore),
+      numericCoverage:round(numericCoverage),
+      specialBonus,measured,
+    };
+  });
+}
+function profile(card: Card, mechanics: MechanicsCatalog | null):
+  Omit<SelfCardComparison,"grade"|"numericScore"|"numericCoverage"|
+    "specialBonus"|"measured"> {
   const raw = mechanicsOf(card, mechanics);
   const m = resolveMechanics(card, mechanics);
   const record = getMechanicsRecord(card, mechanics);
@@ -129,40 +281,6 @@ function profile(card: Card, slot: SelfSlotId, benchmark: number,
     damage:formStat(/^(damage|area damage|attack damage)$/i),
     dps:formStat(/^(dps|damage per second)$/i),
   } : null;
-  // Levels are the player's own normalized base levels. The reference
-  // publication's exact-level values are used directly, never projected.
-  const readiness = clamp(100 - Math.max(0, benchmark - (card.level ?? 0)) * 17);
-  let fit = 91;
-  if (slot === "air") {
-    fit += m?.targetsAir === true ? 5 : 0;
-    fit += m?.dps !== null && m?.dps !== undefined ? 4 : 0;
-    if (role(card, "Swarm control")) fit -= 3;
-  } else if (slot === "splash") {
-    fit += m?.targetsAir === true ? 3 : 0;
-    fit += m?.splashRadiusTiles !== null && m?.splashRadiusTiles !== undefined &&
-      m.splashRadiusTiles > 0 ? 6 : 0;
-  } else if (slot === "tank") {
-    fit += m?.dps !== null && m?.dps !== undefined ? 6 : 0;
-    fit += defensiveBuildings.has(card.name) ? 2 : 0;
-  } else if (slot === "mini") {
-    fit += m?.hitpoints !== null && m?.hitpoints !== undefined ? 5 : 0;
-    fit -= Math.max(0, (card.elixir ?? 0) - 4) * 5;
-  } else if (slot === "ground") {
-    fit += (card.elixir ?? 9) <= 3 ? 7 : 0;
-    fit -= Math.max(0, (card.elixir ?? 0) - 4) * 7;
-  } else if (slot === "win") {
-    fit += 5;
-  } else {
-    fit += 8;
-  }
-  const confidence = raw.score === null ? 0 : raw.confidence;
-  // Unknown mechanics don't score as zero: confidence removes their weight.
-  // The measured component is an editorial per-elixir normalization, NOT an
-  // independent win rate or a direct cross-category DPS comparison.
-  const grade = round(clamp(
-    (readiness * 50 + clamp(fit) * 25 +
-      (raw.score ?? 0) * 25 * confidence) / (75 + 25 * confidence),
-  ));
   const known: string[] = [];
   if (raw.hp !== null) known.push("HP " + Math.round(raw.hp));
   if (raw.dps !== null) known.push("DPS " + Math.round(raw.dps));
@@ -172,12 +290,12 @@ function profile(card: Card, slot: SelfSlotId, benchmark: number,
   if (evolved && [evolved.hp,evolved.damage,evolved.dps].some(x=>x!==null))
     known.push("Published " + evolved.form + " stats available");
   return {
-    card, grade, hp: raw.hp, damage: raw.damage, dps: raw.dps,
-    hitSpeed:raw.hitSpeed, range:raw.range, splash:raw.splash,
-    abilityRecorded:m?.specialAbility ?? null, evolved,
-    target: raw.targets, confidence,
-    evidence: known.length ? known.join(" · ") :
-      "Only level and classified role can currently be verified",
+    card,hp:raw.hp,damage:raw.damage,dps:raw.dps,
+    hitSpeed:raw.hitSpeed,range:raw.range,splash:raw.splash,
+    abilityRecorded:m?.specialAbility ?? null,evolved,
+    target:raw.targets,confidence:raw.confidence,
+    evidence:known.length?known.join(" · "):
+      "Only owned level, elixir and editorial role are currently verified",
   };
 }
 
@@ -271,11 +389,13 @@ export function generateSelfMadeDecks(
   }
   const options = new Map<SelfSlotId, SelfCardComparison[]>();
   for (const slot of SELF_SLOTS) {
-    const matches = pool.filter(c => qualifiesForSelfSlot(slot.id, c, mechanics))
-      .map(c => profile(c, slot.id, benchmark, mechanics))
+    const eligible = pool.filter(c => qualifiesForSelfSlot(slot.id, c, mechanics));
+    const matches = roleProfiles(eligible, slot.id, benchmark, mechanics)
       .sort((a, b) => b.grade - a.grade ||
+        (b.numericScore ?? -1) - (a.numericScore ?? -1) ||
         (b.card.level ?? 0) - (a.card.level ?? 0) ||
         a.card.id - b.card.id);
+
     options.set(slot.id, matches);
     slotCounts[slot.id] = matches.length;
     if (!matches.length)
@@ -361,17 +481,17 @@ export function generateSelfMadeDecks(
     const evolutionBonus = Math.min(3.75, specialSlots.length * 1.25);
     const extraWins = Math.max(0, cards.filter(c => role(c,"Win condition")).length - 1);
     const score = round(clamp(
-      averageRolePower * .48 + evaluation.score * .29 +
-      strategy.score * .23 + evolutionBonus - extraWins * 2.5,
+      averageRolePower * .85 + evaluation.score * .08 +
+      strategy.score * .07 + evolutionBonus - extraWins * 2.5,
     ));
     const slots: SelfSlotComparison[] = SELF_SLOTS.map(slot => {
       const chosen = options.get(slot.id)!.find(x =>
         x.card.id === state.chosen.find(s => s.id === slot.id)!.card.id)!;
       return {
         id:slot.id, label:slot.label, purpose:slot.purpose, chosen,
-        // All alternatives were evaluated; show only the strongest five.
+        // Expose the full ordered owned-card ranking for transparency.
         alternatives:options.get(slot.id)!.filter(x =>
-          x.card.id !== chosen.card.id).slice(0,5),
+          x.card.id !== chosen.card.id),
         considered:options.get(slot.id)!.length,
       };
     });
@@ -389,8 +509,8 @@ export function generateSelfMadeDecks(
       warnings,
     });
   }
-  full.sort((a,b) => b.score - a.score ||
-    b.averageRolePower - a.averageRolePower ||
+  full.sort((a,b) => b.averageRolePower - a.averageRolePower ||
+    b.score - a.score ||
     key(a.cards).localeCompare(key(b.cards)));
   const selected: SelfMadeCandidate[] = [];
   for (const candidate of full) {
