@@ -1,5 +1,38 @@
 # Global Ranked Deck Laboratory — Top 100, 200 or 300
 
+## How to Play This Deck — deck-specific match guide
+
+Deck Laboratory now displays a dedicated **How to Play This Deck** panel
+for the currently selected eight cards. Every alternative from the current
+global Ranked scan has its own expandable **How to play alternative #N**
+guide. Changing to a different recommendation, changing the selected deck
+or the strategic focus updates the active guide; the displayed playbook
+never reuses another candidate's card names.
+
+The deterministic generator (src/lib/deckPlaybook.ts) uses only the actual
+eight-card selection, categorized strategic functions, current reference
+targeting flags when available, and selected strategy focus. It produces:
+
+- Four phases: safe opening (without assuming the starting four-card hand),
+  single elixir, double elixir, and overtime/finishing.
+- Specific deck archetype priorities for Royal Giant, cycle-pressure, spell
+  bait, heavy tank pushes, Miner, Balloon and siege win conditions, with a
+  generic fallback for newly introduced win conditions.
+- Response plans for heavy air, tanks, swarms/bait and ground pressure,
+  naming only cards **present** in the selected deck. It explicitly
+  discloses missing defensive answers and distinguishes one-use stun/cycle
+  effects from sustained air defense.
+- Eight card-by-card assignments with the player's actual card levels and
+  elixir, when to spend each card and mistakes to avoid.
+- The deck's average elixir, win condition, match reminders and caveats.
+
+No paid AI key is required for this playbook. It is deliberately rule-based,
+not a live battle replay, exact card-rotation solver or win-probability
+model. It cannot know the match's starting hand, opponent's current elixir,
+placement coordinates, tower HP, arena pathing, timing or hidden counters.
+Unknown numbers are never invented. Matchup advice is situational guidance
+rather than a 100% guaranteed play sequence.
+
 ## Per-card replacement accuracy policy (2026-11-16)
 
 The original algorithm considered role overlap, card frequency and the player's
