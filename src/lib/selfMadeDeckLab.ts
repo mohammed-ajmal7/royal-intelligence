@@ -62,6 +62,7 @@ export type SelfMadeCandidate = {
   averageRolePower: number;
   ownedEvolutionCount: number;
   suggestedEvolutions: string[];
+  specialSlots: { slot:"Evolution"|"Hero"|"Wild"; card:string; form:"evolution"|"hero"|"champion" }[];
   warnings: string[];
 };
 export type SelfMadeResult = {
@@ -79,8 +80,7 @@ const defensiveBuildings = new Set([
   "Cannon", "Tesla", "Inferno Tower", "Bomb Tower", "Tombstone", "Goblin Cage",
 ]);
 const isTroopOrBuilding = (c: Card) =>
-  !role(c, "Spell") && !role(c, "Win condition") &&
-  c.rarity.toLowerCase() !== "champion";
+  !role(c, "Spell") && !role(c, "Win condition");
 const canSustainAir = (card: Card, mechanics: MechanicsCatalog | null) => {
   if (!role(card, "Air defense") || !isTroopOrBuilding(card) || role(card, "Cycle"))
     return false;
@@ -181,6 +181,51 @@ function profile(card: Card, slot: SelfSlotId, benchmark: number,
   };
 }
 
+type SpecialForm = {
+  id:number; card:string; form:"evolution"|"hero"|"champion"; grade:number;
+};
+
+/**
+ * Since March 2026 the deck has one Evo slot, one Hero slot and one Wild.
+ * Assign each chosen card to at most one active form, without pretending
+ * an unlock is already equipped or that an ability has a known DPS multiplier.
+ */
+function planSpecialSlots(cards:Card[], assignments:Assignment[]):{
+  slot:"Evolution"|"Hero"|"Wild";card:string;form:"evolution"|"hero"|"champion";
+}[] {
+  const forms:SpecialForm[]=[];
+  for(const c of cards){
+    const grade=assignments.find(x=>x.card.id===c.id)?.grade??0;
+    if(c.evo===true)forms.push({id:c.id,card:c.name,form:"evolution",grade});
+    if(c.hero===true)forms.push({id:c.id,card:c.name,form:"hero",grade});
+    if(c.rarity.toLowerCase()==="champion")
+      forms.push({id:c.id,card:c.name,form:"champion",grade});
+  }
+  const best:{slot:"Evolution"|"Hero"|"Wild";card:string;form:SpecialForm["form"]}[]=[];
+  let bestValue=-1;
+  const evos=forms.filter(x=>x.form==="evolution");
+  const heroes=forms.filter(x=>x.form==="hero"||x.form==="champion");
+  for(const evo of [null,...evos]){
+    for(const hero of [null,...heroes]){
+      if(evo&&hero&&evo.id===hero.id)continue;
+      for(const wild of [null,...forms]){
+        const picked=[evo,hero,wild].filter((x):x is SpecialForm=>x!==null);
+        if(new Set(picked.map(x=>x.id)).size!==picked.length)continue;
+        // Fill available slots, then favor the most capable owned forms.
+        const value=picked.length*1000+
+          picked.reduce((sum,x)=>sum+x.grade,0);
+        if(value<=bestValue)continue;
+        bestValue=value;
+        best.length=0;
+        if(evo)best.push({slot:"Evolution",card:evo.card,form:evo.form});
+        if(hero)best.push({slot:"Hero",card:hero.card,form:hero.form});
+        if(wild)best.push({slot:"Wild",card:wild.card,form:wild.form});
+      }
+    }
+  }
+  return best;
+}
+
 type Assignment = { id: SelfSlotId; card: Card; grade: number };
 type Beam = { chosen: Assignment[]; ids: Set<number>; spent: number; value: number };
 
@@ -210,12 +255,20 @@ export function generateSelfMadeDecks(
     return empty();
   }
   const pool = [...new Map(collection.filter(c =>
-    c.owned && !c.tower && c.rarity.toLowerCase() !== "champion" &&
+    c.owned && !c.tower &&
     c.level !== null && Number.isInteger(c.level) && c.level >= q.minLevel &&
     c.elixir !== null && Number.isFinite(c.elixir) && c.elixir >= 0 &&
     !q.exclude.includes(c.id),
   ).map(c => [c.id, { ...c, active: "base" }])).values()];
   const benchmark = ownedLevelBenchmark(pool);
+  const lockedIds = [...q.include];
+  if (focus === "royal-giant" && !lockedIds.some(id =>
+    pool.some(c => c.id === id && c.name === "Royal Giant"))) {
+    const royalGiant = pool.find(c => c.name === "Royal Giant");
+    if (!royalGiant) issues.push(
+      "Royal Giant focus requires an eligible owned Royal Giant.");
+    else lockedIds.push(royalGiant.id);
+  }
   const options = new Map<SelfSlotId, SelfCardComparison[]>();
   for (const slot of SELF_SLOTS) {
     const matches = pool.filter(c => qualifiesForSelfSlot(slot.id, c, mechanics))
@@ -230,7 +283,7 @@ export function generateSelfMadeDecks(
         ". Review your minimum level or excluded cards.");
   }
   if (pool.length < 8) issues.push("Fewer than eight eligible owned cards.");
-  const forced = new Set(q.include);
+  const forced = new Set(lockedIds);
   for (const id of forced) {
     if (!pool.some(c => c.id === id))
       issues.push("Locked card #" + id + " is not eligible in your collection.");
@@ -253,6 +306,9 @@ export function generateSelfMadeDecks(
       for (const candidate of options.get(slot.id)!) {
         const card = candidate.card;
         if (state.ids.has(card.id) || state.spent + (card.elixir ?? 0) > maxSpent)
+          continue;
+        if (card.rarity.toLowerCase() === "champion" &&
+          state.chosen.filter(x => x.card.rarity.toLowerCase() === "champion").length >= 2)
           continue;
         const ids = new Set(state.ids);
         ids.add(card.id);
@@ -297,16 +353,12 @@ export function generateSelfMadeDecks(
     const strategy = assessStrategy(cards, mechanics, { focus });
     const averageRolePower = round(state.value / 8);
     const evolutionReady = cards.filter(c => c.evo === true);
-    const suggestedEvolutions = evolutionReady
-      .map(c => ({
-        name: c.name,
-        grade: state.chosen.find(x => x.card.id === c.id)!.grade,
-      }))
-      .sort((a,b) => b.grade - a.grade)
-      .slice(0,2).map(x => x.name);
-    // Evolution is a small *unlock* preference, NOT fake upgraded DPS.
-    // In-game active slots/rotation are not visible for a generated deck.
-    const evolutionBonus = Math.min(3, evolutionReady.length * 1.5);
+    const specialSlots = planSpecialSlots(cards, state.chosen);
+    const suggestedEvolutions = specialSlots.filter(x => x.form === "evolution")
+      .map(x => x.card);
+    // The one Evo, one Hero and one Wild slot give only a small
+    // eligibility benefit. They do not multiply base combat statistics.
+    const evolutionBonus = Math.min(3.75, specialSlots.length * 1.25);
     const extraWins = Math.max(0, cards.filter(c => role(c,"Win condition")).length - 1);
     const score = round(clamp(
       averageRolePower * .48 + evaluation.score * .29 +
@@ -324,7 +376,8 @@ export function generateSelfMadeDecks(
       };
     });
     const warnings = [
-      "Evolution/Hero unlocked does not mean equipped or activated; choose legal in-game slots.",
+      "The 2026 deck system has an Evolution, Hero and Wild slot; active forms depend on unlocked slots and the game mode.",
+      "Evolution/Hero unlocked does not mean equipped or activated; configure the suggested slots in game.",
       "Comparison numbers use base forms at your owned level, never invented Evolution damage multipliers.",
       "Some published combat values may lag the current balance patch.",
     ];
@@ -332,7 +385,7 @@ export function generateSelfMadeDecks(
       warnings.push("Incomplete HP, damage or targeting values: low-confidence comparisons are clearly marked.");
     full.push({
       cards, score, evaluation, strategy, slots, averageRolePower,
-      ownedEvolutionCount:evolutionReady.length, suggestedEvolutions,
+      ownedEvolutionCount:evolutionReady.length, suggestedEvolutions, specialSlots,
       warnings,
     });
   }
