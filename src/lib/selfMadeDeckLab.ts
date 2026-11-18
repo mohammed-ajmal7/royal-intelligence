@@ -5,6 +5,7 @@ import { assessStrategy, type StrategyFocus } from "./deckStrategy";
 import {
   getMechanicsRecord,
   resolveMechanics,
+  statForLevel,
   type MechanicsCatalog,
 } from "./mechanics";
 import { mechanicsOf } from "./mechanicsScoring";
@@ -35,6 +36,11 @@ export type SelfCardComparison = {
   hp: number | null;
   damage: number | null;
   dps: number | null;
+  hitSpeed: number | null;
+  range: number | null;
+  splash: number | null;
+  abilityRecorded: boolean | null;
+  evolved: { form: string; hp: number | null; damage: number | null; dps: number | null } | null;
   target: string;
   confidence: number;
   evidence: string;
@@ -108,6 +114,21 @@ function profile(card: Card, slot: SelfSlotId, benchmark: number,
   mechanics: MechanicsCatalog | null): SelfCardComparison {
   const raw = mechanicsOf(card, mechanics);
   const m = resolveMechanics(card, mechanics);
+  const record = getMechanicsRecord(card, mechanics);
+  const evoForm = card.evo === true ?
+    Object.entries(record?.extraFormsByLevel ?? {})
+      .find(([form]) => /evolution|evolved|\bevo\b/i.test(form)) : undefined;
+  const formStat = (pattern: RegExp) => {
+    if (!evoForm) return null;
+    const entry = Object.entries(evoForm[1]).find(([field]) => pattern.test(field));
+    return entry ? statForLevel(entry[1], card.level) : null;
+  };
+  const evolved = evoForm ? {
+    form:evoForm[0],
+    hp:formStat(/^(hp|hitpoints|health)$/i),
+    damage:formStat(/^(damage|area damage|attack damage)$/i),
+    dps:formStat(/^(dps|damage per second)$/i),
+  } : null;
   // Levels are the player's own normalized base levels. The reference
   // publication's exact-level values are used directly, never projected.
   const readiness = clamp(100 - Math.max(0, benchmark - (card.level ?? 0)) * 17);
@@ -148,8 +169,12 @@ function profile(card: Card, slot: SelfSlotId, benchmark: number,
   if (card.evo === true) known.push("Evolution unlocked");
   if (card.hero === true) known.push("Hero unlocked");
   if (m?.specialAbility) known.push("Special ability recorded");
+  if (evolved && [evolved.hp,evolved.damage,evolved.dps].some(x=>x!==null))
+    known.push("Published " + evolved.form + " stats available");
   return {
     card, grade, hp: raw.hp, damage: raw.damage, dps: raw.dps,
+    hitSpeed:raw.hitSpeed, range:raw.range, splash:raw.splash,
+    abilityRecorded:m?.specialAbility ?? null, evolved,
     target: raw.targets, confidence,
     evidence: known.length ? known.join(" · ") :
       "Only level and classified role can currently be verified",
