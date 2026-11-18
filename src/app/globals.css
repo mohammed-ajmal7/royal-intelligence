@@ -4045,3 +4045,69 @@ footer p { color: #afcbe4; }
   .deck-play-phase,.deck-play-matchup{padding:11px}
   .deck-play-quick span{width:100%}
 }
+
+
+/* Independent owned-collection eight-role Deck Laboratory generator. */
+.self-lab-blueprint{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:16px 0}
+.self-lab-blueprint-item{display:flex;gap:10px;align-items:flex-start;padding:12px;
+  border:1px solid #4b779f;border-radius:9px;background:#102f53;min-width:0}
+.self-lab-blueprint-item>span{display:grid;place-items:center;flex:none;width:28px;height:28px;
+  border-radius:7px;background:#604829;color:#ffe7ac;font-weight:900;font-size:12px}
+.self-lab-blueprint-item>div{display:grid;gap:4px;min-width:0}
+.self-lab-blueprint-item strong{font-size:12px;color:#ffedc3;line-height:1.35}
+.self-lab-blueprint-item small{font-size:10px;color:#c1d9ec;line-height:1.5}
+.self-lab-results{display:grid;gap:14px;margin-top:14px;min-width:0}
+.self-lab-candidate{padding:15px;border-radius:12px;background:#0d2c50;border:1px solid #5d88b2;min-width:0}
+.self-lab-candidate-head{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:12px}
+.self-lab-kicker{font-size:10px;letter-spacing:.7px;color:#e3ca97;font-weight:850}
+.self-lab-candidate-head h4{font-size:17px;color:#ffe7b0;margin:5px 0}
+.self-lab-candidate-head p{font-size:11px;color:#c7dced;line-height:1.6;margin:0}
+.self-lab-score{text-align:right;flex:none}
+.self-lab-score strong{display:block;font-size:22px;color:#ffe5a3;font-variant-numeric:tabular-nums}
+.self-lab-score strong small{font-size:12px;color:#c1d8e9}
+.self-lab-score>span{display:block;font-size:10px;color:#c0dbeb}
+.self-lab-card-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.self-lab-card-tile{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;
+  gap:5px;padding:9px 6px;border:1px solid #37678e;border-radius:9px;background:#143b66}
+.self-lab-card-tile small{font-size:10px;color:#f5d597;font-weight:800}
+.self-lab-card-tile img{width:52px;height:63px;object-fit:contain}
+.self-lab-card-tile strong{font-size:11px;color:#e8f4ff;line-height:1.35}
+.self-lab-card-tile span{font-size:10px;color:#d2e5f5}
+.self-lab-card-tile em{font-style:normal;font-size:9px;color:#b9f5d5}
+.self-lab-factors{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.self-lab-factors span{padding:6px 9px;border-radius:7px;border:1px solid #557698;
+  background:#123b60;color:#cadfeb;font-size:10px}
+.self-lab-factors b{color:#ffe6a9}
+.self-lab-note{font-size:11px;line-height:1.7;color:#c1dceb;margin:10px 0}
+.self-lab-note strong{color:#ffedbe}
+.self-lab-error{color:#ffe7cb;background:#572f24;border:1px solid #a97757;
+  border-radius:8px;padding:10px;font-size:12px;line-height:1.6}
+.self-lab-details{border:1px solid #4d7da5;border-radius:9px;background:#0c3055;
+  padding:11px;margin:12px 0;min-width:0}
+.self-lab-details>summary{font-size:12px;font-weight:850;color:#ffdf98;cursor:pointer}
+.self-lab-role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.self-lab-role{min-width:0;border:1px solid #35688e;border-radius:9px;background:#15385d;padding:12px}
+.self-lab-role-head{display:flex;gap:10px;align-items:flex-start}
+.self-lab-role-head>span{color:#ffdc94;font-weight:900;font-size:17px}
+.self-lab-role-head h5{font-size:12px;color:#ffedb9;margin:0}
+.self-lab-role-head small{display:block;font-size:10px;color:#c6dceb;line-height:1.6}
+.self-lab-picked{display:flex;align-items:center;justify-content:space-between;gap:9px;
+  margin-top:10px;font-size:12px;color:#e8f6ff}
+.self-lab-picked b{color:#ffe6a8;font-variant-numeric:tabular-nums}
+.self-lab-stats{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.self-lab-stats span{font-size:10px;padding:5px 7px;border-radius:6px;
+  background:#0e294a;color:#cbe4f5}
+.self-lab-alternatives{margin-top:10px;padding:7px;border:1px solid #486e91;border-radius:7px}
+.self-lab-alternatives>summary{cursor:pointer;color:#f6dca3;font-size:11px}
+.self-lab-alternatives table{width:100%;border-collapse:collapse;font-size:10px;margin-top:7px;color:#dfecf8}
+.self-lab-alternatives th,.self-lab-alternatives td{padding:7px 5px;text-align:left;border-bottom:1px solid #315b7d}
+.self-lab-alternatives th{color:#f4dfb9;font-weight:850}
+.self-lab-actions{display:flex;justify-content:flex-end;margin-top:12px}
+@media(max-width:950px){.self-lab-blueprint{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+  .self-lab-card-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .self-lab-role-grid{grid-template-columns:minmax(0,1fr)}
+  .self-lab-candidate{padding:11px}
+  .self-lab-candidate-head h4{font-size:14px}
+  .self-lab-score strong{font-size:18px}
+}
