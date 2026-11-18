@@ -58,6 +58,8 @@ import {
 import { DeckStrategyPanel } from "../components/DeckStrategyPanel";
 import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { DeckPlaybookPanel } from "../components/DeckPlaybookPanel";
+import { generateSelfMadeDecks, type SelfMadeResult } from "../lib/selfMadeDeckLab";
+import { SelfMadeDeckPanel } from "../components/SelfMadeDeckPanel";
 import { recommendFromTop100, type LiveCandidate } from "../lib/liveDeckLab";
 import type { GlobalRankedLimit, LabEvent, LabProgress, LiveMeta } from "../lib/liveMeta";
 import { LiveMetaPanel, LiveCandidateEvidence } from "../components/LiveMetaPanel";
@@ -273,6 +275,8 @@ export default function App() {
     [selected, setSelected] = useState<Card | null>(null),
     [q, setQ] = useState<Constraints>(defaults),
     [candidates, setCandidates] = useState<LiveCandidate[]>([]),
+    [selfMade, setSelfMade] = useState<SelfMadeResult | null>(null),
+    [deckOrigin, setDeckOrigin] = useState<"global" | "self" | "manual">("manual"),
     [globalTopLimit, setGlobalTopLimit] = useState<GlobalRankedLimit>(100),
     [focus, setFocus] = useState<StrategyFocus>("balanced"),
     [aiAccessCode, setAiAccessCode] = useState(""),
@@ -325,6 +329,7 @@ export default function App() {
     cancelLab();
     return ()=>{labRun.current++;labAbort.current?.abort();};
   },[s.tag,q,focus,globalTopLimit]);
+  useEffect(() => { setSelfMade(null); setDeckOrigin("manual"); },[s.tag,q,focus,mechanics]);
   useEffect(() => {
     const change = () => {
       try {
@@ -459,8 +464,9 @@ export default function App() {
     strategic = assessStrategy(deck,mechanics,{focus,battles:s.battles}),
     strategicSwaps = compareStrategy(s.deck,deck,mechanics,{focus}),
     selectedPlaybook = buildDeckPlaybook(deck,mechanics,focus),
-    liveChoice = candidates.find(c=>key(c.cards)===key(deck)),
-    recommendationScore = liveChoice?.recommendationScore ?? strategic.score;
+    liveChoice = deckOrigin === "global" ? candidates.find(c=>key(c.cards)===key(deck)) : undefined,
+    selfChoice = deckOrigin === "self" ? selfMade?.candidates.find(c=>key(c.cards)===key(deck)) : undefined,
+    recommendationScore = selfChoice?.score ?? liveChoice?.recommendationScore ?? strategic.score;
   const visible = s.catalog
     .filter(
       (c) =>
@@ -599,7 +605,7 @@ export default function App() {
             setLabProgress({stage:4,completed:event.meta.sampleSize,
               total:event.meta.sampleSize,
               message:"Completed "+event.meta.sampleSize+" observed-deck analyses."});
-            if(choices.length)setDeck(choices[0].cards);
+            if(choices.length){setDeck(choices[0].cards);setDeckOrigin("global");}
             else setLabError("The scan completed, but no suitable eight-card deck meets your ownership, levels, locked cards and elixir limits. Adjust those filters; the verified global sample is displayed above.");
           } catch(error) {
             if(run!==labRun.current||controller.signal.aborted)return;
@@ -674,6 +680,7 @@ export default function App() {
     }finally{if(reviewRun===labRun.current)setAiReviewLoading(false);}
   }
   function add(c: Card) {
+    setDeckOrigin("manual");
     if (deck.some((x) => x.id === c.id))
       setDeck(deck.filter((x) => x.id !== c.id));
     else if (deck.length >= 8)
@@ -1494,7 +1501,7 @@ export default function App() {
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
-              <Panel title="Find the best deck for your collection"
+              <Panel title="Top Global Player Comparison Deck Generator"
                 kicker={"FRESH GLOBAL TOP "+globalTopLimit+" · AVAILABLE-DATA RECOMMENDATIONS"}>
                 <p className="smart-intro">
                   Choose the current global Ranked top 100, 200 or 300 accounts.
@@ -1591,7 +1598,7 @@ export default function App() {
                 <div className="smart-overview">
                   <div className="smart-overview-head">
                     <div>
-                      <div className="eyebrow">{liveChoice ? "RECOMMENDED FROM "+liveMeta?.sampleSize+
+                      <div className="eyebrow">{selfChoice ? "SELF-MADE · EIGHT REQUIRED ROLES · OWNED CARDS" : liveChoice ? "RECOMMENDED FROM "+liveMeta?.sampleSize+
                         "/"+liveMeta?.requestedCount+" VERIFIED RANKED DECKS" :
                         labError ? "YOUR CURRENT DECK — NO ELIGIBLE RECOMMENDATION" :
                         "MANUALLY SELECTED / CURRENT DECK"}</div>
@@ -1608,9 +1615,9 @@ export default function App() {
                   </div>
                   <Deck cards={deck} onClick={setSelected}/>
                   <div className="reasoned-recommendation-score">
-                    <span><BrainCircuit size={18}/> {liveChoice ? "Recommendation from the completed live scan" : "Selected deck: tactical analysis"}</span>
+                    <span><BrainCircuit size={18}/> {selfChoice ? "Independent owned-collection recommendation" : liveChoice ? "Recommendation from the completed live scan" : "Selected deck: tactical analysis"}</span>
                     <strong>{recommendationScore.toFixed(1)}<small>/100</small></strong>
-                    <p>{liveChoice ?
+                    <p>{selfChoice ? "Owned role power 48% · composition 29% · tactical threats 23%, plus a small unlocked-Evolution preference." : liveChoice ?
                       "Observed combinations 20% · Tactical roles 25% · Actual owned-level readiness 40% · Observed usage 5% · Functional replacement fit 10%. Each direct substitution has a hard +1 elixir ceiling." :
                       "This selection is not being claimed as a fresh global Ranked recommendation."}
                       Scores are editorial estimates, never predicted win rates.</p>
@@ -1675,6 +1682,60 @@ export default function App() {
                       onClick={track}><History size={14}/> Track this deck</button>
                   </div>
                 </div>
+              </Panel>
+              <Panel title="Self-Made Deck Generator"
+                kicker="MY COLLECTION · EIGHT STRICT ROLES · LEVELS · EVOLUTIONS · KNOWN POWER">
+                <p className="smart-intro">
+                  Generate a balanced-control deck entirely from your own collection,
+                  independently of global-player rankings. Each different card
+                  fills one required job. Ranking combines owned levels, measured
+                  per-level stats, target compatibility, defensive coverage,
+                  elixir efficiency and unlocked Evolution potential.
+                </p>
+                <div className="self-lab-blueprint">
+                  {[
+                    ["01","Win condition","Reliable tower damage"],
+                    ["02","Mini tank","Absorbs ground damage"],
+                    ["03","Air defender","Sustained anti-air"],
+                    ["04","Air + splash","Grouped air and ground control"],
+                    ["05","Tank killer / building","Stops high-HP threats"],
+                    ["06","Ground defense","Cheap defense and cycle"],
+                    ["07","Small spell","Swarm and bait removal"],
+                    ["08","Heavy spell","Support removal and pressure"],
+                  ].map(([num,label,purpose])=>(
+                    <div className="self-lab-blueprint-item" key={num}>
+                      <span>{num}</span>
+                      <div><strong>{label}</strong><small>{purpose}</small></div>
+                    </div>
+                  ))}
+                </div>
+                <p className="micro">
+                  Advanced options below control minimum owned level, maximum elixir,
+                  required cards and excluded cards for both generators. The optimizer
+                  checks every eligible owned card for every role and uses a bounded
+                  search across complete decks. It does not fabricate Evolution damage
+                  multipliers or guarantee any win percentage.
+                </p>
+                <div className="actions">
+                  <button className="btn smart-find" type="button"
+                    disabled={s.mode!=="live" || loading || busy || s.cards.length<8}
+                    onClick={()=>{
+                      const result=generateSelfMadeDecks(s.cards,q,mechanics,focus);
+                      setSelfMade(result);
+                      if(result.candidates.length){
+                        setDeck(result.candidates[0].cards);
+                        setDeckOrigin("self");
+                      } else setDeckOrigin("manual");
+                    }}>
+                    <Sparkles size={17}/> Generate strongest self-made deck
+                  </button>
+                </div>
+                {s.mode==="demo"&&<p className="micro">
+                  Load your player tag to generate from your actual owned collection.
+                </p>}
+                <SelfMadeDeckPanel result={selfMade} selected={deck}
+                  focus={focus} mechanics={mechanics}
+                  onChoose={cards=>{setDeck(cards);setDeckOrigin("self");}}/>
               </Panel>
               <details className="lab-advanced">
                 <summary>Advanced options · manually edit cards, lock choices, or set limits</summary>
@@ -2036,7 +2097,7 @@ export default function App() {
                       onClick={()=>{
                         const target=aiReview.choiceIndex===-1?s.deck:
                           candidates[aiReview.choiceIndex]?.cards;
-                        if(target)setDeck(target);
+                        if(target){setDeck(target);setDeckOrigin(aiReview.choiceIndex===-1?"manual":"global");}
                       }}>
                       Use the AI-selected eight cards
                     </button>
@@ -2082,7 +2143,7 @@ export default function App() {
                         )}
                         <button
                           className="btn secondary"
-                          onClick={() => setDeck(c.cards)}
+                          onClick={() => {setDeck(c.cards);setDeckOrigin("global");}}
                         >
                           {key(deck) === key(c.cards) ? "Selected" : "Use this deck"}
                         </button>
