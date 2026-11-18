@@ -4097,9 +4097,9 @@ footer p { color: #afcbe4; }
 .self-lab-stats{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .self-lab-stats span{font-size:10px;padding:5px 7px;border-radius:6px;
   background:#0e294a;color:#cbe4f5}
-.self-lab-alternatives{margin-top:10px;padding:7px;border:1px solid #486e91;border-radius:7px}
+.self-lab-alternatives{margin-top:10px;padding:7px;border:1px solid #486e91;border-radius:7px;overflow-x:auto}
 .self-lab-alternatives>summary{cursor:pointer;color:#f6dca3;font-size:11px}
-.self-lab-alternatives table{width:100%;border-collapse:collapse;font-size:10px;margin-top:7px;color:#dfecf8}
+.self-lab-alternatives table{width:100%;min-width:760px;border-collapse:collapse;font-size:10px;margin-top:7px;color:#dfecf8}
 .self-lab-alternatives th,.self-lab-alternatives td{padding:7px 5px;text-align:left;border-bottom:1px solid #315b7d}
 .self-lab-alternatives th{color:#f4dfb9;font-weight:850}
 .self-lab-actions{display:flex;justify-content:flex-end;margin-top:12px}
