@@ -103,3 +103,44 @@ test("deterministic recommendation and responsive search on a full catalog", () 
   assert.equal(first.candidates[0].score, second.candidates[0].score);
   assert.equal(first.eligibleCardCount, collection.length);
 });
+
+
+test("special slots use eligible unique cards across Evolution, Hero and Wild", () => {
+  const cards = collection.map(c => ({...c}));
+  cards.find(c => c.name === "Valkyrie")!.hero = true;
+  cards.push({
+    ...own("Archer Queen", 12, 13, 5), rarity: "champion",
+  });
+  cards.push({
+    ...own("Little Prince", 13, 14, 3), rarity: "champion",
+  });
+  const result = generateSelfMadeDecks(cards, defaults);
+  assert.ok(result.candidates.length > 0);
+  for (const candidate of result.candidates) {
+    assert.ok(candidate.cards.filter(c =>
+      c.rarity.toLowerCase() === "champion").length <= 2);
+    assert.ok(candidate.specialSlots.length <= 3);
+    assert.ok(new Set(candidate.specialSlots.map(s => s.card)).size ===
+      candidate.specialSlots.length);
+    assert.ok(new Set(candidate.specialSlots.map(s => s.slot)).size ===
+      candidate.specialSlots.length);
+    assert.ok(candidate.specialSlots.every(s =>
+      candidate.cards.some(c => c.name === s.card)));
+    assert.ok(candidate.specialSlots.every(s =>
+      (s.slot === "Evolution" ? s.form === "evolution" :
+        s.slot === "Hero" ? s.form === "hero" || s.form === "champion" :
+        true)));
+  }
+});
+
+test("Royal Giant focus cannot quietly substitute a different win condition", () => {
+  const without = generateSelfMadeDecks(collection, defaults, null, "royal-giant");
+  assert.equal(without.candidates.length, 0);
+  assert.match(without.issues.join(" "), /Royal Giant focus/);
+  const withGiant = generateSelfMadeDecks(
+    [...collection, own("Royal Giant", 14, 12, 6)],
+    defaults, null, "royal-giant");
+  assert.ok(withGiant.candidates.length > 0);
+  assert.ok(withGiant.candidates.every(c =>
+    c.cards.some(x => x.name === "Royal Giant")));
+});
