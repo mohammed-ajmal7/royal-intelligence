@@ -3964,3 +3964,84 @@ footer p { color: #afcbe4; }
   font-variant-numeric:tabular-nums;
   color:#d5e9f6;
 }
+
+/* Deck Laboratory: play-by-play guide grounded in the selected eight cards. */
+.deck-playbook{display:grid;gap:15px;min-width:0}
+.deck-play-header{
+  padding:17px;
+  border-radius:12px;
+  border:1px solid #779cc3;
+  background:linear-gradient(115deg,#153b6b,#0a294e);
+  box-shadow:inset 0 1px #c3ebff3b,0 3px 0 #071e3a;
+}
+.deck-play-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:10px;
+  letter-spacing:1px;font-weight:900;color:#ffdc91}
+.deck-play-header h3{color:#fff0c4;font-size:21px;margin:9px 0}
+.deck-play-header p{font-size:12px;line-height:1.75;color:#d6e9f6;margin:0}
+.deck-play-quick{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.deck-play-quick span{display:inline-flex;align-items:center;gap:6px;font-size:11px;
+  font-weight:750;color:#fff0c6;border:1px solid #5b82a2;background:#092445;
+  padding:7px 9px;border-radius:7px}
+.deck-play-phases{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.deck-play-phase,.deck-play-matchup{
+  min-width:0;
+  border:1px solid #527fb0;
+  border-radius:10px;
+  background:#0c315c;
+  padding:14px;
+}
+.deck-play-phase header{display:flex;align-items:flex-start;gap:12px;padding-bottom:10px;
+  border-bottom:1px solid #346189}
+.deck-play-phase header>span{display:grid;place-items:center;flex:none;min-width:34px;
+  height:34px;border:1px solid #bd9257;border-radius:8px;background:#514021;
+  color:#ffe2a0;font-size:14px;font-weight:900}
+.deck-play-phase h4,.deck-play-section-head h4{
+  color:#ffe7ab;font-size:13px;line-height:1.5;margin:0 0 5px}
+.deck-play-phase header p,.deck-play-section-head p{font-size:11px;color:#bdd7ea;
+  line-height:1.65;margin:0}
+.deck-play-phase ol,.deck-play-matchup ol{margin:12px 0;padding-left:21px}
+.deck-play-phase li,.deck-play-matchup li{color:#d8eaf6;font-size:11px;line-height:1.8;
+  padding-left:3px}
+.deck-play-phase li+li,.deck-play-matchup li+li{margin-top:7px}
+.deck-play-warning{display:flex;align-items:flex-start;gap:8px;color:#ffe0b1;
+  background:#4a321f;border:1px solid #795a39;border-radius:8px;
+  padding:10px;font-size:10px;line-height:1.65;margin:12px 0 0}
+.deck-play-warning svg{flex:none;margin-top:1px}
+.deck-play-section-head{display:flex;align-items:center;gap:10px;color:#ffdfa6}
+.deck-play-section-head p{font-size:11px}
+.deck-play-matchups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.deck-play-matchup-title{display:flex;align-items:center;gap:9px;color:#ffe7b0;
+  font-size:12px;line-height:1.5}
+.deck-play-counters{color:#a9dfd5;font-size:10px;font-weight:750;
+  line-height:1.65;margin:8px 0 0}
+.deck-play-details{border:1px solid #4b80ad;border-radius:9px;background:#092c51;
+  padding:11px 13px;min-width:0}
+.deck-play-details summary{display:flex;align-items:center;gap:9px;
+  color:#ffe2a1;font-size:12px;font-weight:850;cursor:pointer;
+  padding:5px 0;line-height:1.5}
+.deck-play-details ul{padding-left:18px;font-size:11px;color:#d3e7f4;line-height:1.8}
+.deck-play-card-jobs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;margin-top:11px}
+.deck-play-card-jobs article{min-width:0;border:1px solid #3d719a;border-radius:8px;
+  background:#0b365e;padding:11px}
+.deck-play-card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px}
+.deck-play-card-head strong{color:#fff0c5;font-size:12px}
+.deck-play-card-head span{color:#bcdbef;font-size:10px;font-weight:700}
+.deck-play-card-jobs article p{font-size:10px;line-height:1.75;color:#d2e7f5;margin:7px 0 0}
+.deck-play-card-jobs article p b{color:#ffe4a8}
+.deck-play-card-jobs .deck-play-card-job{color:#b0ddc8;font-weight:800}
+.deck-play-footnote{font-size:10px;color:#b8d3e7;line-height:1.75;margin:0}
+.deck-play-alternative{padding:11px;margin:12px 0;border-radius:9px;
+  background:#0b2a4e;border:1px solid #638db1;min-width:0}
+.deck-play-alternative>summary{cursor:pointer;color:#ffdc94;font-size:12px;
+  font-weight:850;line-height:1.6}
+.deck-play-alternative>.deck-playbook{margin-top:12px}
+@media(max-width:740px){
+  .deck-play-header{padding:12px}
+  .deck-play-header h3{font-size:18px}
+  .deck-play-phases,.deck-play-matchups,.deck-play-card-jobs{
+    grid-template-columns:minmax(0,1fr)
+  }
+  .deck-play-phase,.deck-play-matchup{padding:11px}
+  .deck-play-quick span{width:100%}
+}
