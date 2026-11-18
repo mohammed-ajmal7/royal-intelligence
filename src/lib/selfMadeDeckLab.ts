@@ -187,8 +187,8 @@ function measuresOf(card: Card, mechanics: MechanicsCatalog | null): Metrics {
   const record = getMechanicsRecord(card, mechanics);
   // If the source describes one spawned soldier, never rank a multi-unit
   // deployment as though its published per-soldier HP/DPS were whole-card totals.
-  const grouped = !!record?.groupUnits?.length &&
-    (record.groupUnits.length > 1 || record.groupUnits.some(x => (x.count ?? 1) > 1));
+  const group=record?.groupUnits ?? [];
+  const grouped=group.length>1 || group.some(x => (x.count ?? 1)>1);
   const cost = knownNumber(card.elixir);
   const hp = grouped ? null : knownNumber(m?.hitpoints);
   const dps = grouped ? null : knownNumber(m?.dps);
@@ -246,17 +246,25 @@ function roleProfiles(
     if(slot==="mini")fit+=(card.elixir??99)<=3?6:0;
     if(slot==="tank")fit+=defensiveBuildings.has(card.name)?4:0;
     if(slot==="win")fit+=m?.buildingsOnly===true?6:0;
-    // Owning a special form provides flexibility, not an invented combat
-    // multiplier and not proof the special slot has been equipped.
-    const specialBonus=Math.min(5,(card.evo===true?3:0)+
-      (card.hero===true?2:0));
+    // Unlocks, recorded special abilities and verified Evo-form improvements
+    // provide limited option value, never a guessed active-form DPS multiplier.
+    const detail=profile(card, mechanics);
+    const evo=detail.evolved;
+    const improves=(evo?.hp!==null && evo?.hp!==undefined &&
+      detail.hp!==null && evo.hp>detail.hp) ||
+      (evo?.damage!==null && evo?.damage!==undefined &&
+      detail.damage!==null && evo.damage>detail.damage) ||
+      (evo?.dps!==null && evo?.dps!==undefined &&
+      detail.dps!==null && evo.dps>detail.dps);
+    const specialBonus=Math.min(7,(card.evo===true?3:0)+
+      (card.hero===true?2:0)+(m?.specialAbility?1:0)+(improves?1:0));
     const weight=numericScore===null?0:60*numericCoverage;
     const grade=round(clamp((levelScore*25+clamp(fit)*15+
       (numericScore??0)*weight)/(40+weight)+specialBonus));
     return {
-      ...profile(card, mechanics),grade,
+      ...detail,grade,
       numericScore:numericScore===null?null:round(numericScore),
-      numericCoverage:round(numericCoverage),
+      numericCoverage:Math.round(numericCoverage*1000)/1000,
       specialBonus,measured,
     };
   });
