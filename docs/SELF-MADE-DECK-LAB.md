@@ -50,7 +50,7 @@ adding HP to DPS or declaring the card with the highest single stat a winner.
 Numerical metrics have up to 60% weight, subject to the proportion of
 relevant published combat fields that are actually available; owned level has
 25% and verified functional fit 15%. Unlocked Evolution/Hero availability
-can add up to 5 small *flexibility* points, never an invented damage bonus.
+can add up to 7 small *flexibility* points when actual forms, recorded abilities or published form improvements are known, never an invented damage bonus.
 Unknown values do not count as zero, and low-coverage ranks must be read with
 caution. A base unit's HP/DPS is never multiplied into aggregate group DPS
 without a published whole-card measurement. Some community data can lag the
