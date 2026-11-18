@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { defaults, key } from "../src/lib/engine";
 import { rolesFor, type Card } from "../src/lib/model";
+import type { MechanicsCatalog, MechanicsCard } from "../src/lib/mechanics";
 import {
   SELF_SLOTS,
   qualifiesForSelfSlot,
@@ -143,4 +144,74 @@ test("Royal Giant focus cannot quietly substitute a different win condition", ()
   assert.ok(withGiant.candidates.length > 0);
   assert.ok(withGiant.candidates.every(c =>
     c.cards.some(x => x.name === "Royal Giant")));
+});
+
+
+function mockMechanics(id:number,name:string,dps:number,damage:number,
+  hp:number,kind:"Troop"|"Spell"="Troop"):MechanicsCard {
+  return {
+    id,name,kind,
+    hpByLevel:Array(16).fill(hp),
+    damageByLevel:Array(16).fill(damage),
+    dpsByLevel:kind==="Troop"?Array(16).fill(dps):null,
+    hitSpeedSeconds:kind==="Troop"?1:null,
+    rangeTiles:kind==="Troop"?5.5:null,
+    moveSpeedRaw:null,targetsAir:true,targetsGround:true,
+    buildingsOnly:false,areaRadiusTiles:null,unitCount:1,
+    deploySeconds:null,firstHitSeconds:null,specialAbility:false,
+    provenance:"crtool-game-data",sourceUpdatedAt:"2026-11-18",
+  };
+}
+function ownWithRoles(name:string,id:number,level:number,elixir:number,
+  roles:string[],evo=false,hero=false):Card {
+  return {...own(name,id,level,elixir,evo),roles,hero};
+}
+
+test("role-specific measured DPS beats a higher-level but weaker owned air defender",()=>{
+  const low=ownWithRoles("Sky Expert",211,11,4,["Air defense"]);
+  const high=ownWithRoles("Sky Novice",212,13,4,["Air defense"]);
+  const cards=[...collection,low,high];
+  const mechanics:MechanicsCatalog={
+    source:"test exact-level combat data",fetchedAt:"2026-11-18T00:00:00Z",
+    warnings:[],cards:[
+      mockMechanics(low.id,low.name,520,520,1000),
+      mockMechanics(high.id,high.name,90,90,1000),
+    ],
+  };
+  const result=generateSelfMadeDecks(cards,defaults,mechanics);
+  assert.ok(result.candidates.length>0);
+  const role=result.candidates[0].slots.find(s=>s.id==="air")!;
+  const ranked=[role.chosen,...role.alternatives];
+  assert.equal(ranked.length,role.considered);
+  assert.ok(ranked.find(x=>x.card.id===low.id)!.grade >
+    ranked.find(x=>x.card.id===high.id)!.grade);
+  assert.ok(ranked.find(x=>x.card.id===low.id)!.numericCoverage>0);
+  assert.ok(ranked.find(x=>x.card.id===low.id)!.measured.some(x=>
+    x.label==="Anti-air DPS" && x.value===520));
+});
+
+test("only owned cards enter full role rankings; special unlocks are not fake DPS",()=>{
+  const cards=[...collection,
+    ownWithRoles("Test Owned Air",301,12,4,["Air defense"],true,true),
+    {...ownWithRoles("Test Unowned Air",302,16,4,["Air defense"]),owned:false},
+  ];
+  const result=generateSelfMadeDecks(cards,defaults);
+  const role=result.candidates[0].slots.find(s=>s.id==="air")!;
+  const ranked=[role.chosen,...role.alternatives];
+  assert.ok(ranked.some(x=>x.card.id===301));
+  assert.ok(!ranked.some(x=>x.card.id===302));
+  const evolved=ranked.find(x=>x.card.id===301)!;
+  assert.equal(evolved.specialBonus,5);
+  assert.equal(evolved.dps,null);
+  assert.equal(evolved.numericScore,null);
+  assert.ok(evolved.card.evo && evolved.card.hero);
+});
+
+test("a costly mega-tank cannot win the cheap mini-tank role",()=>{
+  const massive=ownWithRoles("Mega Knight",401,16,7,["Mini tank","Ground defense"]);
+  const result=generateSelfMadeDecks([...collection,massive],defaults);
+  assert.ok(result.candidates.length>0);
+  const slot=result.candidates[0].slots.find(s=>s.id==="mini")!;
+  assert.ok(![slot.chosen,...slot.alternatives]
+    .some(x=>x.card.id===massive.id));
 });
