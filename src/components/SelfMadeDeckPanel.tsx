@@ -85,7 +85,7 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
           splash and elixir efficiency drive up to 60% of the role grade;
           owned level contributes 25% and role fit 15%. Missing combat
           evidence is excluded, never guessed. An unlocked Evolution/Hero
-          gives up to 5 additional flexibility points, not fake damage.
+          adds at most 7 flexibility points for unlocked forms, recorded abilities and verified Evolution improvements; it never fabricates damage.
           Cards selected for another role cannot be reused.
         </p>
         <div className="self-lab-role-grid">
