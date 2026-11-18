@@ -1683,6 +1683,60 @@ export default function App() {
                   </div>
                 </div>
               </Panel>
+              <Panel title="Self-Made Deck Generator"
+                kicker="MY COLLECTION · EIGHT STRICT ROLES · LEVELS · EVOLUTIONS · KNOWN POWER">
+                <p className="smart-intro">
+                  Generate a balanced-control deck entirely from your own collection,
+                  independently of global-player rankings. Each different card
+                  fills one required job. Ranking combines owned levels, measured
+                  per-level stats, target compatibility, defensive coverage,
+                  elixir efficiency and unlocked Evolution potential.
+                </p>
+                <div className="self-lab-blueprint">
+                  {[
+                    ["01","Win condition","Reliable tower damage"],
+                    ["02","Mini tank","Absorbs ground damage"],
+                    ["03","Air defender","Sustained anti-air"],
+                    ["04","Air + splash","Grouped air and ground control"],
+                    ["05","Tank killer / building","Stops high-HP threats"],
+                    ["06","Ground defense","Cheap defense and cycle"],
+                    ["07","Small spell","Swarm and bait removal"],
+                    ["08","Heavy spell","Support removal and pressure"],
+                  ].map(([num,label,purpose])=>(
+                    <div className="self-lab-blueprint-item" key={num}>
+                      <span>{num}</span>
+                      <div><strong>{label}</strong><small>{purpose}</small></div>
+                    </div>
+                  ))}
+                </div>
+                <p className="micro">
+                  Advanced options below control minimum owned level, maximum elixir,
+                  required cards and excluded cards for both generators. The optimizer
+                  checks every eligible owned card for every role and uses a bounded
+                  search across complete decks. It does not fabricate Evolution damage
+                  multipliers or guarantee any win percentage.
+                </p>
+                <div className="actions">
+                  <button className="btn smart-find" type="button"
+                    disabled={s.mode!=="live" || loading || busy || s.cards.length<8}
+                    onClick={()=>{
+                      const result=generateSelfMadeDecks(s.cards,q,mechanics,focus);
+                      setSelfMade(result);
+                      if(result.candidates.length){
+                        setDeck(result.candidates[0].cards);
+                        setDeckOrigin("self");
+                      } else setDeckOrigin("manual");
+                    }}>
+                    <Sparkles size={17}/> Generate strongest self-made deck
+                  </button>
+                </div>
+                {s.mode==="demo"&&<p className="micro">
+                  Load your player tag to generate from your actual owned collection.
+                </p>}
+                <SelfMadeDeckPanel result={selfMade} selected={deck}
+                  focus={focus} mechanics={mechanics}
+                  onChoose={cards=>{setDeck(cards);setDeckOrigin("self");}}/>
+              </Panel>
               <details className="lab-advanced">
                 <summary>Advanced options · manually edit cards, lock choices, or set limits</summary>
                 <p className="micro">
