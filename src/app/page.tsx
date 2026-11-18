@@ -56,6 +56,8 @@ import {
   type StrategyFocus,
 } from "../lib/deckStrategy";
 import { DeckStrategyPanel } from "../components/DeckStrategyPanel";
+import { buildDeckPlaybook } from "../lib/deckPlaybook";
+import { DeckPlaybookPanel } from "../components/DeckPlaybookPanel";
 import { recommendFromTop100, type LiveCandidate } from "../lib/liveDeckLab";
 import type { GlobalRankedLimit, LabEvent, LabProgress, LiveMeta } from "../lib/liveMeta";
 import { LiveMetaPanel, LiveCandidateEvidence } from "../components/LiveMetaPanel";
@@ -456,6 +458,7 @@ export default function App() {
     current = evaluate(s.deck, { ...defaults, cap: s.cap }, mechanics),
     strategic = assessStrategy(deck,mechanics,{focus,battles:s.battles}),
     strategicSwaps = compareStrategy(s.deck,deck,mechanics,{focus}),
+    selectedPlaybook = buildDeckPlaybook(deck,mechanics,focus),
     liveChoice = candidates.find(c=>key(c.cards)===key(deck)),
     recommendationScore = liveChoice?.recommendationScore ?? strategic.score;
   const visible = s.catalog
@@ -1966,6 +1969,16 @@ export default function App() {
                 </Panel>
                 </div>
               </details>
+              <Panel title="How to Play This Deck"
+                kicker="OPENINGS · DEFENSE · COUNTERPUSH · DOUBLE ELIXIR · CARD JOBS">
+                <p className="micro">
+                  This playbook follows the exact eight cards currently shown
+                  above. It updates when you select a different recommended
+                  deck, change a card, or choose a different tactical focus.
+                  No separate AI subscription is required.
+                </p>
+                <DeckPlaybookPanel guide={selectedPlaybook}/>
+              </Panel>
               <Panel title="Explain my deck" kicker="WHY THESE EIGHT · MATCHUPS · TRADE-OFFS">
                 <DeckStrategyPanel report={strategic}
                   comparison={strategicSwaps} />
@@ -2054,6 +2067,11 @@ export default function App() {
                           {" "}{c.strategy?.score ?? "—"}/100.
                         </p>
                         <LiveCandidateEvidence candidate={c}/>
+                        <details className="deck-play-alternative">
+                          <summary>How to play alternative #{i+1}</summary>
+                          <DeckPlaybookPanel
+                            guide={buildDeckPlaybook(c.cards,mechanics,focus)}/>
+                        </details>
                         {c.strategy?.risks.slice(0,2).map((risk,i)=>(
                           <p className="micro" key={i}>{risk}</p>
                         ))}
