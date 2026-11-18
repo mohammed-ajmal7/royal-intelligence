@@ -52,6 +52,8 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
             <span>Lv {slot.chosen.card.level ?? "?"} · {slot.chosen.card.elixir ?? "?"} elixir</span>
             {slot.chosen.card.evo === true &&
               <em>Evolution unlocked</em>}
+            {slot.chosen.card.rarity.toLowerCase() === "champion" &&
+              <em>Champion owned</em>}
           </div>
         ))}
       </div>
@@ -61,12 +63,19 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
         <span>Threat coverage <b>{item.strategy.score}</b></span>
         <span>Available Evolutions <b>{item.ownedEvolutionCount}</b></span>
       </div>
-      {item.suggestedEvolutions.length > 0 && (
-        <p className="self-lab-note">
-          Suggested Evolution priorities (if usable in your mode):
-          {" "}<strong>{item.suggestedEvolutions.join(" + ")}</strong>.
-          These are unlocked-form preferences, not measured Evolution stat bonuses.
-        </p>
+      {item.specialSlots.length > 0 && (
+        <div className="self-lab-special-slots" aria-label="Recommended special-card slots">
+          {item.specialSlots.map(s => (
+            <span key={s.slot}>
+              <strong>{s.slot}</strong> · {s.card}
+              <small> ({s.form})</small>
+            </span>
+          ))}
+          <p className="self-lab-note">
+            Suggested eligible slots only, not proof that the form is currently
+            equipped. Abilities and evolved DPS are not invented.
+          </p>
+        </div>
       )}
       <details className="self-lab-details">
         <summary>Compare all eight picks against your owned cards</summary>
