@@ -93,9 +93,18 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
                 <span>Damage: {stat(slot.chosen.damage)}</span>
                 <span>Targets: {slot.chosen.target}</span>
                 <span>Stat coverage: {Math.round(slot.chosen.confidence * 100)}%</span>
+                <span>Attack interval: {slot.chosen.hitSpeed === null ? "unknown" : slot.chosen.hitSpeed + "s"}</span>
+                <span>Range: {slot.chosen.range === null ? "unknown" : slot.chosen.range + " tiles"}</span>
+                <span>Splash radius: {slot.chosen.splash === null ? "unknown" : slot.chosen.splash + " tiles"}</span>
+                <span>Base ability: {slot.chosen.abilityRecorded === null ? "unknown" : slot.chosen.abilityRecorded ? "Recorded" : "None recorded"}</span>
                 <span>Evolution: {slot.chosen.card.evo === true ? "Unlocked" : slot.chosen.card.evo === false ? "Not unlocked" : "Unknown"}</span>
               </div>
               <p className="self-lab-note">{slot.chosen.evidence}</p>
+              {slot.chosen.evolved && <p className="self-lab-note">
+                Published {slot.chosen.evolved.form} at your level:
+                {" "}HP {stat(slot.chosen.evolved.hp)} · Damage {stat(slot.chosen.evolved.damage)} · DPS {stat(slot.chosen.evolved.dps)}.
+                Not assumed active; unknown values remain unknown.
+              </p>}
               {slot.alternatives.length > 0 && (
                 <details className="self-lab-alternatives">
                   <summary>Top {slot.alternatives.length} alternative candidates</summary>
