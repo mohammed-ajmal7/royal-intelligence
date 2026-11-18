@@ -58,7 +58,7 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
         ))}
       </div>
       <div className="self-lab-factors">
-        <span>Role power <b>{item.averageRolePower.toFixed(1)}</b></span>
+        <span>Measured role strength <b>{item.averageRolePower.toFixed(1)}</b></span>
         <span>Composition <b>{item.evaluation.score}</b></span>
         <span>Threat coverage <b>{item.strategy.score}</b></span>
         <span>Available Evolutions <b>{item.ownedEvolutionCount}</b></span>
@@ -80,10 +80,13 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
       <details className="self-lab-details">
         <summary>Compare all eight picks against your owned cards</summary>
         <p className="self-lab-note">
-          Every eligible owned card was considered for each role. The score is a
-          weighted level / role / known-stat heuristic, not a damage multiplier
-          or predicted win rate. Alternatives may clash with another occupied
-          slot and cannot automatically replace its selection.
+          Every eligible owned card was ranked against your other owned cards
+          in the SAME category. Verified role-specific HP, DPS, damage, range,
+          splash and elixir efficiency drive up to 60% of the role grade;
+          owned level contributes 25% and role fit 15%. Missing combat
+          evidence is excluded, never guessed. An unlocked Evolution/Hero
+          adds at most 7 flexibility points for unlocked forms, recorded abilities and verified Evolution improvements; it never fabricates damage.
+          Cards selected for another role cannot be reused.
         </p>
         <div className="self-lab-role-grid">
           {item.slots.map((slot, i) => (
@@ -96,6 +99,18 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
                 <strong>{slot.chosen.card.name} · Lv {slot.chosen.card.level ?? "?"}</strong>
                 <b>{slot.chosen.grade.toFixed(1)}/100</b>
               </div>
+              <p className="self-lab-note">
+                Numerical role score: {slot.chosen.numericScore === null ? "unavailable" :
+                  slot.chosen.numericScore.toFixed(1) + "/100"} ·
+                {" "}{Math.round(slot.chosen.numericCoverage*100)}% relevant combat evidence ·
+                {" "}Special-form flexibility +{slot.chosen.specialBonus.toFixed(1)}
+              </p>
+              {slot.chosen.measured.length > 0 && <p className="self-lab-note">
+                Compared against your owned cards in this role:{" "}
+                {slot.chosen.measured.map(m =>
+                  m.label + " " + m.value + " " + m.unit + " (" + m.relative +
+                  "% of owned-role benchmark)").join(" · ")}
+              </p>}
               <div className="self-lab-stats">
                 <span>HP: {stat(slot.chosen.hp)}</span>
                 <span>DPS: {stat(slot.chosen.dps)}</span>
@@ -116,15 +131,24 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
               </p>}
               {slot.alternatives.length > 0 && (
                 <details className="self-lab-alternatives">
-                  <summary>Top {slot.alternatives.length} alternative candidates</summary>
+                  <summary>Full owned-role ranking · {slot.alternatives.length} other candidates</summary>
                   <table>
-                    <thead><tr><th>Card</th><th>Lv</th><th>HP</th><th>DPS</th><th>Fit</th></tr></thead>
+                    <thead><tr><th>Card</th><th>Lv</th><th>Elixir</th><th>HP</th><th>DPS</th><th>Damage</th><th>Evo / Hero</th><th>Numeric</th><th>Coverage</th><th>Role power</th></tr></thead>
                     <tbody>{slot.alternatives.map(other => (
                       <tr key={other.card.id}>
                         <td>{other.card.name}{other.card.evo === true ? " ◈" : ""}</td>
                         <td>{other.card.level ?? "?"}</td>
+                        <td>{other.card.elixir ?? "?"}</td>
                         <td>{stat(other.hp)}</td>
                         <td>{stat(other.dps)}</td>
+                        <td>{stat(other.damage)}</td>
+                        <td>{[other.card.evo === true ? "Evo" : "",
+                          other.card.hero === true ? "Hero" : "",
+                          other.card.rarity.toLowerCase() === "champion" ? "Champion" : ""]
+                          .filter(Boolean).join(" / ") || "—"}</td>
+                        <td>{other.numericScore === null ? "unknown" :
+                          other.numericScore.toFixed(1)}</td>
+                        <td>{Math.round(other.numericCoverage * 100)}%</td>
                         <td>{other.grade.toFixed(1)}</td>
                       </tr>
                     ))}</tbody>
@@ -169,6 +193,9 @@ export function SelfMadeDeckPanel({
       ))}
       {result.candidates.length > 0 && (
         <p className="self-lab-note">
+          Role strength takes priority over deck synergy in this generator,
+          subject to eight distinct cards and your filters. Damage stats are
+          not directly comparable across different troop mechanics or spells.
           The eight-slot blueprint is strict, but it is not a proof that a
           deck wins every matchup. Published numbers may be from different
           balance patches; Evolution forms and Hero ability effects are not

@@ -23,26 +23,49 @@ Eight separate cards must fill the following mandatory positions:
 If any slot is impossible, no deck is invented. These are user-requested
 strict slots, not a universal theorem about the best competitive archetypes.
 
-## Numerical analysis
+## Role-first numerical selection
 
-Each role checks every eligible owned card:
+The generator first filters to cards the player **actually owns**, with a valid
+level and elixir cost, excluding tower cards and applying locks and bans. It
+then classifies every eligible card by all applicable roles. A mini tank must
+cost at most five elixir; air+splash must have an anti-air role and independently
+classified group-control capability.
 
-- 50% owned-level readiness relative to the 75th-percentile owned-level benchmark.
-- 25% role-specific function fit including targeted cost/attack correction.
-- Up to 25% known published base mechanics rating, discounted by data completeness.
+Each of the eight categories uses a **different mechanical comparison** using
+published combat numbers at each card's exact owned level:
 
-Unknown statistics have zero evidence weight, not a claimed value of zero.
-When available at the exact owned level, the app shows HP, damage, DPS,
-hit interval, attack range, targeting, area radius, and ability recording.
-Missing data is labeled unknown. Static community data can lag live patches.
-Group member DPS must never be interpreted as whole squad DPS.
+- Win condition: DPS, hit damage, survivability, DPS per elixir, cost.
+- Mini tank: HP, HP per elixir, DPS, cost.
+- Air defender: DPS, DPS per elixir, range, hit damage, HP, cost.
+- Air+splash: area radius, DPS, range, hit damage, HP, cost.
+- Tank killer/building: DPS, hit damage, HP, range, cost.
+- Ground defense: defensive HP/DPS efficiency, durability, damage, deployment count, cost.
+- Small spell: hit damage, radius, elixir cost.
+- Heavy spell: hit damage, radius, elixir cost.
 
-A bounded 500-width beam combines the eight distinct roles with hard card
-locks, bans and average-cost limits. This considers all eligible cards for
-each role but does not enumerate every possible eight-card permutation.
-Deck ranking combines 48% mean role fit, 29% structural score, 23% tactical
-score, and a small feasible special-form bonus, minus redundancy penalties.
-Scores are editorial estimates, not measured win probabilities.
+The observed metrics are individually compared to the **best known value
+among the eligible owned cards in the same category**. This avoids directly
+adding HP to DPS or declaring the card with the highest single stat a winner.
+
+Numerical metrics have up to 60% weight, subject to the proportion of
+relevant published combat fields that are actually available; owned level has
+25% and verified functional fit 15%. Unlocked Evolution/Hero availability
+can add up to 7 small *flexibility* points when actual forms, recorded abilities or published form improvements are known, never an invented damage bonus.
+Unknown values do not count as zero, and low-coverage ranks must be read with
+caution. A base unit's HP/DPS is never multiplied into aggregate group DPS
+without a published whole-card measurement. Some community data can lag the
+current balance patch.
+
+A bounded 500-width beam searches assignments across eight slots, enforcing
+distinct cards, Champion limits, required cards and average-cost cap.
+It prioritizes mean role strength before team scoring (85% role strength,
+8% structural score, 7% tactical score, a small legal special-slot
+eligibility bonus, and redundancy penalties). It **does not** prove a
+globally optimal assignment or predict match win rates.
+
+The interface shows the selected eight cards, a full ordered comparison
+against **every eligible owned alternative in each role**, observed stats,
+coverage, Evolution/Hero availability and the how-to-play guide.
 
 ## Evolution, Hero and Wild (2026)
 
