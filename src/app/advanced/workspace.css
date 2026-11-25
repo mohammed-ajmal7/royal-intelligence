@@ -42,10 +42,11 @@
   letter-spacing: -.02em;
 }
 .royal-app .mobile-brand-wordmark { color: inherit; font: inherit; }
+.royal-app .brand-icon img, .royal-app .mobile-crown img{display:block;width:100%;height:100%;object-fit:contain}
 .royal-app .brand-icon, .royal-app .mobile-crown {
   flex-shrink: 0;
-  background: var(--advanced-blue);
-  color: white;
+  background: transparent;
+  color: inherit;
   border: 0;
   box-shadow: none;
 }

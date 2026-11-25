@@ -918,12 +918,12 @@ export default function App() {
     <div className="royal-app">
       <aside ref={drawerRef} id="advanced-navigation" className={mobile ? "sidebar open" : "sidebar"}
         role={mobile?"dialog":undefined} aria-modal={mobile||undefined} aria-label="All workspace sections">
-        <a className="brand" href={dashboardPath} aria-label="Royal Intelligence dashboard">
+        <a className="brand" href={dashboardPath} aria-label="CrownPilot dashboard">
           <span className="brand-icon">
-            <Crown />
+            <img src="/brand/crownpilot-mark.svg" width={38} height={38} alt="" />
           </span>
           <span>
-            Royal Intelligence
+            CrownPilot
           </span>
         </a>
         <div className="nav-kicker">
@@ -986,9 +986,9 @@ export default function App() {
           >
             <Menu size={22} />
           </button>
-          <a className="mobile-brand" href={dashboardPath} aria-label="Royal Intelligence dashboard">
-            <span className="mobile-crown"><Crown size={24} /></span>
-            <span className="mobile-brand-wordmark">Royal Intelligence</span>
+          <a className="mobile-brand" href={dashboardPath} aria-label="CrownPilot dashboard">
+            <span className="mobile-crown"><img src="/brand/crownpilot-mark.svg" width={32} height={32} alt="" /></span>
+            <span className="mobile-brand-wordmark">CrownPilot</span>
           </a>
           <div className="desktop-breadcrumb">
             <a href={dashboardPath}>Dashboard</a>
@@ -2860,7 +2860,7 @@ export default function App() {
                       );
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = "royal-intelligence-export.json";
+                      a.download = "crownpilot-export.json";
                       a.click();
                       setTimeout(() => URL.revokeObjectURL(url), 1000);
                     }}
@@ -2972,8 +2972,8 @@ export default function App() {
           )}
           <footer>
             <div>
-              <Crown size={15} />
-              <strong>ROYAL INTELLIGENCE</strong>
+              <img src="/brand/crownpilot-mark.svg" width={18} height={18} alt="" />
+              <strong>CROWNPILOT</strong>
             </div>
             <p>
               Unofficial fan content, not endorsed by Supercell.{" "}

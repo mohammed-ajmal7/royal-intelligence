@@ -1,0 +1,29 @@
+{
+  "name": "CrownPilot — Clash Royale Companion",
+  "short_name": "CrownPilot",
+  "description": "Your Clash Royale cards, decks, battles, and strategy in one simple companion.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#17459f",
+  "categories": [
+    "games",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/brand/crownpilot-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/crownpilot-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -18,7 +18,8 @@ small{font-size:11px}
 .ri-topbar{height:68px;max-width:1130px;padding:0 26px;margin:auto;display:flex;align-items:center;gap:30px}
 .ri-brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;font-weight:750;letter-spacing:-.4px;font-size:17px;white-space:nowrap;color:#142235}
 .ri-brand-light{font-weight:500}
-.ri-logo{height:34px;width:34px;display:grid;place-items:center;color:white;background:#2d54b4;border-radius:10px}
+.ri-logo{height:34px;width:34px;display:grid;place-items:center;border-radius:10px;flex-shrink:0}
+.ri-logo img{display:block;width:34px;height:34px;object-fit:contain}
 .ri-nav{display:flex;align-items:center;gap:4px;flex:1}
 .ri-nav button{border:0;background:transparent;color:var(--ri-sub);border-radius:8px;padding:10px 13px;font-size:13px;font-weight:600;white-space:nowrap}
 .ri-nav button:hover,.ri-nav button.is-active{background:var(--ri-soft);color:#234cac}
