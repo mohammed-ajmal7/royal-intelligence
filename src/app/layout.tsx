@@ -2,40 +2,40 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://crownpilot.vercel.app"),
+  metadataBase: new URL("https://crown-pilot.vercel.app"),
   alternates: { canonical: "/" },
-  applicationName: "CrownPilot",
+  applicationName: "Crown-pilot",
   title: {
-    default: "CrownPilot — Clash Royale Companion",
-    template: "%s | CrownPilot",
+    default: "Crown-pilot — Clash Royale Companion",
+    template: "%s | Crown-pilot",
   },
-  description: "CrownPilot is an unofficial Clash Royale companion for your cards, decks, battles, strategies, and public game data.",
+  description: "Crown-pilot is an unofficial Clash Royale companion for your cards, decks, battles, strategies, and public game data.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/brand/crownpilot-mark.svg", type: "image/svg+xml" },
-      { url: "/brand/crownpilot-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/crown-pilot-mark.svg", type: "image/svg+xml" },
+      { url: "/brand/crown-pilot-192.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/brand/crownpilot-mark.svg",
-    apple: [{ url: "/brand/crownpilot-192.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/brand/crown-pilot-mark.svg",
+    apple: [{ url: "/brand/crown-pilot-192.png", sizes: "192x192", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
-    title: "CrownPilot",
+    title: "Crown-pilot",
     statusBarStyle: "default",
   },
   openGraph: {
     type: "website",
-    title: "CrownPilot — Clash Royale Companion",
+    title: "Crown-pilot — Clash Royale Companion",
     description: "Your cards. Your deck. Your arena. One simple companion.",
-    siteName: "CrownPilot",
+    siteName: "Crown-pilot",
     url: "/",
-    images: [{ url: "/brand/crownpilot-192.png", width: 192, height: 192, alt: "CrownPilot logo" }],
+    images: [{ url: "/brand/crown-pilot-192.png", width: 192, height: 192, alt: "Crown-pilot logo" }],
   },
   twitter: {
     card: "summary",
-    title: "CrownPilot — Clash Royale Companion",
-    images: ["/brand/crownpilot-192.png"],
+    title: "Crown-pilot — Clash Royale Companion",
+    images: ["/brand/crown-pilot-192.png"],
   },
 };
 
