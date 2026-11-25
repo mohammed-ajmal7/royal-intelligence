@@ -59,6 +59,12 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(home,/className="ri-cost"/);
   assert.ok(ui.includes('unavailableLabel = "No form listed"'));
   assert.ok(ui.includes('card.owned && unlocked === false ? "Locked" : "Available"'));
+  assert.match(ui,/className="ri-level-design"/);
+  assert.match(ui,/className="ri-level-grid" role="group" aria-label="Choose card level"/);
+  assert.match(ui,/Your actual card level/);
+  assert.match(ui,/setLevel\(value\); setAllLevels\(false\)/);
+  assert.match(css,/\.ri-level-grid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.ri-level-option\.is-selected/);
   assert.ok(ui.includes('const evolutionStatus = formStatus(hasEvolution, card.evo, "Not available");'));
   assert.ok(ui.includes('const heroStatus = formStatus(hasHero, card.hero, "Not available");'));
   assert.ok(ui.includes("Evolution: evolutionStatus,"));
