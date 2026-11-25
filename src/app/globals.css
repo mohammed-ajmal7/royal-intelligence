@@ -368,3 +368,16 @@ html:has(.ri-card-dialog[open]) { overflow: hidden; }
 @media(forced-colors:active){
   .ri-main select:not([multiple]){-webkit-appearance:auto;appearance:auto;background-image:none;padding-right:12px}
 }
+
+/* All ownership includes both unlocked and locked cards. */
+.ri-ownership-toggle button{min-width:0}
+@media(max-width:760px){
+  .ri-filterbar>select{max-width:100%}
+}
+@media(max-width:480px){
+  .ri-filterbar{grid-template-columns:minmax(0,1fr)}
+  .ri-filterbar>input{grid-column:1}
+  .ri-ownership-toggle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ri-ownership-toggle button{width:100%}
+  .ri-filterbar>select{max-width:100%;width:100%}
+}
