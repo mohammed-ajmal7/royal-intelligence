@@ -62,10 +62,6 @@ small{font-size:11px}
 .ri-profile-avatar-wrap{position:relative;flex-shrink:0;width:56px;height:56px}
 .ri-profile-avatar{overflow:hidden;padding:0;background:#e5ecfa;color:#3156ac}
 .ri-profile-avatar img{display:block;width:100%;height:100%;object-fit:cover}
-.ri-avatar-edit{position:absolute;right:-5px;bottom:-6px;display:grid;place-items:center;width:24px;height:24px;border:2px solid #fff;border-radius:50%;background:#3156ac;color:#fff;cursor:pointer}
-.ri-avatar-edit input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:0}
-.ri-avatar-reset{position:absolute;top:-6px;right:-6px;display:grid;place-items:center;width:22px;height:22px;border:1px solid #d6e1ee;border-radius:50%;background:#fff;color:#526d9c}
-.ri-avatar-error{position:absolute;top:100%;left:0;z-index:2;width:220px;margin-top:9px;padding:8px;border:1px solid #e9bbbb;border-radius:6px;background:#fff4f4;color:#a33a3a;font-size:10px}
 .ri-profile h2{font-size:22px}
 .ri-profile p:not(.ri-eyebrow){font-size:12px;color:var(--ri-sub);margin-top:5px}
 .ri-profile .ri-eyebrow{margin-bottom:6px!important}
