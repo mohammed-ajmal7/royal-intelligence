@@ -5,8 +5,9 @@ export type FormStatusFilter = "All" | "Unlocked" | "Locked";
 export type CardTypeFilter = "" | "Evolutions" | "Heroes";
 
 /**
- * Ownership and special-form unlock status are separate filters.
- * Locked/Unlocked only apply to owned cards and the selected special form.
+ * Collection scope uses "Locked" for cards the player does not own.
+ * Inside an Owned special-form view, formStatus distinguishes unlocked and
+ * locked forms for cards the player does own.
  */
 export function filterCollection(
   cards: readonly Card[],
