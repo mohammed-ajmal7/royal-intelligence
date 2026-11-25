@@ -58,6 +58,7 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(home,/elixirAsset\(card\.elixir\)/);
   assert.match(home,/className="ri-cost"/);
   assert.ok(ui.includes('unavailableLabel = "No form listed"'));
+  assert.ok(ui.includes('card.owned && unlocked === false ? "Locked" : "Available"'));
   assert.ok(ui.includes('const evolutionStatus = formStatus(hasEvolution, card.evo, "Not available");'));
   assert.ok(ui.includes('const heroStatus = formStatus(hasHero, card.hero, "Not available");'));
   assert.ok(ui.includes("Evolution: evolutionStatus,"));
