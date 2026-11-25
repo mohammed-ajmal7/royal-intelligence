@@ -66,4 +66,6 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.ok(ui.includes('heroStatus === "Not available" ? ["Hero"] : []'));
   assert.ok(css.includes(".ri-inspector-fact.is-unavailable"));
   assert.ok(css.includes("filter:grayscale(1)"));
+  const globalCss=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  assert.match(globalCss,/\.ri-cost\s*\{[^}]*background:\s*transparent/);
 });
