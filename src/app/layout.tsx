@@ -10,9 +10,12 @@ export const metadata: Metadata = {
   description: "CrownPilot is an unofficial Clash Royale companion for your cards, decks, battles, strategies, and public game data.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/brand/crownpilot-mark.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/brand/crownpilot-mark.svg", type: "image/svg+xml" },
+      { url: "/brand/crownpilot-192.png", type: "image/png", sizes: "192x192" },
+    ],
     shortcut: "/brand/crownpilot-mark.svg",
-    apple: [{ url: "/brand/crownpilot-mark.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/brand/crownpilot-192.png", sizes: "192x192", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
