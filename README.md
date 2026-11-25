@@ -6,7 +6,9 @@ A minimal, mobile-first Clash Royale companion app built with Next.js, React and
 
 Installable web app metadata, branded browser icons and a responsive mobile launcher experience are included. This remains an unofficial fan tool.
 
-**Live:** https://royal-intelligence.vercel.app (legacy address; preserved for existing bookmarks during the CrownPilot rollout)
+**Live:** https://crownpilot.vercel.app
+
+**Previous URL (kept working):** https://royal-intelligence.vercel.app
 
 ## Five simple sections
 
@@ -82,4 +84,4 @@ This is an unofficial fan site, not affiliated with or endorsed by Supercell.
 
 ## Brand migration
 
-The visible website, advanced tools, app title, install metadata, logo, and package name are CrownPilot. The existing `ri-*` local-storage keys remain unchanged for backwards compatibility so player history and settings are not lost. The GitHub repository's legacy URL is retained until its repository slug can be renamed by an administrator. Existing deployment links should continue to resolve during the rollout.
+The visible website, advanced tools, app title, install metadata, logo, and package name are CrownPilot. The existing `ri-*` local-storage keys remain unchanged for backwards compatibility so player history and settings are not lost. The GitHub repository's legacy URL is retained until its repository slug can be renamed by an administrator; repository renaming is not exposed by the current connected GitHub integration. Existing deployment links should continue to resolve during the rollout.
