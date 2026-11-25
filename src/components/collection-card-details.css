@@ -179,3 +179,56 @@
  .ri-level-panel-footer strong{font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){.ri-level-option{transition:none}}
+
+
+/* Card level selector: reference layout, Royaleon theme tokens. */
+.ri-level-design{display:grid;gap:10px;min-width:0}
+.ri-level-design-heading{font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--ri-text)}
+.ri-level-panel{
+  min-width:0;padding:16px;border:1px solid var(--ri-border);border-radius:16px;
+  background:var(--ri-paper);color:var(--ri-text);box-shadow:none;
+}
+.ri-level-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.ri-level-panel-header h3{font-size:16px;font-weight:700;letter-spacing:-.25px;color:var(--ri-text)}
+.ri-level-panel-header p{margin-top:3px;color:var(--ri-sub);font-size:12px;line-height:1.45}
+.ri-level-owned-badge{
+  flex:0 0 auto;padding:5px 10px;border-radius:999px;background:#eaf8f0;
+  color:var(--ri-success);font-size:11px;font-weight:750;letter-spacing:.35px;white-space:nowrap;
+}
+.ri-level-owned-badge.is-unowned{background:var(--ri-soft);color:var(--ri-sub)}
+.ri-level-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.ri-level-option{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-width:0;min-height:70px;padding:9px 5px;border:1px solid var(--ri-border);
+  border-radius:12px;background:var(--ri-paper);color:var(--ri-text);
+  transition:border-color .15s,background .15s,transform .15s;
+}
+.ri-level-option:hover{border-color:var(--ri-accent);background:var(--ri-soft)}
+.ri-level-option strong{font-size:20px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+.ri-level-option span{color:var(--ri-sub);font-size:9px;line-height:1.2;font-weight:650;letter-spacing:.35px}
+.ri-level-option.is-selected{
+  border:2px solid var(--ri-accent);background:var(--ri-soft);padding:8px 4px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--ri-accent) 12%,transparent);
+}
+.ri-level-option.is-selected span,.ri-level-option.is-owned:not(.is-selected) span{color:var(--ri-success)}
+.ri-level-panel-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:17px;padding-top:15px;border-top:1px solid var(--ri-border);
+}
+.ri-level-panel-footer span{color:var(--ri-sub);font-size:12px}
+.ri-level-panel-footer strong{color:var(--ri-text);font-size:15px;font-weight:700;white-space:nowrap}
+.ri-level-option:focus-visible{outline:2px solid var(--ri-accent);outline-offset:3px}
+@media(max-width:560px){
+  .ri-level-panel{padding:12px;border-radius:13px}
+  .ri-level-grid{gap:7px}
+  .ri-level-option{min-height:62px;border-radius:10px}
+  .ri-level-option strong{font-size:18px}
+  .ri-level-panel-footer{margin-top:13px;padding-top:12px}
+  .ri-level-panel-footer span{font-size:11px}
+  .ri-level-panel-footer strong{font-size:13px}
+}
+@media(max-width:360px){
+  .ri-level-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ri-level-panel-header{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){.ri-level-option{transition:none}}
