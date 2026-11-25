@@ -343,7 +343,7 @@ export default function Home() {
                     if(next&&cardsOwnership==="Unowned")setCardsOwnership("All");
                     setCardsFormStatus("All");setSelectedCard(null);
                   }}>
-                    <option value="">All card types</option>
+                    <option value="">All cards</option>
                     {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}
                   </select>
                 </label>
