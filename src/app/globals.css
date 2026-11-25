@@ -447,3 +447,29 @@ html:has(.ri-card-dialog[open]) { overflow: hidden; }
 @media(prefers-reduced-motion:reduce){
   .ri-card-search{transition:none}
 }
+
+
+/* Keep the filtered card count compact and visually distinct. */
+.ri-cards-toolbar .ri-filter-count{
+  justify-self:end;
+  display:inline-flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:5px;
+  min-width:0;
+  min-height:34px;
+  padding:6px 12px;
+  border:1px solid #e5eaf1;
+  border-radius:999px;
+  background:#f8fafc;
+  color:var(--ri-sub);
+}
+.ri-cards-toolbar .ri-filter-count strong{
+  color:var(--ri-text);
+  font-size:.875rem;
+  line-height:1;
+}
+.ri-cards-toolbar .ri-filter-count span{
+  font-size:.75rem;
+  line-height:1;
+}
