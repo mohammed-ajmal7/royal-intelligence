@@ -10,6 +10,7 @@ import { generateSelfMadeDecks, type SelfMadeResult } from "../lib/selfMadeDeckL
 import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
+import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
@@ -309,7 +310,7 @@ export default function Home() {
           <h2>{loading?"Loading your profile":"Start with your player tag"}</h2><p>{loading?"Retrieving your cards, deck and recent battles.":"Enter your Clash Royale player tag to see your cards, decks and recent battles."}</p>
         </div>:<>
           {tab==="Overview"&&<div className="ri-stack">
-            <div className="ri-profile"><div className="ri-profile-icon">{player.name.slice(0,1).toUpperCase()}</div>
+            <div className="ri-profile"><ProfileAvatar playerTag={player.tag} playerName={player.name} rawPlayer={player.raw}/>
               <div><p className="ri-eyebrow">PLAYER PROFILE</p><h2>{player.name}</h2>
                 <p>{player.arena} {player.clan?"· "+player.clan:""} · King Tower {player.kingLevel??"—"}</p></div>
               <span className={"ri-status "+(!player.stale?"ri-status-good":"")}>{player.stale?"Saved profile":"Live profile"}</span></div>
