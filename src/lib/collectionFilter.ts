@@ -1,6 +1,6 @@
 import type { Card } from "./model";
 
-export type CardOwnership = "Owned" | "Unowned" | "All";
+export type CardOwnership = "Owned" | "Locked" | "All";
 export type FormStatusFilter = "All" | "Unlocked" | "Locked";
 export type CardTypeFilter = "" | "Evolutions" | "Heroes";
 
