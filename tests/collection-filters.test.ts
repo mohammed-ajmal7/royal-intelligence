@@ -89,6 +89,7 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
 test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
   assert.match(page,/useState<FormStatusFilter>\("All"\)/);
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
@@ -106,7 +107,7 @@ test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>
   assert.match(page,/setCardsOwnership\("All"\);setCardsFormStatus\("All"\)/);
   assert.match(page,/No cards match these filters/);
   assert.match(css,/\.ri-cards-toolbar/);
-  assert.match(css,/\.ri-hero-empty-art/);
-  assert.match(css,/\.ri-hero-empty-action/);
+  assert.match(cardCss,/\.ri-hero-empty-art/);
+  assert.match(cardCss,/\.ri-hero-empty-action/);
   assert.match(css,/@media\(max-width:760px\)/);
 });
