@@ -130,3 +130,52 @@
  .ri-card-dialog.ri-inspector .ri-inspector-all-levels{margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){.ri-inspector-forms button{transition:none}}
+
+
+/* Level picker — visual grid inspired by the reference design. */
+.ri-level-design{display:grid;gap:10px;min-width:0}
+.ri-level-design-heading{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.ri-level-panel{
+  min-width:0;padding:16px;border:1px solid #252a32;border-radius:17px;
+  background:#0d1117;color:#e7edf4;
+}
+.ri-level-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.ri-level-panel-header h3{font-size:16px;font-weight:700;letter-spacing:-.25px;color:#e7edf4}
+.ri-level-panel-header p{margin-top:3px;color:#9aa3ad;font-size:12px;line-height:1.45}
+.ri-level-owned-badge{
+  flex:0 0 auto;padding:5px 10px;border-radius:999px;background:#06351f;
+  color:#00d66b;font-size:11px;font-weight:750;letter-spacing:.45px;white-space:nowrap;
+}
+.ri-level-owned-badge.is-unowned{background:#242a33;color:#aab3bf}
+.ri-level-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.ri-level-option{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  min-width:0;min-height:70px;padding:9px 5px;border:1px solid #252a32;border-radius:13px;
+  background:#0a0e13;color:#e7edf4;transition:border-color .15s,background .15s,transform .15s;
+}
+.ri-level-option:hover{border-color:#536274;background:#111923}
+.ri-level-option strong{font-size:20px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+.ri-level-option span{color:#929aa5;font-size:9px;line-height:1.2;font-weight:650;letter-spacing:.35px}
+.ri-level-option.is-selected{
+  border:2px solid #3985ff;background:#203f6d;padding:8px 4px;
+  box-shadow:0 0 0 1px #3985ff22;
+}
+.ri-level-option.is-selected span{color:#8cf2b3}
+.ri-level-option.is-owned:not(.is-selected) span{color:#00d66b}
+.ri-level-panel-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:17px;padding-top:15px;border-top:1px solid #202630;
+}
+.ri-level-panel-footer span{color:#9aa3ad;font-size:12px}
+.ri-level-panel-footer strong{color:#e7edf4;font-size:15px;font-weight:700;white-space:nowrap}
+.ri-level-design>.ri-inspector-all-levels{justify-self:start;min-height:34px;padding:7px 10px;font-size:11px}
+@media(max-width:560px){
+ .ri-level-panel{padding:12px;border-radius:13px}
+ .ri-level-grid{gap:7px}
+ .ri-level-option{min-height:62px;border-radius:10px}
+ .ri-level-option strong{font-size:18px}
+ .ri-level-panel-footer{margin-top:13px;padding-top:12px}
+ .ri-level-panel-footer span{font-size:11px}
+ .ri-level-panel-footer strong{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){.ri-level-option{transition:none}}
