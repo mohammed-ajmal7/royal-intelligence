@@ -183,10 +183,10 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const hasRows = sections.some(section => Object.keys(section.levels).some(value => Number(value) <= cap));
   const starLevel = card.starLevel == null ? "Not reported" : card.starLevel === 0 ? "None" : String(card.starLevel);
   const costIcon=elixirAsset(card.elixir);
-  const formStatus = (available: boolean | null, unlocked: boolean | null) =>
+  const formStatus = (available: boolean | null, unlocked: boolean | null, unavailableLabel = "No form listed") =>
     unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Available · not unlocked" : "Available" :
-      available === false || profile ? "Not available" : "Unknown";
-  const heroStatus = formStatus(hasHero, card.hero);
+      available === false || profile ? unavailableLabel : "Unknown";
+  const heroStatus = formStatus(hasHero, card.hero, "Not available");
 
   return <dialog ref={dialog} className="ri-card-dialog ri-inspector" aria-labelledby={titleId}
     onClose={onClose} onClick={event => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
