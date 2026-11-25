@@ -21,8 +21,8 @@ const cards:Card[]=[
   item("Tower Princess",true,11,{tower:true,hasEvolution:true}),
 ];
 
-const filter=(ownership:"Owned"|"Unowned"|"All",type:""|"Evolutions"|"Heroes"="",query="")=>
-  filterCollection(cards,{ownership,type,query}).map(c=>c.name);
+const filter=(ownership:"Owned"|"Unowned"|"All",type:""|"Evolutions"|"Heroes"="",query="",formStatus:"All"|"Unlocked"|"Locked"="All")=>
+  filterCollection(cards,{ownership,type,query,formStatus}).map(c=>c.name);
 
 test("Owned is the default group and an empty type filter shows all owned cards",()=>{
   assert.deepEqual(filter("Owned"),["Knight","Archers","Goblin","Wizard"]);
@@ -36,16 +36,16 @@ test("Unowned includes only unowned cards while All includes both",()=>{
 test("All plus Evolutions includes every known evolution-capable owned and unowned card",()=>{
   assert.deepEqual(filter("All","Evolutions"),["Archers","Goblin","Valkyrie"]);
   assert.deepEqual(filter("Owned","Evolutions"),["Archers","Goblin"]);
-  assert.deepEqual(filter("Locked","Evolutions"),["Archers"]);
-  assert.deepEqual(filter("Unlocked","Evolutions"),["Goblin"]);
+  assert.deepEqual(filter("Owned","Evolutions","", "Locked"),["Archers"]);
+  assert.deepEqual(filter("Owned","Evolutions","", "Unlocked"),["Goblin"]);
   assert.deepEqual(filter("Unowned","Evolutions"),["Valkyrie"]);
 });
 test("All plus Heroes includes every known hero-capable owned and unowned card",()=>{
   assert.deepEqual(filter("All","Heroes"),["Knight","Bowler","Mini P.E.K.K.A"]);
   assert.deepEqual(filter("Owned","Heroes"),["Knight"]);
   assert.deepEqual(filter("Unowned","Heroes"),["Bowler","Mini P.E.K.K.A"]);
-  assert.deepEqual(filter("Locked","Heroes"),["Knight"]);
-  assert.deepEqual(filter("Unlocked","Heroes"),["Bowler"]);
+  assert.deepEqual(filter("Owned","Heroes","", "Locked"),["Knight"]);
+  assert.deepEqual(filter("Owned","Heroes","", "Unlocked"),[]);
 });
 test("capability is not mistaken for an unlocked evolution or hero",()=>{
   assert.equal(cards.find(c=>c.name==="Archers")?.evo,false);
@@ -86,10 +86,11 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Evolutions",query:""}).map(c=>c.name),["Archers","Valkyrie"]);
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Heroes",query:""}).map(c=>c.name),["Knight"]);
 });
-test("Cards UI exposes special-form status and ownership filters for Evolutions and Heroes",()=>{
+test("Cards UI shows ownership first and nested unlock status only for owned special-form cards",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
-  assert.match(page,/useState<CardCollectionFilter>\("Owned"\)/);
+  assert.match(page,/useState<CardOwnership>\("Owned"\)/);
+  assert.match(page,/useState<FormStatusFilter>\("All"\)/);
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
   assert.match(page,/role="group" aria-label="Card ownership"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
