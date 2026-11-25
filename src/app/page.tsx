@@ -433,7 +433,7 @@ export default function Home() {
               } : undefined}/>}
             {!visible.length&&((cardsFilter==="Heroes"||cardsFilter==="Evolutions")&&cardsOwnership==="Owned"&&!cardsQuery.trim()
               ? <SpecialFormEmptyState type={cardsFilter} status={cardsFormStatus}
-                  onShowAll={()=>{setCardsOwnership("All");setCardsFormStatus("All");setSelectedCard(null);}}/>
+                  onShowAll={()=>{setCardsOwnership("Owned");setCardsFormStatus("All");setSelectedCard(null);}}/>
               : <div className="ri-empty">No cards match these filters.</div>)}
             <div className="ri-cards">{visible.map(c=>
               <button type="button" key={c.id} className={"ri-card "+(selectedCard?.id===c.id?"is-selected":"")}
