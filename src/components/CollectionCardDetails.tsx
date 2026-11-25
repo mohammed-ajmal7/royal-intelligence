@@ -229,7 +229,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
             <span>{card.tower ? "Tower Troop" : profile?.type ?? (prior?.kind !== "Other" ? prior?.kind : null) ?? "Unknown type"}</span>
             {costIcon && <span className="ri-inspector-cost"><img src={costIcon} width={24} height={24} alt={card.elixir+" elixir"} />Elixir</span>}
           </div>
-          <p className="ri-inspector-ownership">{card.owned ? card.level != null ? "Lv "+card.level+" · Owned" : "Owned" : "Not owned"}</p>
+          <p className="ri-inspector-ownership">{card.owned ? card.level != null ? "Lv "+card.level+" · Current" : "Current" : "Not owned"}</p>
         </div>
         <button type="button" className="ri-close" aria-label="Close card details" onClick={() => dialog.current?.close()}><X size={21}/></button>
       </header>
@@ -250,7 +250,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                 <strong>Level {viewing}</strong>
               </span>
               <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
-                {card.owned && card.level != null ? "OWNED · " + card.level : card.owned ? "OWNED" : "NOT OWNED"}
+                {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
               </span>
               <ChevronDown className="ri-level-trigger-chevron" size={18} aria-hidden="true"/>
             </button>
@@ -262,7 +262,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                     <p>Choose a level to view card stats</p>
                   </div>
                   <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
-                    {card.owned && card.level != null ? "OWNED · " + card.level : card.owned ? "OWNED" : "NOT OWNED"}
+                    {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
                   </span>
                 </div>
                 <div className="ri-level-grid" role="group" aria-label="Choose card level">
@@ -270,16 +270,16 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                     const isOwned = card.owned && value === card.level;
                     return <button key={value} type="button"
                       className={"ri-level-option" + (viewing === value ? " is-selected" : "") + (isOwned ? " is-owned" : "")}
-                      aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your owned level" : "")}
+                      aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your current level" : "")}
                       onClick={() => { setLevel(value); setAllLevels(false); setLevelPickerOpen(false); }}>
                       <strong>{value}</strong>
-                      <span>{isOwned ? "✓ OWNED" : "LEVEL"}</span>
+                      <span>{isOwned ? "✓ CURRENT" : "LEVEL"}</span>
                     </button>;
                   })}
                 </div>
                 <div className="ri-level-panel-footer">
                   <span>Your actual card level</span>
-                  <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Owned · level unknown" : "Not owned"}</strong>
+                  <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Current level unknown" : "Not owned"}</strong>
                 </div>
               </div>
             </div>
