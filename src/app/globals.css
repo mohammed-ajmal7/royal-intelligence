@@ -82,7 +82,8 @@ small{font-size:11px}
 .ri-art{position:relative;display:grid;place-items:center;width:100%;height:83px;border-radius:6px;overflow:hidden;background:#eef1f5;color:#98a2b3}
 .ri-art img{max-width:100%;height:100%;object-fit:contain}
 .ri-art-small{height:48px}
-.ri-cost{position:absolute;top:3px;left:3px;display:grid;place-items:center;min-width:19px;height:20px;border-radius:6px;background:#775ed6;color:white;font-weight:750;font-size:10px;padding:0 3px}
+.ri-cost{position:absolute;top:2px;left:2px;z-index:1;display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:0;background:transparent;color:#fff;font-weight:750;font-size:11px;padding:0;filter:drop-shadow(0 1px 2px #17122c60)}
+.ri-art .ri-cost img{position:static;inset:auto;display:block;width:28px;height:28px;object-fit:contain}
 .ri-welcome{display:flex;align-items:center;justify-content:center;text-align:center;flex-direction:column;gap:13px;min-height:260px;color:#98a2b3}
 .ri-welcome h2{font-size:15px;font-weight:550;color:var(--ri-sub)}
 .ri-filterbar{display:flex;gap:10px}

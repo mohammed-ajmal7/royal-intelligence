@@ -1,156 +1,129 @@
-.ri-card-dialog.ri-inspector {
-  width: min(740px, calc(100% - 24px));
-  max-height: min(88dvh, 840px);
-  overscroll-behavior: contain;
+/* Royaleon card inspector — compact, information-first, responsive. */
+.ri-card-dialog.ri-inspector{
+  width:min(628px,calc(100% - 24px));
+  max-height:min(88dvh,800px);
+  border:1px solid #dfe4eb;
+  border-radius:14px;
+  box-shadow:0 20px 64px rgba(16,24,40,.22);
+  overscroll-behavior:contain;
 }
-
-.ri-inspector-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 64px 18px 22px;
-  border-bottom: 1px solid var(--ri-border);
-  background: var(--ri-paper);
+.ri-inspector-content{min-width:0}
+.ri-inspector-header{
+  position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:14px;
+  padding:14px 52px 13px 18px;border-bottom:1px solid var(--ri-border);
+  background:var(--ri-paper);
 }
-.ri-inspector-portrait {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: 0 0 68px;
-  height: 78px;
-  border-radius: 9px;
-  background: var(--ri-soft);
+.ri-inspector-portrait{
+  display:grid;place-items:center;flex:0 0 51px;height:63px;
+  overflow:hidden;border-radius:8px;background:var(--ri-soft);
 }
-.ri-inspector-portrait img {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.ri-inspector-portrait img{display:block;width:100%;height:100%;object-fit:contain}
+.ri-inspector-identity{min-width:0;flex:1}
+.ri-inspector-identity h2{
+  font-size:19px;font-weight:720;line-height:1.18;letter-spacing:-.55px;
+  overflow-wrap:anywhere;
 }
-.ri-inspector-portrait span {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  min-width: 20px;
-  padding: 2px 4px;
-  border-radius: 6px;
-  background: #6745ba;
-  color: white;
-  font-size: .75rem;
-  font-weight: 700;
-  text-align: center;
+.ri-inspector-meta{
+  display:flex;align-items:center;flex-wrap:wrap;column-gap:6px;
+  margin-top:5px;color:var(--ri-sub);font-size:12px;line-height:1.45;
+  text-transform:capitalize;
 }
-.ri-inspector-identity { min-width: 0; }
-.ri-inspector-identity h2 { font-size: 1.375rem; overflow-wrap: anywhere; }
-.ri-inspector-identity p { margin-top: 4px; color: var(--ri-sub); font-size: .875rem; text-transform: capitalize; }
-.ri-inspector .ri-close { inset: 14px 14px auto auto; }
-.ri-inspector-body { display: grid; gap: 16px; padding: 20px 22px 24px; }
-.ri-inspector-controls { display: flex; gap: 10px 14px; flex-wrap: wrap; align-items: end; }
-.ri-inspector-forms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--ri-border);
-  border-radius: 9px;
-  background: var(--ri-bg);
+.ri-inspector-meta-dot{color:#afb8c6}
+.ri-inspector-cost{
+  display:inline-flex;gap:3px;align-items:center;margin-left:5px;
+  color:var(--ri-text);font-size:11px;font-weight:650;text-transform:none;
 }
-.ri-inspector-forms button {
-  min-height: 38px;
-  padding: 5px 11px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--ri-sub);
-  font-size: .875rem;
-  font-weight: 650;
+.ri-inspector-cost img{display:block;width:24px;height:24px}
+.ri-inspector-ownership{margin-top:4px!important;color:#6a7788!important;font-size:11px!important}
+.ri-inspector .ri-close{inset:10px 10px auto auto}
+.ri-inspector-body{display:grid;gap:13px;padding:13px 18px 18px}
+.ri-inspector-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.ri-inspector-forms{
+  display:flex;align-items:center;gap:2px;padding:3px;
+  background:#f2f4f7;border:1px solid var(--ri-border);border-radius:8px;
 }
-.ri-inspector-forms button[aria-pressed="true"] {
-  border-color: var(--ri-border);
-  background: var(--ri-paper);
-  color: var(--ri-accent);
+.ri-inspector-forms button{
+  min-height:34px;padding:6px 11px;border:0;border-radius:5px;background:transparent;
+  color:var(--ri-sub);font-size:12px;font-weight:650;
 }
-.ri-inspector-level {
-  display: grid;
-  gap: 4px;
-  color: var(--ri-sub);
-  font-size: .8125rem;
-  font-weight: 650;
+.ri-inspector-forms button[aria-pressed="true"]{
+  background:#fff;color:var(--ri-accent);box-shadow:0 1px 3px #10182818;
 }
-.ri-inspector-level select {
-  min-height: 44px;
-  padding: 6px 32px 6px 10px;
-  border: 1px solid var(--ri-border);
-  border-radius: 8px;
-  background: var(--ri-paper);
-  color: var(--ri-text);
-  font-size: 1rem;
+.ri-inspector-level{display:flex;gap:8px;align-items:center;font-size:11px;font-weight:650;color:var(--ri-sub)}
+.ri-inspector-level select{
+  width:auto;max-width:175px;min-width:122px;min-height:38px;
+  border:1px solid var(--ri-border);border-radius:7px;background:#fff;
+  color:var(--ri-text);font-size:12px;font-weight:650;
+  padding:7px 34px 7px 10px;
 }
-.ri-inspector-description { color: var(--ri-sub); font-size: .9375rem; }
-.ri-inspector-section {
-  display: grid;
-  gap: 9px;
-  min-width: 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--ri-border);
+.ri-card-dialog.ri-inspector .ri-inspector-all-levels{
+  min-height:38px;padding:8px 11px;font-size:11px;margin-left:auto;
 }
-.ri-inspector-section h3 { font-size: .9375rem; }
-.ri-inspector-facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
-  gap: 7px;
-  margin: 0;
+.ri-inspector-section{display:grid;gap:9px;min-width:0;padding-top:12px;border-top:1px solid var(--ri-border)}
+.ri-inspector-section h3{font-size:13px;font-weight:700;letter-spacing:-.14px}
+.ri-inspector-section-level{color:var(--ri-sub);font-weight:500;font-size:11px}
+.ri-inspector-facts{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;
+  overflow:hidden;margin:0;border:1px solid var(--ri-border);border-radius:9px;
+  background:var(--ri-border);
 }
-.ri-inspector-facts > div {
-  padding: 8px 10px;
-  border: 1px solid var(--ri-border);
-  border-radius: 8px;
-  background: var(--ri-bg);
-  overflow-wrap: anywhere;
+.ri-inspector-fact{
+  display:flex;align-items:center;min-width:0;min-height:51px;gap:9px;
+  background:#fff;padding:7px 9px;
 }
-.ri-inspector-facts dt { margin-bottom: 3px; color: var(--ri-sub); font-size: .8125rem; }
-.ri-inspector-facts dd { margin: 0; font-size: .9375rem; font-weight: 650; font-variant-numeric: tabular-nums; }
-.ri-inspector-note { color: var(--ri-sub); font-size: .8125rem; }
-.ri-inspector-note a { text-decoration: underline; text-underline-offset: .16em; }
-.ri-inspector-notice {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--ri-border);
-  border-radius: 8px;
-  background: var(--ri-bg);
-  color: var(--ri-sub);
-  font-size: .875rem;
+.ri-inspector-stat-icon{
+  display:block;flex:0 0 31px;width:31px;height:31px;object-fit:contain;border-radius:7px;
 }
-.ri-inspector-table {
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  border: 1px solid var(--ri-border);
-  border-radius: 8px;
+.ri-inspector-fact-body{min-width:0;overflow-wrap:anywhere}
+.ri-inspector-facts dt{margin:0 0 2px;color:var(--ri-sub);font-size:10.5px;line-height:1.25;font-weight:500}
+.ri-inspector-facts dd{
+  margin:0;color:var(--ri-text);font-size:13px;line-height:1.3;
+  font-weight:700;font-variant-numeric:tabular-nums;
 }
-.ri-inspector-table table { min-width: 100%; border-collapse: collapse; text-align: left; font-size: .875rem; }
-.ri-inspector-table th, .ri-inspector-table td {
-  padding: 8px 11px;
-  border-bottom: 1px solid var(--ri-border);
-  font-variant-numeric: tabular-nums;
+.ri-inspector-information-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ri-inspector-information-facts .ri-inspector-fact{gap:7px;padding:8px;min-height:54px}
+.ri-inspector-information-facts .ri-inspector-stat-icon{width:24px;height:24px;flex-basis:24px}
+.ri-inspector-information-facts dd{font-size:11px;font-weight:640}
+.ri-inspector-about{border-top:1px solid var(--ri-border);padding-top:10px}
+.ri-inspector-about summary{cursor:pointer;color:var(--ri-accent);font-size:11px;font-weight:640;list-style-position:inside}
+.ri-inspector-about p{color:var(--ri-sub);font-size:12px;line-height:1.55;padding-top:7px}
+.ri-inspector-note{color:var(--ri-sub);font-size:11px;line-height:1.5}
+.ri-inspector-note a{text-decoration:underline;text-underline-offset:.16em}
+.ri-inspector-notice{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 10px;border:1px solid var(--ri-border);border-radius:7px;
+  background:var(--ri-bg);color:var(--ri-sub);font-size:11px;
 }
-.ri-inspector-table thead { background: var(--ri-bg); }
-.ri-inspector-table tr:last-child > * { border-bottom: 0; }
-.ri-inspector-table .is-viewing { background: var(--ri-soft); }
-.ri-inspector-body > .ri-button-secondary { justify-self: start; }
-@media (max-width: 560px) {
-  .ri-inspector-header { gap: 12px; padding: 14px 48px 14px 14px; }
-  .ri-inspector-portrait { flex-basis: 56px; height: 65px; }
-  .ri-inspector .ri-close { inset: 6px 6px auto auto; }
-  .ri-inspector-body { padding: 14px; }
-  .ri-inspector-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ri-inspector-forms { width: 100%; }
-  .ri-inspector-forms button { flex: 1; min-height: 44px; }
+.ri-inspector-table{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;border:1px solid var(--ri-border);border-radius:8px}
+.ri-inspector-table table{min-width:100%;border-collapse:collapse;text-align:left;font-size:11px}
+.ri-inspector-table th,.ri-inspector-table td{padding:7px 9px;border-bottom:1px solid var(--ri-border);font-variant-numeric:tabular-nums}
+.ri-inspector-table thead{background:var(--ri-bg)}
+.ri-inspector-table tr:last-child>*{border-bottom:0}
+.ri-inspector-table .is-viewing{background:var(--ri-soft)}
+.ri-inspector-body>.ri-button-secondary{justify-self:start;min-height:35px;padding:7px 11px}
+@media(max-width:560px){
+ .ri-card-dialog.ri-inspector{width:calc(100% - 14px);max-height:92dvh;border-radius:12px}
+ .ri-inspector-header{gap:10px;padding:10px 43px 10px 11px}
+ .ri-inspector-portrait{flex-basis:46px;height:57px}
+ .ri-inspector-identity h2{font-size:17px}
+ .ri-inspector-meta{font-size:11px}
+ .ri-inspector .ri-close{inset:6px 6px auto auto}
+ .ri-inspector-body{padding:11px;gap:11px}
+ .ri-inspector-controls{gap:7px}
+ .ri-inspector-forms{flex-shrink:0}
+ .ri-inspector-forms button{min-height:36px;padding:7px}
+ .ri-inspector-level{gap:5px}
+ .ri-inspector-level select{min-width:106px;max-width:137px;font-size:11px}
+ .ri-inspector-fact{gap:6px;padding:7px;min-height:52px}
+ .ri-inspector-stat-icon{flex-basis:27px;width:27px;height:27px}
+ .ri-inspector-facts dt{font-size:10px}
+ .ri-inspector-facts dd{font-size:11.5px}
+ .ri-inspector-information-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ri-inspector-information-facts .ri-inspector-stat-icon{flex-basis:22px;width:22px;height:22px}
 }
+@media(max-width:360px){
+ .ri-inspector-facts{grid-template-columns:1fr}
+ .ri-inspector-information-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ri-card-dialog.ri-inspector .ri-inspector-all-levels{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){.ri-inspector-forms button{transition:none}}

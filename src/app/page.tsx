@@ -14,6 +14,7 @@ import { CollectionCardDetails } from "../components/CollectionCardDetails";
 import { filterCollection, type CardOwnership, type CardTypeFilter } from "../lib/collectionFilter";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
+import { elixirAsset } from "../lib/statAssets";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy}[] = [
@@ -31,7 +32,7 @@ const digits=(v:number|null|undefined)=>v==null?"—":Number.isInteger(v)?fmt(v)
 function CardArt({card,size="normal"}:{card:Card;size?:"normal"|"small"}){
   return <div className={"ri-art "+(size==="small"?"ri-art-small":"")}>
     {card.image?<img src={card.image} alt="" loading="lazy"/>:<Crown size={22}/>}
-    {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}>{card.elixir??"—"}</span>}
+    {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}>{elixirAsset(card.elixir)?<img src={elixirAsset(card.elixir)!} alt="" width={28} height={28}/>:card.elixir??"—"}</span>}
   </div>;
 }
 function Stat({label,value,hint}:{label:string;value:string|number;hint?:string}){

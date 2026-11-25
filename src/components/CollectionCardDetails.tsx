@@ -5,6 +5,7 @@ import { Crown, X } from "lucide-react";
 import type { Card } from "../lib/model";
 import type { CardReferenceSection, CurrentReference } from "../lib/liveCardReference";
 import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../lib/mechanics";
+import { statIconPath, statValueWithUnit, elixirAsset } from "../lib/statAssets";
 import "./collection-card-details.css";
 
 type Form = "base" | "evolution" | "hero";
@@ -17,17 +18,27 @@ type Props = {
   onClose: () => void;
 };
 
-function withUnit(value: string, label: string) {
-  if (/^\d+(?:\.\d+)?$/.test(value) && /range|radius/i.test(label)) return value + " tiles";
-  if (/^\d+(?:\.\d+)?[–-]\d+(?:\.\d+)?$/.test(value) && /range/i.test(label)) return value + " tiles";
-  return value.replace(/(\d)sec$/i, "$1 s");
-}
+const priority = (label:string) =>
+  /hit ?points|health/i.test(label) ? 0 :
+  /\bdamage\b/i.test(label) ? 1 :
+  /hit speed|attack speed/i.test(label) ? 2 :
+  /target/i.test(label) ? 3 :
+  /^speed|movement speed/i.test(label) ? 4 :
+  /range/i.test(label) ? 5 :
+  /count/i.test(label) ? 6 : 7;
 
-function FactGrid({ facts }: { facts: Record<string, string> }) {
-  if (!Object.keys(facts).length) return null;
-  return <dl className="ri-inspector-facts">{Object.entries(facts).map(([label, value]) =>
-    <div key={label}><dt>{label}</dt><dd>{withUnit(value, label)}</dd></div>
-  )}</dl>;
+function FactGrid({ facts, combat = false }: { facts: Record<string,string>; combat?: boolean }) {
+  const entries=Object.entries(facts);
+  if (!entries.length) return null;
+  if (combat) entries.sort(([a],[b]) => priority(a)-priority(b));
+  return <dl className={"ri-inspector-facts "+(combat?"ri-inspector-combat-facts":"ri-inspector-information-facts")}>
+    {entries.map(([label,value])=><div key={label} className="ri-inspector-fact">
+      {statIconPath(label)&&<img className="ri-inspector-stat-icon" src={statIconPath(label)!} alt="" loading="lazy" aria-hidden="true"/>}
+      <div className="ri-inspector-fact-body">
+        <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
+      </div>
+    </div>)}
+  </dl>;
 }
 
 function joinSections(base: CardReferenceSection[], changes: CardReferenceSection[]) {
@@ -115,7 +126,7 @@ function LevelStats({ section, level, cap, allLevels }: {
       </table>
     </div>;
   }
-  return current ? <FactGrid facts={current}/> : <p className="ri-inspector-note">No values are published for level {level}.</p>;
+  return current ? null : <p className="ri-inspector-note">No values are published for level {level}.</p>;
 }
 
 const formLabels: Record<Form, string> = { base: "Base", evolution: "Evolution", hero: "Hero" };
@@ -170,7 +181,8 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const sourceUrl = reference?.card.sourceUrl ?? fallbackUrl;
   const sourceDate = reference?.updatedAt ?? prior?.sourceUpdatedAt ?? mechanics?.sourceUpdatedAt;
   const hasRows = sections.some(section => Object.keys(section.levels).some(value => Number(value) <= cap));
-  const starLevel = card.starLevel == null ? "Unavailable" : card.starLevel === 0 ? "None" : String(card.starLevel);
+  const starLevel = card.starLevel == null ? "Not reported" : card.starLevel === 0 ? "None" : String(card.starLevel);
+  const costIcon=elixirAsset(card.elixir);
   const formStatus = (available: boolean | null, unlocked: boolean | null) =>
     unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Available · not unlocked" : "Available" :
       available === false || profile ? "No form listed" : "Unknown";
@@ -181,14 +193,17 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
       <header className="ri-inspector-header">
         <div className="ri-inspector-portrait">
           {image ? <img src={image} alt=""/> : <Crown size={28} aria-hidden="true"/>}
-          {card.elixir != null && <span>{card.elixir}</span>}
+
         </div>
         <div className="ri-inspector-identity">
           <h2 id={titleId}>{card.name}</h2>
-          <p>{card.rarity !== "unknown" ? card.rarity : profile?.rarity ?? "Unknown rarity"}
-            {" · "}{card.tower ? "Tower Troop" : profile?.type ?? (prior?.kind !== "Other" ? prior?.kind : null) ?? "Unknown type"}
-            {" · "}{card.elixir == null ? card.tower ? "Tower support" : "Variable elixir" : card.elixir + " elixir"}</p>
-          <p>{card.owned ? card.level != null ? "Owned at level " + card.level : "Owned" : "Not owned"}</p>
+          <div className="ri-inspector-meta">
+            <span>{card.rarity !== "unknown" ? card.rarity : profile?.rarity ?? "Unknown rarity"}</span>
+            <span className="ri-inspector-meta-dot" aria-hidden="true">·</span>
+            <span>{card.tower ? "Tower Troop" : profile?.type ?? (prior?.kind !== "Other" ? prior?.kind : null) ?? "Unknown type"}</span>
+            {costIcon && <span className="ri-inspector-cost"><img src={costIcon} width={24} height={24} alt={card.elixir+" elixir"} />Elixir</span>}
+          </div>
+          <p className="ri-inspector-ownership">{card.owned ? card.level != null ? "Lv "+card.level+" · Owned" : "Owned" : "Not owned"}</p>
         </div>
         <button type="button" className="ri-close" aria-label="Close card details" onClick={() => dialog.current?.close()}><X size={21}/></button>
       </header>
@@ -204,8 +219,8 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                 .map(value => <option key={value} value={value}>{value}{value === card.level ? " (owned)" : ""}</option>)}
             </select>
           </label>
-          {hasRows && <button type="button" className="ri-button-secondary" aria-pressed={allLevels}
-            onClick={() => setAllLevels(!allLevels)}>{allLevels ? "Show selected level" : "Show all levels"}</button>}
+          {hasRows && <button type="button" className="ri-button-secondary ri-inspector-all-levels" aria-pressed={allLevels}
+            onClick={() => setAllLevels(!allLevels)}>{allLevels ? "Selected level" : "All levels"}</button>}
         </div>
 
         {referenceStatus === "loading" && <p className="ri-inspector-note" role="status">Loading the card reference…</p>}
@@ -214,17 +229,19 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
             mechanicsLoading ? "Current reference unavailable. Looking for a community record…" : "No combat reference is available for this card."}</p>
           <button type="button" className="ri-text-button" onClick={() => { setReferenceStatus("loading"); setAttempt(value => value + 1); }}>Retry</button>
         </div>}
-        {description && <p className="ri-inspector-description">{description}</p>}
+
         {form !== "base" && !chosen && referenceStatus !== "loading" &&
           <p className="ri-inspector-note">Stats for this form are unavailable.</p>}
         {chosen?.cycles != null && <FactGrid facts={{ "Evolution cycles": String(chosen.cycles) }}/>}
         {sections.map(section => <section key={section.name} className="ri-inspector-section">
-          <h3>{section.name === "Card stats" ? (allLevels ? "Combat stats" : "Combat stats · Level " + viewing) : section.name}</h3>
-          {section.description && <p className="ri-inspector-description">{section.description}</p>}
-          <FactGrid facts={section.facts}/>
+          <h3>{section.name === "Card stats" ? "Combat stats" : section.name}
+            {!allLevels && <span className="ri-inspector-section-level"> · Lv {viewing}</span>}</h3>
+          <FactGrid combat facts={{...section.facts,...(allLevels?{}:(section.levels[viewing]??{}))}}/>
           <LevelStats section={section} level={viewing} cap={cap} allLevels={allLevels}/>
+          {section.description && <details className="ri-inspector-about"><summary>Ability details</summary><p>{section.description}</p></details>}
         </section>)}
 
+        {description && <details className="ri-inspector-about"><summary>About {card.name}</summary><p>{description}</p></details>}
         <section className="ri-inspector-section">
           <h3>Card information</h3>
           <FactGrid facts={{
@@ -235,7 +252,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
             ...(profile?.arena ? { "Unlock arena": profile.arena } : {}),
             ...(card.roles.length ? { Roles: card.roles.join(", ") } : {}),
           }}/>
-          <p className="ri-inspector-note">Star Levels are cosmetic.{card.starLevel == null && " Your profile did not report a Star Level for this card."}</p>
+
         </section>
         {sourceUrl && <p className="ri-inspector-note">
           <a href={sourceUrl} target="_blank" rel="noreferrer">Combat stat source</a>
