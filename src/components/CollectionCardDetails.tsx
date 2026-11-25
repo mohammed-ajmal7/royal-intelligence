@@ -186,6 +186,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const formStatus = (available: boolean | null, unlocked: boolean | null, unavailableLabel = "No form listed") =>
     unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Available · not unlocked" : "Available" :
       available === false || profile ? unavailableLabel : "Unknown";
+  const evolutionStatus = formStatus(hasEvolution, card.evo, "Not available");
   const heroStatus = formStatus(hasHero, card.hero, "Not available");
 
   return <dialog ref={dialog} className="ri-card-dialog ri-inspector" aria-labelledby={titleId}
@@ -248,11 +249,14 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
           <FactGrid facts={{
             "Star level": starLevel,
             ...(card.maxStarLevel != null ? { "Maximum star level": String(card.maxStarLevel) } : {}),
-            Evolution: formStatus(hasEvolution, card.evo),
+            Evolution: evolutionStatus,
             Hero: heroStatus,
             ...(profile?.arena ? { "Unlock arena": profile.arena } : {}),
             ...(card.roles.length ? { Roles: card.roles.join(", ") } : {}),
-          }} unavailableFacts={heroStatus === "Not available" ? ["Hero"] : []}/>
+          }} unavailableFacts={[
+            ...(evolutionStatus === "Not available" ? ["Evolution"] : []),
+            ...(heroStatus === "Not available" ? ["Hero"] : []),
+          ]}/>
 
         </section>
         {sourceUrl && <p className="ri-inspector-note">
