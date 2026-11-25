@@ -1,0 +1,60 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { statIconPath, statValueWithUnit, elixirAsset } from "../src/lib/statAssets";
+
+const fromPublic=(path:string)=>new URL("../public"+path,import.meta.url);
+const ui=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+const home=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+
+test("each numbered elixir asset 1–10 exists as valid scalable SVG",()=>{
+  for(let n=1;n<=10;n++){
+    const path=elixirAsset(n);
+    assert.equal(path,"/game-icons/elixir/"+n+".svg");
+    assert.ok(existsSync(fromPublic(path!)));
+    const svg=readFileSync(fromPublic(path!),"utf8");
+    assert.match(svg,/xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    assert.match(svg,new RegExp("<title>"+n+" Elixir</title>"));
+    assert.match(svg,/viewBox="0 0 48 48"/);
+  }
+  for(const value of [null,undefined,0,-1,2.5,11])assert.equal(elixirAsset(value),null);
+});
+test("all stat pictograms are vector assets in public, including advanced mechanics",()=>{
+  for(const label of [
+    "Hitpoints","Shield hitpoints","Damage","Ranged Damage","Power Shot Damage",
+    "Damage/sec","Hit Speed","First hit","Targets","Speed","Range",
+    "Power Shot Range","Count","Radius","Deploy time","Evolution cycles",
+    "Star level","Evolution","Hero","Unlock arena",
+  ]){
+    const asset=statIconPath(label);
+    assert.ok(asset,label+" icon missing");
+    assert.ok(existsSync(fromPublic(asset!)),label+" asset not found");
+    const svg=readFileSync(fromPublic(asset!),"utf8");
+    assert.match(svg,/<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    assert.ok(svg.includes("</svg>"));
+  }
+});
+test("damage and attack values never accidentally receive range units",()=>{
+  assert.equal(statValueWithUnit("112","Ranged Damage"),"112");
+  assert.equal(statValueWithUnit("140","Power Shot Damage"),"140");
+  assert.equal(statValueWithUnit("304","Hitpoints"),"304");
+  assert.equal(statValueWithUnit("5","Range"),"5 tiles");
+  assert.equal(statValueWithUnit("4.5–6","Power Shot Range"),"4.5–6 tiles");
+  assert.equal(statValueWithUnit("0.9sec","Hit Speed"),"0.9 s");
+  assert.equal(statValueWithUnit("5 tiles","Range"),"5 tiles");
+});
+test("the inspector is denser with labeled stats, compact form controls and optional details",()=>{
+  assert.match(ui,/className="ri-inspector-stat-icon"/);
+  assert.match(ui,/statValueWithUnit\(value,label\)/);
+  assert.match(ui,/className="ri-inspector-meta"/);
+  assert.match(ui,/className="ri-inspector-about"/);
+  assert.match(ui,/<FactGrid combat facts=/);
+  assert.match(ui,/elixirAsset\(card\.elixir\)/);
+  assert.match(css,/width:min\(628px,calc\(100% - 24px\)\)/);
+  assert.match(css,/\.ri-inspector-facts\{\s*display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.ri-inspector-stat-icon/);
+  assert.match(css,/@media\(max-width:560px\)/);
+  assert.match(home,/elixirAsset\(card\.elixir\)/);
+  assert.match(home,/className="ri-cost"/);
+});
