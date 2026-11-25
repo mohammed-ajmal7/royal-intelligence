@@ -1,5 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap");
-:root {
+.royal-app {
   --bg: #0b0f19;
   --panel: #111925;
   --panel2: #151d2b;
@@ -10,10 +9,10 @@
   --green: #57c9ab;
   --gold: #dfbf77;
 }
-* {
+:where(.royal-app) *{
   box-sizing: border-box;
 }
-body {
+.royal-app {
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -22,66 +21,66 @@ body {
     Arial,
     sans-serif;
 }
-button,
-input,
-select {
+:where(.royal-app) button, 
+:where(.royal-app) input, 
+:where(.royal-app) select{
   font: inherit;
 }
-button,
-a,
-input,
-select,
-summary {
+:where(.royal-app) button, 
+:where(.royal-app) a, 
+:where(.royal-app) input, 
+:where(.royal-app) select, 
+:where(.royal-app) summary{
   -webkit-tap-highlight-color: transparent;
 }
-button {
+:where(.royal-app) button{
   cursor: pointer;
 }
-button:disabled {
+:where(.royal-app) button:disabled{
   opacity: 0.45;
   cursor: not-allowed;
 }
-a {
+:where(.royal-app) a{
   color: #b4a0f6;
   text-decoration: none;
 }
-button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible,
-summary:focus-visible {
+:where(.royal-app) button:focus-visible, 
+:where(.royal-app) a:focus-visible, 
+:where(.royal-app) select:focus-visible, 
+:where(.royal-app) input:focus-visible, 
+:where(.royal-app) summary:focus-visible{
   outline: 2px solid #c7b8ff;
   outline-offset: 3px;
 }
-h1,
-h2,
-h3,
-h4 {
+:where(.royal-app) h1, 
+:where(.royal-app) h2, 
+:where(.royal-app) h3, 
+:where(.royal-app) h4{
   font-family: Manrope, "DM Sans", Arial, sans-serif;
   margin-top: 0;
 }
-h1 {
+:where(.royal-app) h1{
   font-size: 34px;
   letter-spacing: -1.3px;
   margin-bottom: 12px;
 }
-h2 {
+:where(.royal-app) h2{
   font-size: 26px;
   letter-spacing: -0.7px;
 }
-h3 {
+:where(.royal-app) h3{
   font-size: 16px;
   margin-bottom: 0;
 }
-h4 {
+:where(.royal-app) h4{
   font-size: 14px;
   margin-bottom: 12px;
 }
-p {
+:where(.royal-app) p{
   color: var(--muted);
   line-height: 1.7;
 }
-small,
+:where(.royal-app) small, 
 .micro {
   font-size: 11px;
   color: var(--muted);
@@ -141,11 +140,11 @@ small,
 .nav-kicker small {
   font-size: 8px;
 }
-nav {
+:where(.royal-app) nav{
   display: grid;
   gap: 5px;
 }
-nav button {
+:where(.royal-app) nav button{
   display: flex;
   align-items: center;
   gap: 12px;
@@ -158,15 +157,15 @@ nav button {
   border-radius: 7px;
   position: relative;
 }
-nav button:hover {
+:where(.royal-app) nav button:hover{
   background: #1c2334;
   color: white;
 }
-nav button.active {
+:where(.royal-app) nav button.active{
   background: #2b2445;
   color: #c4b3fa;
 }
-nav button.active:before {
+:where(.royal-app) nav button.active:before{
   content: "";
   position: absolute;
   left: -17px;
@@ -176,8 +175,8 @@ nav button.active:before {
   width: 3px;
   border-radius: 4px;
 }
-nav button:nth-child(4),
-nav button:nth-child(10) {
+:where(.royal-app) nav button:nth-child(4), 
+:where(.royal-app) nav button:nth-child(10){
   margin-top: 17px;
 }
 .lab-tag {
@@ -286,7 +285,7 @@ nav button:nth-child(10) {
 .mobile-toggle {
   display: none !important;
 }
-main {
+:where(.royal-app) main{
   max-width: 1600px;
   padding: 34px;
   margin: auto;
@@ -884,8 +883,8 @@ main {
   width: 100%;
   padding: 12px 0;
 }
-input,
-select {
+:where(.royal-app) input, 
+:where(.royal-app) select{
   background: #0e1623;
   color: #c3cbdc;
   border: 1px solid #343e51;
@@ -894,13 +893,13 @@ select {
   font-size: 12px;
   max-width: 100%;
 }
-select {
+:where(.royal-app) select{
   min-height: 39px;
 }
-select[multiple] {
+:where(.royal-app) select[multiple]{
   min-height: 120px;
 }
-input[type="range"] {
+:where(.royal-app) input[type="range"]{
   accent-color: var(--purple);
   padding: 0;
   width: 100%;
@@ -1051,7 +1050,7 @@ label > select {
 details {
   margin-top: 18px;
 }
-summary {
+:where(.royal-app) summary{
   color: #b7a4eb;
   font-size: 11px;
   cursor: pointer;
@@ -1254,7 +1253,7 @@ code {
 .delete-confirm .btn {
   margin-right: 10px;
 }
-footer {
+:where(.royal-app) footer{
   border-top: 1px solid #283142;
   margin-top: 40px;
   padding: 22px 0;
@@ -1265,19 +1264,19 @@ footer {
   font-size: 8px;
   color: #8590a2;
 }
-footer > div {
+:where(.royal-app) footer > div{
   display: flex;
   align-items: center;
   gap: 9px;
 }
-footer strong {
+:where(.royal-app) footer strong{
   font-size: 8px;
   letter-spacing: 1.2px;
 }
-footer span {
+:where(.royal-app) footer span{
   margin-left: 10px;
 }
-footer p {
+:where(.royal-app) footer p{
   font-size: 8px;
   max-width: 360px;
   margin: 0;
@@ -1395,7 +1394,7 @@ footer p {
   .workspace {
     margin-left: 210px;
   }
-  main {
+  :where(.royal-app) main{
     padding: 25px;
   }
   .lab-grid {
@@ -1463,7 +1462,7 @@ footer p {
   }
 }
 @media (max-width: 650px) {
-  main {
+  :where(.royal-app) main{
     padding: 22px 16px;
   }
   .topbar {
@@ -1489,7 +1488,7 @@ footer p {
   .page-heading > .btn svg:last-child {
     display: none;
   }
-  h1 {
+  :where(.royal-app) h1{
     font-size: 29px;
     line-height: 1.2;
   }
@@ -1687,10 +1686,10 @@ footer p {
     padding: 10px 6px;
     white-space: normal;
   }
-  footer {
+  :where(.royal-app) footer{
     display: block;
   }
-  footer p {
+  :where(.royal-app) footer p{
     margin-top: 14px;
   }
   .modal-backdrop {
@@ -1722,7 +1721,7 @@ footer p {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  * {
+  :where(.royal-app) *{
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
@@ -1821,7 +1820,7 @@ footer p {
    Royal Arena design system — mobile-first game-inspired presentation.
    Original gradients, tiles and crowns; card artwork remains the game API's.
    ------------------------------------------------------------------------- */
-:root {
+.royal-app {
   color-scheme: dark;
   --bg: #07172f;
   --panel: #0b2b51;
@@ -1837,8 +1836,7 @@ footer p {
   --arena-deep: #072448;
   --arena-stone: #183c65;
 }
-html { scroll-padding-top: 88px; }
-body {
+.royal-app {
   background-color: var(--bg);
   background-image:
     radial-gradient(ellipse at 70% -12%, rgba(50,155,247,.23), transparent 44%),
@@ -1850,21 +1848,21 @@ body {
   color: var(--text);
 }
 .royal-app { min-height: 100dvh; }
-a { color: #87d4ff; }
-a:hover { color: #fff0ad; }
-button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible,
-summary:focus-visible {
+:where(.royal-app) a{ color: #87d4ff; }
+:where(.royal-app) a:hover{ color: #fff0ad; }
+:where(.royal-app) button:focus-visible, 
+:where(.royal-app) a:focus-visible, 
+:where(.royal-app) select:focus-visible, 
+:where(.royal-app) input:focus-visible, 
+:where(.royal-app) summary:focus-visible{
   outline: 3px solid var(--gold);
   outline-offset: 3px;
 }
-h1,h2,h3,h4 { color: #f8fbff; }
-h1 { font-weight: 800; letter-spacing: -.9px; text-shadow: 0 2px 2px #0005; }
-h2 { font-weight: 750; }
-h3 { font-weight: 750; }
-p, small, .micro { color: var(--muted); }
+:where(.royal-app) h1, :where(.royal-app) h2, :where(.royal-app) h3, :where(.royal-app) h4{ color: #f8fbff; }
+:where(.royal-app) h1{ font-weight: 800; letter-spacing: -.9px; text-shadow: 0 2px 2px #0005; }
+:where(.royal-app) h2{ font-weight: 750; }
+:where(.royal-app) h3{ font-weight: 750; }
+:where(.royal-app) p, :where(.royal-app) small, .micro{ color: var(--muted); }
 .eyebrow { color: #9cddff; font-weight: 800; }
 .eyebrow i { background: var(--gold); width: 20px; height: 3px; border-radius: 10px; }
 .sidebar {
@@ -1881,7 +1879,7 @@ p, small, .micro { color: var(--muted); }
   box-shadow: inset 0 2px 1px #fff7bd, 0 4px 0 #734613, 0 8px 16px #0004;
 }
 .nav-kicker { color: #b6d9f4; }
-nav button { color: #cbdff4; font-weight: 700; }
+:where(.royal-app) nav button{ color: #cbdff4; font-weight: 700; }
 .sidebar nav button { min-height: 43px; }
 .sidebar nav button:hover { background: #23639a; color: #fff; }
 .sidebar nav button.active {
@@ -1963,14 +1961,14 @@ nav button { color: #cbdff4; font-weight: 700; }
 .tag-input span { color: var(--gold); font-weight: 900; font-size: 17px; }
 .tag-input input { color: #fff; }
 .source-label small { color: #b1d4ed; }
-input, select, textarea {
+:where(.royal-app) input, :where(.royal-app) select, :where(.royal-app) textarea{
   background: #071c38;
   border: 1px solid #396b99;
   color: #f5fbff;
   border-radius: 9px;
 }
-input::placeholder, textarea::placeholder { color: #90b0c8; }
-input[type="range"] { accent-color: #bd54f0; }
+:where(.royal-app) input::placeholder, :where(.royal-app) textarea::placeholder{ color: #90b0c8; }
+:where(.royal-app) input[type="range"]{ accent-color: #bd54f0; }
 .pill {
   background: #283c83;
   border: 1px solid #7978dc;
@@ -2148,7 +2146,7 @@ tr:nth-child(even) td { background: #123a68; }
 .table-card { color: #fff; }
 .conversation p { background: #143c6b; border: 1px solid #3676a7; }
 .conversation svg { color: #ffdb67; }
-summary { color: #a2dcff; font-weight: 750; }
+:where(.royal-app) summary{ color: #a2dcff; font-weight: 750; }
 pre, code { background: #061d3c; border: 1px solid #345f8a; color: #bdeaff; }
 .lab-advanced { background: #0e3158; border-color: #428bbf; }
 .smart-overview {
@@ -2161,9 +2159,9 @@ pre, code { background: #061d3c; border: 1px solid #345f8a; color: #bdeaff; }
 .smart-check { background: #10375d; border-color: #4d8ab9; color: #dfefff; }
 .smart-check.ok { border-color: #46c4a2; color: #bdffe8; }
 .smart-check.miss { border-color: #d4a24f; color: #ffe7b0; }
-footer { border-color: #376f9c; color: #a6c9e3; }
-footer strong, footer svg { color: #ffdb71; }
-footer p { color: #afcbe4; }
+:where(.royal-app) footer{ border-color: #376f9c; color: #a6c9e3; }
+:where(.royal-app) footer strong, :where(.royal-app) footer svg{ color: #ffdb71; }
+:where(.royal-app) footer p{ color: #afcbe4; }
 .toast {
   background: #123f72;
   border: 2px solid #80c5ef;
@@ -2274,7 +2272,7 @@ footer p { color: #afcbe4; }
   .mobile-tab.active { color: #fff3b9; background: linear-gradient(#225e93, #164578); border-color: #4b9fdb; box-shadow: inset 0 1px #9ae4ff3b; }
   .mobile-tab.active .mobile-tab-icon { color: #ffdf70; filter: drop-shadow(0 1px #6d460e); }
   .mobile-tab:active { background: #205f91; }
-  main {
+  :where(.royal-app) main{
     padding-bottom: calc(100px + env(safe-area-inset-bottom));
     max-width: 900px;
     overflow-x: clip;
@@ -2282,7 +2280,7 @@ footer p { color: #afcbe4; }
   .toast { z-index: 175; bottom: calc(82px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 650px) {
-  main { padding: 18px 13px calc(104px + env(safe-area-inset-bottom)); }
+  :where(.royal-app) main{ padding: 18px 13px calc(104px + env(safe-area-inset-bottom)); }
   .page-heading { align-items: flex-start; gap: 10px; margin-bottom: 20px; }
   .page-heading h1 { font-size: clamp(22px, 6vw, 30px); line-height: 1.18; }
   .page-heading p { font-size: 12px; line-height: 1.5; max-width: 360px; }
@@ -2402,8 +2400,8 @@ footer p { color: #afcbe4; }
   .prompt-grid .btn { min-height: 50px; font-size: 11px; padding: 11px 8px; white-space: normal; line-height: 1.3; }
   .conversation p { font-size: 12px; }
   .result-strip span { width: 32px; height: 35px; }
-  footer { gap: 12px; padding-top: 25px; }
-  footer p { font-size: 10px; }
+  :where(.royal-app) footer{ gap: 12px; padding-top: 25px; }
+  :where(.royal-app) footer p{ font-size: 10px; }
   .modal-backdrop { padding: 0; align-items: flex-end; }
   .modal {
     max-height: calc(94dvh - env(safe-area-inset-top));
@@ -2421,7 +2419,7 @@ footer p { color: #afcbe4; }
   .toast { width: calc(100% - 24px); max-width: 420px; padding: 12px 14px; }
 }
 @media (max-width: 375px) {
-  main { padding-left: 11px; padding-right: 11px; }
+  :where(.royal-app) main{ padding-left: 11px; padding-right: 11px; }
   .mobile-brand-wordmark { font-size: 13px; }
   .mobile-brand-wordmark small { letter-spacing: 1.5px; }
   .mobile-crown { width: 35px; height: 35px; flex-basis: 35px; }

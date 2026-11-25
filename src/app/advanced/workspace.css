@@ -1,0 +1,212 @@
+
+/* Advanced workspace surfaces share the dashboard's type and accent. */
+.royal-app {
+  --bg: #101827;
+  --panel: #182334;
+  --panel2: #1d2a3d;
+  --line: #35455c;
+  --text: #f3f6fc;
+  --muted: #b9c6d9;
+  --purple: #86a7ff;
+  --gold: #f6d58a;
+  --green: #72ddba;
+  --advanced-field: #111a2a;
+  --advanced-blue: #3764ce;
+  --advanced-selected: #243d68;
+  color-scheme: dark;
+  background: var(--bg);
+  color: var(--text);
+  font: 1rem/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.royal-app :where(h1, h2, h3, h4) { font-family: inherit; text-shadow: none; }
+.royal-app :where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 3px;
+}
+.royal-app :where(a, summary) { color: #a9c0ff; }
+.royal-app .workspace > main { max-width: 1250px; }
+.royal-app .sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  box-shadow: none;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 20px;
+}
+.royal-app .brand, .royal-app .mobile-brand {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+.royal-app .mobile-brand-wordmark { color: inherit; font: inherit; }
+.royal-app .brand-icon, .royal-app .mobile-crown {
+  flex-shrink: 0;
+  background: var(--advanced-blue);
+  color: white;
+  border: 0;
+  box-shadow: none;
+}
+.royal-app .nav-kicker {
+  color: var(--muted);
+  padding: 22px 10px 12px;
+  font-size: .8125rem;
+  letter-spacing: 0;
+  font-weight: 700;
+  align-items: center;
+}
+.royal-app .sidebar nav button {
+  border: 1px solid transparent;
+  margin: 0;
+  padding: 9px 10px;
+  color: var(--muted);
+  font-size: .875rem;
+}
+.royal-app .sidebar nav button:hover, .royal-app .sidebar nav button.active {
+  background: var(--advanced-selected);
+  color: white;
+  box-shadow: none;
+}
+.royal-app .sidebar nav button.active::before { content: none; }
+.royal-app .sidebar .connection, .royal-app .sidebar .avatar {
+  background: var(--panel2);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.royal-app .sidebar-bottom { padding-top: 16px; }
+.royal-app .profile-button { margin-top: 12px; padding-top: 12px; font-size: .875rem; }
+.royal-app .profile-button small, .royal-app .connection small, .royal-app .connection strong { font-size: .75rem; }
+.royal-app .topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+  font-size: .875rem;
+}
+.royal-app .topbar strong, .royal-app .page-heading h1, .royal-app .panel-head h3 { color: var(--text); }
+.royal-app .page-heading p, .royal-app .source-label small { color: var(--muted); font-size: .875rem; }
+.royal-app .page-heading .eyebrow { margin-bottom: 8px; font-size: .75rem; letter-spacing: .04em; }
+.royal-app .topbar .mobile-toggle, .royal-app .drawer-close {
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--text);
+}
+.royal-app .account-bar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  margin-bottom: 24px;
+  padding: 12px;
+}
+.royal-app .tag-input { min-height: 44px; border: 1px solid var(--line); }
+.royal-app .tag-input span { color: var(--muted); }
+.royal-app .tag-input input { font-size: 1rem; letter-spacing: 0; }
+.royal-app .tag-input, .royal-app .search, .royal-app select, .royal-app textarea {
+  background: var(--advanced-field);
+  border-color: var(--line);
+}
+.royal-app .btn {
+  min-height: 44px;
+  background: var(--advanced-blue);
+  color: white;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-shadow: none;
+  font-size: .875rem;
+  white-space: normal;
+  text-align: center;
+}
+.royal-app .btn.secondary { background: var(--panel2); border-color: var(--line); color: var(--text); }
+.royal-app .btn:hover:not(:disabled), .royal-app .btn:active:not(:disabled) { transform: none; box-shadow: none; }
+.royal-app .btn > svg, .royal-app .text-btn > svg { flex-shrink: 0; }
+.royal-app .pill { letter-spacing: 0; font-size: .75rem; }
+.royal-app .source-label { flex-wrap: wrap; }
+.royal-app .panel, .royal-app .metric, .royal-app .hero,
+.royal-app .modal, .royal-app .deck-item-intro, .royal-app .deck-item-controls,
+.royal-app .deck-item-list, .royal-app .deck-item-row, .royal-app .deck-item-expanded,
+.royal-app .smart-overview, .royal-app .reasoned-recommendation-score, .royal-app .mechanics-headline,
+.royal-app .reasoned-hero, .royal-app .reasoned-threat, .royal-app .reasoned-detail,
+.royal-app .deck-play-header, .royal-app .deck-play-phase, .royal-app .deck-play-matchup,
+.royal-app .deck-play-details, .royal-app .self-lab-candidate, .royal-app .self-lab-role,
+.royal-app .live-meta, .royal-app .smart-resource-metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  min-width: 0;
+}
+.royal-app .smart-overview, .royal-app .reasoned-recommendation-score, .royal-app .mechanics-headline,
+.royal-app .smart-resource-metric, .royal-app .self-lab-blueprint-item, .royal-app .deck-play-card-jobs article {
+  background: var(--panel2);
+  border-color: var(--line);
+}
+.royal-app .hero h2, .royal-app .metric > strong, .royal-app .smart-overview-head h3,
+.royal-app .deck-play-header h3, .royal-app .deck-item-intro h2 { color: var(--text); text-shadow: none; }
+.royal-app .hero-watermark { display: none; }
+.royal-app .art { background: var(--panel2); box-shadow: none; }
+.royal-app .art img { display: block; min-height: 0; min-width: 0; }
+.royal-app .card-tile strong { font-size: .8125rem; overflow-wrap: anywhere; }
+.royal-app .card-tile small { font-size: .75rem; }
+.royal-app .card-tile { min-width: 0; }
+.royal-app .elixir { background: #6745ba; border: 1px solid #bda8f7; box-shadow: none; }
+.royal-app .smart-intro, .royal-app .deck-item-intro p { color: var(--muted); font-size: .9375rem; }
+.royal-app .global-top-picker, .royal-app .reasoned-focus-picker {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 9px 14px;
+}
+.royal-app .global-top-picker label, .royal-app .reasoned-focus-picker label { color: var(--text); font-size: .875rem; font-weight: 700; }
+.royal-app .global-top-picker select, .royal-app .reasoned-focus-picker select { color: var(--text); font-weight: 600; }
+.royal-app .mode-tabs { flex-wrap: wrap; }
+.royal-app .mode-tabs button {
+  min-height: 44px;
+  background: var(--advanced-field);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  color: var(--muted);
+  font-size: .875rem;
+}
+.royal-app .mode-tabs button.active { background: var(--advanced-selected); border-color: #759aff; color: white; }
+.royal-app .lab-method { margin: 14px 0; font-size: .875rem; }
+.royal-app .lab-method summary { min-height: 44px; padding-block: 10px; cursor: pointer; }
+.royal-app .lab-method p { max-width: 78ch; margin: 0 0 12px; }
+.royal-app .micro, .royal-app .deck-play-footnote, .royal-app .self-lab-note { font-size: .8125rem; }
+.royal-app .deck-play-phase li, .royal-app .deck-play-matchup li,
+.royal-app .deck-play-card-jobs article p, .royal-app .live-meta p { font-size: .875rem; }
+.royal-app .deck-item-control > span:first-child, .royal-app .deck-play-details summary,
+.royal-app .self-lab-details > summary, .royal-app .live-meta-evidence > summary { font-size: .875rem; }
+.royal-app .deck-item-level-scroll, .royal-app .live-meta-scroll, .royal-app .self-lab-alternatives {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+.royal-app .toast { background: var(--panel2); border-color: var(--line); color: var(--text); box-shadow: 0 6px 24px #0005; }
+@media (max-width: 950px) {
+  .royal-app .sidebar:not(.open) { visibility: hidden; pointer-events: none; }
+  .royal-app .sidebar.open { box-shadow: 12px 0 50px #0007; }
+  .royal-app .mobile-bottom-nav {
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    box-shadow: none;
+  }
+  .royal-app .mobile-tab { color: var(--muted); font-size: .75rem; }
+  .royal-app .mobile-tab.active { background: var(--advanced-selected); border-color: transparent; color: white; box-shadow: none; }
+  .royal-app .mobile-tab.active .mobile-tab-icon { color: #b9ceff; filter: none; }
+}
+@media (max-width: 650px) {
+  .royal-app .topbar { gap: 8px; padding-inline: 12px; }
+  .royal-app .topbar .mobile-toggle { flex-basis: 42px; width: 42px; }
+  .royal-app .mobile-brand { gap: 7px; }
+  .royal-app .mobile-crown { flex-basis: 34px; width: 34px; height: 34px; }
+  .royal-app .mobile-crown svg { width: 20px; }
+  .royal-app .mobile-live-status { font-size: .6875rem; }
+  .royal-app .page-heading { gap: 10px; }
+  .royal-app .page-heading .btn { display: none; }
+  .royal-app .source-label small { font-size: .75rem; }
+  .royal-app .smart-overview-head { flex-wrap: wrap; }
+  .royal-app .smart-score { text-align: left; }
+  .royal-app .smart-modes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .royal-app .card-tile .art { min-width: 0; }
+  .royal-app input:not([type="checkbox"]):not([type="range"]), .royal-app select, .royal-app textarea { font-size: 1rem; }
+}

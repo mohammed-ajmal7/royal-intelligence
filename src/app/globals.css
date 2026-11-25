@@ -1,7 +1,7 @@
 :root{color-scheme:light;--ri-bg:#f8fafc;--ri-paper:#fff;--ri-text:#1a2532;--ri-sub:#647183;--ri-border:#e5eaf0;--ri-accent:#244eb7;--ri-soft:#edf3ff;--ri-success:#127955}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--ri-bg);color:var(--ri-text);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+html{scroll-padding-top:80px}
+body{margin:0;background:var(--ri-bg);color:var(--ri-text);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:1rem;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit}
 button{cursor:pointer}
 button:disabled{opacity:.58;cursor:not-allowed}
@@ -178,7 +178,7 @@ small{font-size:11px}
  .ri-topbar{gap:18px}.ri-nav button{padding:9px 8px}.ri-cards{grid-template-columns:repeat(5,minmax(0,1fr))}
  .ri-main{padding-left:20px;padding-right:20px}.ri-art{height:72px}
 }
-@media(max-width:690px){
+@media(max-width:760px){
  .ri-header .ri-nav{display:none}
  .ri-topbar{height:58px;padding:0 17px}
  .ri-topbar .ri-advanced{margin-left:auto}
@@ -213,4 +213,97 @@ small{font-size:11px}
  .ri-mobile-nav button{flex:1;min-width:0;border:0;background:transparent;padding:7px 1px;display:flex;flex-direction:column;align-items:center;gap:5px;color:#8190a2;font-size:10px;font-weight:690}
  .ri-mobile-nav button.is-active{color:var(--ri-accent)}
 }
-@media(max-width:375px){.ri-brand{font-size:14px}.ri-topbar .ri-advanced{font-size:10px}.ri-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.ri-search button{font-size:0;gap:0}.ri-search button svg{width:19px}}
+@media(max-width:375px){.ri-brand{font-size:.875rem}.ri-topbar .ri-advanced{font-size:.75rem}.ri-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Shared dashboard polish */
+.ri-shell { min-height: 100dvh; }
+.ri-topbar { max-width: 1168px; padding-inline: 24px; }
+.ri-main { max-width: 1168px; }
+.ri-account { margin-bottom: clamp(22px, 3vw, 34px); }
+.ri-search:focus-within { border-color: var(--ri-accent); }
+.ri-search input:focus-visible { outline: 0; }
+.ri-search button, .ri-refresh, .ri-advanced { min-height: 44px; }
+.ri-advanced { border: 1px solid var(--ri-border); padding: 7px 12px; border-radius: 9px; }
+.ri-advanced:hover { background: var(--ri-soft); }
+.ri-statuses { min-width: 0; }
+.ri-status { font-size: .8125rem; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.ri-profile > div { min-width: 0; overflow-wrap: anywhere; }
+.ri-heading p:last-child, .ri-panel p, .ri-section-title p, .ri-subtle { font-size: .9375rem; }
+.ri-stat .ri-tiny { font-size: .875rem !important; }
+.ri-stat small, .ri-shortcuts small, .ri-battle-name small, .ri-record small { font-size: .8125rem; }
+.ri-tiny, .ri-footnote { font-size: .8125rem !important; }
+.ri-field > span, .ri-label, .ri-text-link, .ri-text-button, .ri-button, .ri-button-secondary,
+.ri-guide > summary, .ri-json > summary, .ri-role-details > summary, .ri-role-row > summary,
+.ri-card-detail small, .ri-battle-name strong, .ri-record strong, .ri-kv b { font-size: .875rem; }
+.ri-nav button, .ri-search button, .ri-chip { font-size: .875rem; }
+.ri-button, .ri-button-secondary, .ri-text-button, .ri-chip { min-height: 44px; }
+.ri-text-button, .ri-text-link { white-space: normal; text-align: center; }
+.ri-card, .ri-deck-tile { overflow-wrap: anywhere; }
+.ri-card strong, .ri-deck-tile strong { font-size: .8125rem; }
+.ri-card small, .ri-deck-tile small { font-size: .75rem; }
+.ri-art, .ri-card .ri-art, .ri-battle-decks .ri-art { display: block; height: auto; aspect-ratio: 5 / 6; }
+.ri-art img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.ri-art > svg { position: absolute; inset: 0; margin: auto; }
+.ri-cost { min-width: 22px; height: 22px; font-size: .75rem; background: #6745ba; }
+.ri-card-dialog { border: 1px solid var(--ri-border); border-radius: 16px; width: min(600px,calc(100% - 24px));
+  max-height: min(82dvh, 680px); max-width: none; padding: 0; color: var(--ri-text); background: var(--ri-paper);
+  box-shadow: 0 24px 70px #0f172a40; }
+.ri-card-dialog::backdrop { background: #0b1528aa; }
+html:has(.ri-card-dialog[open]) { overflow: hidden; }
+.ri-card-detail { padding: clamp(16px, 4vw, 26px); padding-right: 56px; }
+.ri-card-detail > .ri-art { height: auto; }
+.ri-card-detail h2 { overflow-wrap: anywhere; }
+.ri-close { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; }
+.ri-close:hover { background: var(--ri-soft); }
+.ri-deck-hint { margin: 12px 0; }
+.ri-replace-note, .ri-selection { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ri-generator-form, .ri-explorer-form { align-items: flex-end; }
+.ri-guide-step ul, .ri-role-row > p { font-size: .875rem !important; }
+.ri-battle-name strong, .ri-record strong { overflow-wrap: anywhere; }
+.ri-battle-decks > div { min-width: 0; }
+.ri-battle-decks .ri-deck-tile strong { font-size: .75rem; }
+.ri-battle-decks .ri-deck-tile small { font-size: .6875rem; }
+.ri-battle-result, .ri-footer, .ri-result-count { font-size: .8125rem; }
+.ri-battle-result { white-space: nowrap; }
+.ri-battle[open] > summary > svg:last-child { transform: rotate(90deg); }
+.ri-record pre, .ri-json pre { font-size: .8125rem; }
+.ri-json pre { white-space: pre-wrap; }
+.ri-alert { margin-bottom: 12px; }
+.ri-explorer-form label { min-width: min(100%, 170px); }
+@media (max-width: 800px) {
+  .ri-topbar { gap: 12px; }
+  .ri-nav button { padding-inline: 7px; }
+  .ri-advanced { font-size: .8125rem; }
+}
+@media (max-width: 690px) {
+  .ri-topbar { padding-inline: 14px; }
+  .ri-advanced { padding-inline: 8px; }
+  .ri-heading { flex-wrap: wrap; gap: 8px; }
+  .ri-profile > .ri-status { font-size: .75rem; }
+  .ri-stat-grid-small { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .ri-stat-grid-small .ri-stat { padding: 12px 9px; }
+  .ri-section-title { flex-wrap: wrap; margin-bottom: 13px; gap: 8px; }
+  .ri-section-title > .ri-button-secondary { min-height: 42px; }
+  .ri-card-detail { display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; padding: 20px; }
+  .ri-card-detail > .ri-art { width: 92px; }
+  .ri-mobile-nav button { font-size: .75rem; min-height: 48px; border-radius: 9px; }
+  .ri-mobile-nav button.is-active { background: var(--ri-soft); }
+  .ri-battle > summary,.ri-record > summary { padding: 12px; gap: 8px; }
+  .ri-battle-detail { padding-inline: 11px; }
+}
+@media (max-width: 375px) {
+  .ri-topbar { padding-inline: 10px; gap: 8px; }
+  .ri-search > span { padding-left: 9px; }
+  .ri-search button { padding-inline: 9px; }
+  .ri-search button > svg { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ri-shell *, .ri-shell *::before, .ri-shell *::after { transition: none !important; }
+}
+
+.ri-art img { position: absolute; inset: 0; }
+.ri-filterbar input { min-width: 0; }
+.ri-filterbar select { width: auto; min-width: 0; max-width: 46%; }
+.ri-battle-result { padding: 4px 7px; border-radius: 6px; background: #eef2f7; }
+.ri-battle:has(.is-win) .ri-battle-result { background: #e9f7ef; color: #155c42; }
+.ri-battle:has(.is-loss) .ri-battle-result { background: #fceeee; color: #a13c3b; }

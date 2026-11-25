@@ -80,29 +80,20 @@ const nav = [
   ["AI Coach", Sparkles],
   ["Settings", Settings],
 ] as const;
-const titles: Record<string, string> = {
-  Overview: "Your competitive edge.",
-  "Deck Laboratory": "Build with intelligence.",
-  "My Collection": "Every card. Every possibility.",
-  "Deck Item": "The strongest cards, ranked by actual numbers.",
-  "Battle History": "Find the pattern.",
-  "Clan Intelligence": "Understand the clan.",
-  "AI Coach": "Think one move ahead.",
-};
 const descriptions: Record<string, string> = {
-  Overview: "Understand your account. Build smarter decks. Play with purpose.",
-  "My Collection": "Your cards, your levels, your possibilities.",
-  "Card Encyclopedia": "Inspect the evidence behind every card.",
-  "Deck Item": "Sort your collection by hits survived, HP, damage or DPS.",
-  "Deck Laboratory": "Find the right eight cards for the way you play.",
-  "Deck Analyzer": "Understand your deck’s strengths, gaps, and roles.",
-  "Matchup Lab": "Know the threats. Preserve the right answers.",
-  "Battle History": "Learn from the matches available in your battle log.",
-  "Clan Intelligence": "Live clan profile, members, and standings from Supercell.",
-  "Upgrade Planner": "Invest in the cards that support your next climb.",
-  "Meta Insights": "Separate current evidence from assumptions.",
-  "AI Coach": "Grounded explanations, without invented statistics.",
-  Settings: "Manage your connection, data, and preferences.",
+  Overview: "Account progress, current deck and recent battles.",
+  "My Collection": "Browse your owned cards and unlocked forms.",
+  "Card Encyclopedia": "Browse the full catalog and available combat stats.",
+  "Deck Item": "Rank and compare cards by durability, damage and other stats.",
+  "Deck Laboratory": "Build from current Ranked decks or from your collection.",
+  "Deck Analyzer": "Review your deck’s roles, strengths and gaps.",
+  "Matchup Lab": "Compare your deck with an opponent’s deck.",
+  "Battle History": "Review results, trophy changes and deck choices.",
+  "Clan Intelligence": "See clan members and current River Race standings.",
+  "Upgrade Planner": "Prioritize upgrades for the cards you use.",
+  "Meta Insights": "See live rankings, events and trends from your battles.",
+  "AI Coach": "Get advice based on your cards and recent battles.",
+  Settings: "Manage player lookup and stored history.",
 };
 const blank = emptyHistory();
 type ScoutedPlayer = { tag: string; name: string; trophies: number | null; deck: Card[] };
@@ -317,6 +308,7 @@ export default function App() {
   const [labProgress,setLabProgress]=useState<LabProgress|null>(null);
   const [labError,setLabError]=useState("");
   const [labFailed,setLabFailed]=useState<{rank:number;tag?:string;name:string;reason:string}[]>([]);
+  const drawerRef=useRef<HTMLElement>(null);
   const labRun=useRef(0);
   const labAbort=useRef<AbortController|null>(null);
   function cancelLab() {
@@ -370,11 +362,36 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!mobile) return;
+    const opener = document.activeElement;
+    const drawer = drawerRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    drawer?.querySelector<HTMLButtonElement>(".drawer-close")?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobile(false);
+      if (event.key !== "Tab" || !drawer) return;
+      const controls = Array.from(drawer.querySelectorAll<HTMLElement>("a[href], button"))
+        .filter(control => control.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     };
+    const desktop = window.matchMedia("(min-width: 951px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobile(false); };
+    desktop.addEventListener("change", closeOnDesktop);
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      desktop.removeEventListener("change", closeOnDesktop);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (opener instanceof HTMLElement) opener.focus({ preventScroll: true });
+    };
   }, [mobile]);
   useEffect(() => {
     if (!selected) return;
@@ -896,33 +913,35 @@ export default function App() {
       </div>
     );
   }
+  const dashboardPath=s.mode==="live"?"/?tag="+encodeURIComponent(s.tag.replace(/^#/,"")):"/";
   return (
     <div className="royal-app">
-      <aside className={mobile ? "sidebar open" : "sidebar"} aria-label="All workspace sections">
-        <a className="brand" href="#Overview" onClick={() => setMobile(false)}>
+      <aside ref={drawerRef} id="advanced-navigation" className={mobile ? "sidebar open" : "sidebar"}
+        role={mobile?"dialog":undefined} aria-modal={mobile||undefined} aria-label="All workspace sections">
+        <a className="brand" href={dashboardPath} aria-label="Royal Intelligence dashboard">
           <span className="brand-icon">
             <Crown />
           </span>
           <span>
-            ROYAL<small>INTELLIGENCE</small>
+            Royal Intelligence
           </span>
         </a>
         <div className="nav-kicker">
-          PLAYER WORKSPACE <small>ARENA DESK</small>
+          <span>Advanced tools</span>
           <button type="button" className="drawer-close icon-btn"
             aria-label="Close navigation"
             onClick={() => setMobile(false)}><X size={21}/></button>
         </div>
-        <nav>
+        <nav aria-label="Advanced tools">
           {nav.map(([p, Icon]) => (
             <button
               className={page === p ? "active" : ""}
               key={p}
+              aria-current={page===p?"page":undefined}
               onClick={() => go(p)}
             >
               <Icon size={18} />
               {p}
-              {p === "Deck Laboratory" && <span className="lab-tag">LAB</span>}
             </button>
           ))}
         </nav>
@@ -957,21 +976,22 @@ export default function App() {
           onClick={() => setMobile(false)}
         />
       )}
-      <div className="workspace">
+      <div className="workspace" inert={mobile||undefined}>
         <header className="topbar">
           <button
             className="mobile-toggle icon-btn"
             aria-label="Open all sections"
+            aria-controls="advanced-navigation" aria-expanded={mobile}
             onClick={() => setMobile(true)}
           >
             <Menu size={22} />
           </button>
-          <div className="mobile-brand" aria-label="Royal Intelligence">
+          <a className="mobile-brand" href={dashboardPath} aria-label="Royal Intelligence dashboard">
             <span className="mobile-crown"><Crown size={24} /></span>
-            <span className="mobile-brand-wordmark">ROYAL<small>INTELLIGENCE</small></span>
-          </div>
+            <span className="mobile-brand-wordmark">Royal Intelligence</span>
+          </a>
           <div className="desktop-breadcrumb">
-            <span>Workspace</span>
+            <a href={dashboardPath}>Dashboard</a>
             <ChevronRight size={14} />
             <strong>{page}</strong>
           </div>
@@ -980,8 +1000,6 @@ export default function App() {
             {s.mode === "live" ? "LIVE" : "DEMO"}
           </div>
           <div className="top-right">
-            <span className="dot" />
-            Transparent by design
             <a
               href="https://developer.clashroyale.com/"
               target="_blank"
@@ -989,7 +1007,6 @@ export default function App() {
             >
               API docs <ArrowUpRight size={13} />
             </a>
-            <span className="avatar">RI</span>
           </div>
         </header>
         <main>
@@ -998,7 +1015,8 @@ export default function App() {
               <span>#</span>
               <input
                 aria-label="Player tag"
-                placeholder="Enter any CR player tag"
+                placeholder="Player tag"
+                autoCapitalize="characters" autoCorrect="off" spellCheck={false} maxLength={32}
                 value={tagInput.replace(/^#/, "")}
                 onChange={(e) => setTag(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !loading && connect()}
@@ -1026,26 +1044,14 @@ export default function App() {
           <div className="page-heading">
             <div>
               <div className="eyebrow">
-                <i />
-                ROYAL INTELLIGENCE / {page.toUpperCase()}
+                Advanced tools
               </div>
-              <h1>{titles[page] ?? page}</h1>
+              <h1>{page}</h1>
               <p>{descriptions[page]}</p>
             </div>
-            <button
-              className="btn secondary"
-              onClick={() =>
-                go(
-                  page === "Deck Laboratory"
-                    ? "My Collection"
-                    : "Deck Laboratory",
-                )
-              }
-            >
-              <FlaskConical size={16} />
-              {page === "Deck Laboratory" ? "View collection" : "Open Deck Lab"}
-              <ArrowUpRight size={15} />
-            </button>
+            {page==="Deck Laboratory"&&<button className="btn secondary" onClick={()=>go("My Collection")}>
+              <Layers3 size={16}/> View collection
+            </button>}
           </div>
           {s.mode === "demo" && (
             <div className="demo-banner">
@@ -1501,21 +1507,13 @@ export default function App() {
           )}
           {["Deck Laboratory", "Deck Analyzer"].includes(page) && (
             <>
-              <Panel title="Top Global Player Comparison Deck Generator"
-                kicker={"FRESH GLOBAL TOP "+globalTopLimit+" · AVAILABLE-DATA RECOMMENDATIONS"}>
+              <Panel title="Build from Ranked decks">
                 <p className="smart-intro">
-                  Choose the current global Ranked top 100, 200 or 300 accounts.
-                  Each click fetches the available real Ranked 1v1 battle decks,
-                  counts played cards and roles, and finds the best suitable eight
-                  cards from your collection using your levels and selected conditions.
-                  Missing battle logs are disclosed, but verified decks still
-                  contribute. No Trophy Road, 2v2, old snapshot or fabricated deck.
+                  Scan the latest played decks from top Ranked players and adapt them to your cards and levels.
                 </p>
                 <div className="global-top-picker">
                   <div>
-                    <label htmlFor="global-ranked-size">Global Ranked player sample</label>
-                    <p>Larger scans use more API requests and may have more unavailable
-                      accounts. Only verified played decks contribute to recommendations.</p>
+                    <label htmlFor="global-ranked-size">Ranked players to scan</label>
                   </div>
                   <select id="global-ranked-size" value={globalTopLimit}
                     disabled={busy}
@@ -1549,9 +1547,7 @@ export default function App() {
                 </div>
                 <div className="reasoned-focus-picker">
                   <div>
-                    <label htmlFor="deck-reasoning-focus">What should this deck beat?</label>
-                    <p>Choose your actual weakness. A different objective can give a
-                      different correct recommendation.</p>
+                    <label htmlFor="deck-reasoning-focus">Matchup to prioritize</label>
                   </div>
                   <select id="deck-reasoning-focus" value={focus}
                     onChange={event=>{
@@ -1578,10 +1574,12 @@ export default function App() {
                       setDeck(s.deck);
                       setError("");
                     }}>
-                    Reset filters
+                    Reset deck filters
                   </button>
                 </div>
-                <p className="micro">
+                {s.mode==="demo"&&<p className="micro">Enter your player tag to enable the Ranked scan.</p>}
+                <details className="lab-method"><summary>How recommendations are scored</summary>
+                <p>
                   Recommendations use verified top-{globalTopLimit} Ranked battle decks,
                   actual owned levels, required air/ground/splash/tank roles and your
                   selected strategy. Each source-slot replacement costs at most
@@ -1590,8 +1588,8 @@ export default function App() {
                   are also enforced. Stronger owned cards can replace an
                   underleveled pro favorite. Missing accounts remain excluded.
                   Scores estimate suitability — never a guaranteed winning deck.
-                  {s.mode === "demo" ? " Load your real tag to use this workflow." : ""}
                 </p>
+                </details>
                 <LiveMetaPanel meta={liveMeta} progress={labProgress} busy={busy}
                   error={labError} failed={labFailed} cancel={cancelLab}
                   retry={()=>{void optimize();}} target={globalTopLimit}/>
@@ -2976,7 +2974,6 @@ export default function App() {
             <div>
               <Crown size={15} />
               <strong>ROYAL INTELLIGENCE</strong>
-              <span>Evidence over guesswork.</span>
             </div>
             <p>
               Unofficial fan content, not endorsed by Supercell.{" "}
@@ -2985,17 +2982,17 @@ export default function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                Fan Content Policy ↗
+                Fan Content Policy
               </a>
             </p>
           </footer>
         </main>
       </div>
-      <nav className="mobile-bottom-nav" aria-label="Mobile primary navigation">
+      <nav className="mobile-bottom-nav" inert={mobile||undefined} aria-label="Mobile primary navigation">
         {([
           ["Overview", LayoutDashboard, "Home"],
           ["My Collection", Layers3, "Cards"],
-          ["Deck Laboratory", FlaskConical, "Build"],
+          ["Deck Laboratory", FlaskConical, "Deck Lab"],
           ["Battle History", Swords, "Battles"],
         ] as const).map(([p, Icon, label]) => (
           <button
