@@ -177,6 +177,7 @@ export default function Home() {
   const [cardsQuery,setCardsQuery]=useState("");
   const [cardsFilter,setCardsFilter]=useState("Owned");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
+  const [replaceId,setReplaceId]=useState<number|null>(null);
   const [battleFilter,setBattleFilter]=useState("All");
   const [localBattles,setLocalBattles]=useState<Snapshot["battles"]>([]);
   const [apiReady,setApiReady]=useState<boolean|null>(null);
@@ -189,7 +190,7 @@ export default function Home() {
       if(!r.ok)throw new Error(payload.error??"Unable to load the player.");
       const snap=payload as Snapshot;
       if(snap.mode!=="live")throw new Error("The official player profile is unavailable.");
-      setPlayer(snap);setDeck(snap.deck);setSelf(null);setSelectedCard(null);
+      setPlayer(snap);setDeck(snap.deck);setSelf(null);setSelectedCard(null);setReplaceId(null);
       setTagInput(snap.tag.replace(/^#/,""));
       try{
         localStorage.setItem("ri-last-player-tag",snap.tag.replace(/^#/,""));
@@ -230,10 +231,11 @@ export default function Home() {
   const recent=matches.slice(0,historyOpened?100:20);
   function chooseTab(next:Tab){setTab(next);window.scrollTo({top:0,behavior:"smooth"});}
   function replaceDeckCard(card:Card) {
-    if(!card.owned)return;
-    if(deck.some(c=>c.id===card.id))return;
-    const next=deck.length<8?[...deck,card]:[...deck.slice(0,7),card];
-    setDeck(next);setSelf(null);
+    if(!card.owned||deck.some(c=>c.id===card.id))return;
+    if(deck.length===8&&replaceId===null)return;
+    const next=deck.length<8?[...deck,card]:
+      deck.map(c=>c.id===replaceId?card:c);
+    setDeck(next);setSelf(null);setReplaceId(null);
   }
   const winnerName=deck.find(c=>c.roles.includes("Win condition"))?.name||"Custom";
   return <div className="ri-shell">
@@ -296,6 +298,10 @@ export default function Home() {
           </div>}
           {tab==="Cards"&&<div className="ri-stack">
             <div className="ri-section-title"><div><h2>Card collection</h2><p>{visible.length} cards · tap one for its known details</p></div></div>
+            {replaceId!==null&&<div className="ri-status ri-replace-note">
+              Choose a card to replace {deck.find(c=>c.id===replaceId)?.name??"the selected slot"}.
+              <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
+            </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
               <select aria-label="Card filter" value={cardsFilter} onChange={e=>setCardsFilter(e.target.value)}>
                 {["Owned","All","Unowned","Evolutions","Heroes"].map(x=><option key={x}>{x}</option>)}</select></div>
@@ -309,7 +315,12 @@ export default function Home() {
                   <span>Range <strong>{digits(cardStats?.rangeTiles)}</strong></span>
                 </div><p className="ri-muted ri-tiny">{activeCard.roles.join(" · ")||"No role classification"}
                   {activeCard.evo===true?" · Evolution unlocked":""}{activeCard.hero===true?" · Hero unlocked":""}</p>
-                {activeCard.owned&&<button className="ri-button-secondary" onClick={()=>{replaceDeckCard(activeCard);chooseTab("Decks")}}>Add to deck <ArrowRight size={14}/></button>}
+                {activeCard.owned&&<button className="ri-button-secondary"
+                  disabled={deck.some(c=>c.id===activeCard.id)||(deck.length===8&&replaceId===null)}
+                  onClick={()=>{replaceDeckCard(activeCard);chooseTab("Decks")}}>
+                  {deck.some(c=>c.id===activeCard.id)?"Already in deck":
+                    deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck"}
+                  <ArrowRight size={14}/></button>}
                 <small>Combat measurements come from separate community data, not the official player API. Unknown stats are not guessed.</small>
               </div></section>}
             <div className="ri-cards">{visible.map(c=>
@@ -324,7 +335,8 @@ export default function Home() {
               <MiniDeck cards={deck} select={c=>setSelectedCard(c)} active={selectedCard?.id}/>
               {selectedCard&&deck.some(c=>c.id===selectedCard.id)&&<div className="ri-row ri-selection">
                 <span>{selectedCard.name} selected</span>
-                <button className="ri-text-button" onClick={()=>{setDeck(deck.filter(c=>c.id!==selectedCard.id));setSelectedCard(null);setSelf(null);}}>Remove card <X size={14}/></button>
+                <button className="ri-text-button" onClick={()=>{setReplaceId(selectedCard.id);setSelectedCard(null);setCardsFilter("Owned");chooseTab("Cards");}}>Replace card <ArrowRight size={14}/></button>
+                <button className="ri-text-button" onClick={()=>{setDeck(deck.filter(c=>c.id!==selectedCard.id));setSelectedCard(null);setSelf(null);setReplaceId(null);}}>Remove <X size={14}/></button>
               </div>}
               {strategy&&<div className="ri-mini-metrics"><span>Air defense <strong>{strategy.scenarios.find(x=>x.id==="air")?.score??"—"}/100</strong></span>
                 <span>Tank defense <strong>{strategy.scenarios.find(x=>x.id==="tanks")?.score??"—"}/100</strong></span>
