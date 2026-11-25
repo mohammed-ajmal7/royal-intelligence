@@ -94,7 +94,10 @@ test("Cards UI shows ownership first and nested unlock status only for owned spe
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
   assert.match(page,/role="group" aria-label="Card ownership"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
-  assert.match(page,/cardsFilter \? \(\["All","Owned"\] as const\) : \(\["Owned","Unowned","All"\] as const\)/);
+  assert.match(page,/\(\["Owned","Unowned","All"\] as const\)/);
+  assert.match(page,/cardsFilter&&cardsOwnership==="Owned"/);
+  assert.match(page,/\(["All","Unlocked","Locked"] as const\)/);
+  assert.match(page,/formStatus:cardsFormStatus/);
   assert.match(page,/\["Evolutions","Heroes"\] as const/);
   assert.match(page,/<option value="">Filter<\/option>/);
   assert.match(page,/aria-label="Card type"/);
