@@ -19,7 +19,7 @@ test("one five-tab workspace rather than thirteen competing destinations",()=>{
 
 test("the primary homepage is small and classic analytics are available separately",()=>{
   assert.ok(page.length<45000,"Homepage grew too large");
-  assert.ok(css.length<25000,"Primary stylesheet grew too large");
+  assert.ok(css.length<27000,"Primary stylesheet grew too large");
   assert.ok(legacy.includes('<Panel title="Build from Ranked decks">'));
   assert.ok(legacy.includes("Self-Made Deck Generator"));
 });
@@ -64,4 +64,23 @@ test("required compliance, access to advanced tools and original features remain
   assert.match(page,/buildDeckPlaybook\(/);
   assert.match(page,/className="ri-battles"/);
   assert.match(legacy,/Self-Made Deck Generator/);
+});
+
+
+test("native browser arrows are replaced by consistently aligned chevrons",()=>{
+  const advancedCss=readFileSync(new URL("../src/app/advanced/workspace.css",import.meta.url),"utf8");
+  for(const sheet of [css,advancedCss]){
+    assert.match(sheet,/-webkit-appearance:none/);
+    assert.match(sheet,/appearance:none/);
+    assert.match(sheet,/background-image:url\("data:image\/svg\+xml,/);
+    assert.match(sheet,/background-repeat:no-repeat/);
+    assert.match(sheet,/background-position:right 13px center/);
+    assert.match(sheet,/background-size:18px 18px/);
+    assert.match(sheet,/padding-right:42px/);
+    assert.match(sheet,/@media\(forced-colors:active\)/);
+  }
+  assert.match(css,/\.ri-main select:not\(\[multiple\]\)/);
+  assert.match(advancedCss,/\.royal-app select:not\(\[multiple\]\)/);
+  assert.match(advancedCss,/\.royal-app \.detail-level-controls select:not\(\[multiple\]\)/);
+  assert.match(advancedCss,/padding-right:29px/);
 });
