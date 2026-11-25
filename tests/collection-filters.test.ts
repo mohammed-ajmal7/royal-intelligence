@@ -98,7 +98,7 @@ test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>
   assert.match(page,/cardsFilter \? \(\["All","Owned"\] as const\)/);
   assert.match(page,/\["Owned","Unowned","All"\] as const/);
   assert.match(page,/aria-label="Card type"/);
-  assert.match(page,/<option value="">All card types<\/option>/);
+  assert.match(page,/<option value="">All cards<\/option>/);
   assert.match(page,/filterCollection\(collection/);
   assert.match(page,/cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&!cardsQuery\.trim\(\)/);
   assert.match(page,/You haven.t unlocked any Hero cards yet/);
