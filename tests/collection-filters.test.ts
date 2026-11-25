@@ -21,14 +21,14 @@ const cards:Card[]=[
   item("Tower Princess",true,11,{tower:true,hasEvolution:true}),
 ];
 
-const filter=(ownership:"Owned"|"Unowned"|"All",type:""|"Evolutions"|"Heroes"="",query="",formStatus:"All"|"Unlocked"|"Locked"="All")=>
+const filter=(ownership:"Owned"|"Locked"|"All",type:""|"Evolutions"|"Heroes"="",query="",formStatus:"All"|"Unlocked"|"Locked"="All")=>
   filterCollection(cards,{ownership,type,query,formStatus}).map(c=>c.name);
 
 test("Owned is the default group and an empty type filter shows all owned cards",()=>{
   assert.deepEqual(filter("Owned"),["Knight","Archers","Goblin","Wizard"]);
 });
-test("Unowned includes only unowned cards while All includes both",()=>{
-  assert.deepEqual(filter("Unowned"),["Bowler","Cannon","Mini P.E.K.K.A","Valkyrie"]);
+test("Locked includes only unowned cards while All includes both",()=>{
+  assert.deepEqual(filter("Locked"),["Bowler","Cannon","Mini P.E.K.K.A","Valkyrie"]);
   assert.equal(filter("All").length,8);
   assert.ok(filter("All").includes("Cannon"));
   assert.ok(filter("All").includes("Archers"));
@@ -38,12 +38,12 @@ test("All plus Evolutions includes every known evolution-capable owned and unown
   assert.deepEqual(filter("Owned","Evolutions"),["Archers","Goblin"]);
   assert.deepEqual(filter("Owned","Evolutions","", "Locked"),["Archers"]);
   assert.deepEqual(filter("Owned","Evolutions","", "Unlocked"),["Goblin"]);
-  assert.deepEqual(filter("Unowned","Evolutions"),["Valkyrie"]);
+  assert.deepEqual(filter("Locked","Evolutions"),["Valkyrie"]);
 });
 test("All plus Heroes includes every known hero-capable owned and unowned card",()=>{
   assert.deepEqual(filter("All","Heroes"),["Knight","Bowler","Mini P.E.K.K.A"]);
   assert.deepEqual(filter("Owned","Heroes"),["Knight"]);
-  assert.deepEqual(filter("Unowned","Heroes"),["Bowler","Mini P.E.K.K.A"]);
+  assert.deepEqual(filter("Locked","Heroes"),["Bowler","Mini P.E.K.K.A"]);
   assert.deepEqual(filter("Owned","Heroes","", "Locked"),["Knight"]);
   assert.deepEqual(filter("Owned","Heroes","", "Unlocked"),[]);
 });
@@ -93,14 +93,19 @@ test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
   assert.match(page,/useState<FormStatusFilter>\("All"\)/);
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
-  assert.match(page,/role="group" aria-label="Card ownership"/);
+  assert.match(page,/role="group" aria-label="Collection filter"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
-  assert.match(page,/cardsFilter \? \(\["All","Owned"\] as const\)/);
-  assert.match(page,/\["Owned","Unowned","All"\] as const/);
+  assert.match(page,/\["All","Owned","Locked"\] as const/);
   assert.match(page,/aria-label="Card type"/);
-  assert.match(page,/<option value="">All cards<\/option>/);
+  assert.match(page,/label:"Evolution"/);
+  assert.match(page,/label:"Hero"/);
+  assert.match(page,/cardsFilter&&cardsOwnership==="Owned"/);
+  assert.match(page,/\["All","Unlocked","Locked"\] as const/);
+  const cardsSection=page.slice(page.indexOf('{tab==="Cards"'),page.indexOf('{tab==="Decks"'));
+  assert.doesNotMatch(cardsSection,/<select/);
+  assert.doesNotMatch(cardsSection,/All card types/);
   assert.match(page,/filterCollection\(collection/);
-  assert.match(page,/cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&!cardsQuery\.trim\(\)/);
+  assert.match(page,/cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&cardsFormStatus==="All"&&!cardsQuery\.trim\(\)/);
   assert.match(page,/You haven.t unlocked any Hero cards yet/);
   assert.match(page,/<svg viewBox="0 0 180 150"/);
   assert.match(page,/Browse all Hero cards/);
