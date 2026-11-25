@@ -451,15 +451,23 @@ export function normalize(
         supportItems: z.array(rawCard).optional(),
       })
       .parse(cInput);
-  const cards = p.cards.map((x) =>
-    card(
-      { ...c.items.find((y) => y.id === x.id), ...x },
+  const cards = p.cards.map((x) => {
+    const catalogCard = c.items.find((y) => y.id === x.id);
+    // Player iconUrls can contain fewer keys than the global card catalog.
+    // Preserve capability art (evolutionMedium / heroMedium) from the catalog
+    // rather than accidentally losing it when overlaying player-owned fields.
+    return card(
+      {
+        ...catalogCard,
+        ...x,
+        iconUrls: { ...(catalogCard?.iconUrls ?? {}), ...(x.iconUrls ?? {}) },
+      },
       true,
       false,
       false,
       cap,
-    ),
-  );
+    );
+  });
   const towers = (p.supportCards ?? []).map((x) =>
     card(x, true, false, true, cap),
   );
