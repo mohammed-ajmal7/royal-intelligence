@@ -84,7 +84,7 @@ export async function upstream(
       r.status === 403
         ? "API access denied. Check the token and IP allowlist."
         : r.status === 404
-          ? "Player not found. Check the tag."
+          ? path.startsWith("/players/") ? "Player not found. Check the tag." : "The resource was not found or this game endpoint is unavailable."
           : r.status === 429
             ? "Game API rate limit reached. Try again later."
             : "Game API request failed.",
