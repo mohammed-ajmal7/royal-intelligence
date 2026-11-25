@@ -11,6 +11,7 @@ import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
+import { filterCollection, type CardOwnership, type CardTypeFilter } from "../lib/collectionFilter";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 
@@ -174,7 +175,8 @@ export default function Home() {
   const [focus,setFocus]=useState<StrategyFocus>("balanced");
   const [maxElixir,setMaxElixir]=useState(5);
   const [cardsQuery,setCardsQuery]=useState("");
-  const [cardsFilter,setCardsFilter]=useState("Owned");
+  const [cardsOwnership,setCardsOwnership]=useState<CardOwnership>("Owned");
+  const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("All");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
   const [replaceId,setReplaceId]=useState<number|null>(null);
   const [battleFilter,setBattleFilter]=useState("All");
@@ -233,14 +235,9 @@ export default function Home() {
       }).catch(()=>setMechanicsStatus("unavailable"));
   },[tab,mechanicsStatus]);
   const collection=player?.catalog??[];
-  const visible=useMemo(()=>collection.filter(c=>
-    c.name.toLowerCase().includes(cardsQuery.trim().toLowerCase())&&
-    (cardsFilter==="All"||(cardsFilter==="Owned"&&c.owned)||
-     (cardsFilter==="Unowned"&&!c.owned)||
-     (cardsFilter==="Evolutions"&&c.evo===true)||
-     (cardsFilter==="Heroes"&&c.hero===true)))
-    .sort((a,b)=>Number(b.owned)-Number(a.owned)||(b.level??0)-(a.level??0)||a.name.localeCompare(b.name)),
-    [collection,cardsQuery,cardsFilter]);
+  const visible=useMemo(()=>filterCollection(collection,{
+    ownership:cardsOwnership,type:cardsFilter,query:cardsQuery,
+  }),[collection,cardsQuery,cardsOwnership,cardsFilter]);
   const current=player?evaluate(deck,{...defaults,cap:player.cap},mechanics):null;
   const strategy=deck.length===8?assessStrategy(deck,mechanics,{focus}):null;
   const battleSummary=player?stats(localBattles):null;
@@ -326,8 +323,13 @@ export default function Home() {
               <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
             </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
-              <select aria-label="Card filter" value={cardsFilter} onChange={e=>setCardsFilter(e.target.value)}>
-                {["Owned","All","Unowned","Evolutions","Heroes"].map(x=><option key={x}>{x}</option>)}</select>
+              <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
+                {(["Owned","Unowned"] as const).map(ownership=><button key={ownership} type="button"
+                  aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
+                  onClick={()=>{setCardsOwnership(ownership);setSelectedCard(null);}}>{ownership}</button>)}
+              </div>
+              <select aria-label="Card type" value={cardsFilter} onChange={e=>{setCardsFilter(e.target.value as CardTypeFilter);setSelectedCard(null);}}>
+                {(["All","Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
               <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
@@ -349,10 +351,10 @@ export default function Home() {
               <p>{deck.length}/8 · {current?.avg?.toFixed(2)??"—"} elixir · {current?.cycle??"—"} cycle</p></div>
               {deck.length===8&&<a href={deckLink(deck)} className="ri-button-secondary" target="_blank" rel="noreferrer">Open in game <ExternalLink size={14}/></a>}</div>
               <MiniDeck cards={deck} select={c=>setSelectedCard(c)} active={selectedCard?.id}/>
-              {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsFilter("Owned");chooseTab("Cards");}}>Browse owned cards</button>}
+              {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("All");chooseTab("Cards");}}>Browse owned cards</button>}
               {selectedCard&&deck.some(c=>c.id===selectedCard.id)&&<div className="ri-row ri-selection">
                 <span>{selectedCard.name} selected</span>
-                <button className="ri-text-button" onClick={()=>{setReplaceId(selectedCard.id);setSelectedCard(null);setCardsFilter("Owned");chooseTab("Cards");}}>Replace card</button>
+                <button className="ri-text-button" onClick={()=>{setReplaceId(selectedCard.id);setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("All");chooseTab("Cards");}}>Replace card</button>
                 <button className="ri-text-button" onClick={()=>{setDeck(deck.filter(c=>c.id!==selectedCard.id));setSelectedCard(null);setSelf(null);setReplaceId(null);}}>Remove <X size={14}/></button>
               </div>}
               {strategy&&<div className="ri-mini-metrics"><span>Air defense <strong>{strategy.scenarios.find(x=>x.id==="air")?.score??"—"}/100</strong></span>
