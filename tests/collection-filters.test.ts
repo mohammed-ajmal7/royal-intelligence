@@ -92,7 +92,7 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
   assert.match(page,/useState<FormStatusFilter>\("All"\)/);
-  assert.match(page,/useState<CardTypeFilter>\("+"\)/);
+  assert.match(page,/useState<CardTypeFilter>\(""\)/);
   assert.match(page,/role="group" aria-label="Collection filter"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
   assert.match(page,/\["All","Owned","Locked"\] as const/);
