@@ -1,18 +1,19 @@
 import type { Card } from "./model";
 
-export type CardCollectionFilter = "Owned" | "Unowned" | "All" | "Locked" | "Unlocked";
+export type CardOwnership = "Owned" | "Unowned" | "All";
+export type FormStatusFilter = "All" | "Unlocked" | "Locked";
 export type CardTypeFilter = "" | "Evolutions" | "Heroes";
 
 /**
- * For special forms, Locked/Unlocked are based on the player's form flag.
- * The API only provides that flag for cards in the player's collection;
- * unowned cards therefore remain available through Owned/Unowned/All only.
+ * Ownership and special-form unlock status are separate filters.
+ * Locked/Unlocked only apply to owned cards and the selected special form.
  */
 export function filterCollection(
   cards: readonly Card[],
-  options: { ownership: CardCollectionFilter; type: CardTypeFilter; query: string },
+  options: { ownership: CardOwnership; type: CardTypeFilter; formStatus?: FormStatusFilter; query: string },
 ): Card[] {
   const search = options.query.trim().toLocaleLowerCase();
+  const formStatus = options.formStatus ?? "All";
   return cards.filter(card => {
     if (card.tower || !card.name.toLocaleLowerCase().includes(search)) return false;
 
@@ -20,16 +21,13 @@ export function filterCollection(
       (options.type === "Evolutions" && (card.hasEvolution === true || card.evo === true)) ||
       (options.type === "Heroes" && (card.hasHero === true || card.hero === true));
     if (!supportsType) return false;
+    if (options.ownership !== "All" && card.owned !== (options.ownership === "Owned")) return false;
 
-    if (options.ownership === "Owned") return card.owned;
-    if (options.ownership === "Unowned") return !card.owned;
-    if (options.ownership === "Locked") {
-      if (!card.owned || !options.type) return false;
-      return options.type === "Evolutions" ? card.evo === false : card.hero === false;
-    }
-    if (options.ownership === "Unlocked") {
-      if (!card.owned || !options.type) return false;
-      return options.type === "Evolutions" ? card.evo === true : card.hero === true;
+    if (options.type && options.ownership === "Owned" && formStatus !== "All") {
+      const unlocked = options.type === "Evolutions" ? card.evo === true : card.hero === true;
+      const locked = options.type === "Evolutions" ? card.evo === false : card.hero === false;
+      if (formStatus === "Unlocked" && !unlocked) return false;
+      if (formStatus === "Locked" && !locked) return false;
     }
     return true;
   }).sort((a,b) =>
