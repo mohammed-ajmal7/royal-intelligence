@@ -1,15 +1,15 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 export const metadata: Metadata = {
-  title: "Royal Intelligence — Your competitive edge",
+  title: "Royal Intelligence — Clash Royale, simplified",
   description:
-    "Your personal Clash Royale workspace. Build decks, inspect roles, and learn from your available battles.",
+    "A simple Clash Royale player dashboard: cards, decks, battles and official public game data.",
 };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b3766",
+  themeColor: "#f8fafc",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
