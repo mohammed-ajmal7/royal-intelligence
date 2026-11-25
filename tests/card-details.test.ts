@@ -51,6 +51,8 @@ test("card level selector opens as a dropdown popover and closes after selection
   assert.match(component,/setLevel\(value\); setAllLevels\(false\); setLevelPickerOpen\(false\);/);
   assert.match(component,/closeOnOutsidePointer/);
   assert.match(component,/event\.key === "Escape"/);
+  assert.match(component,/event\.preventDefault\(\)/);
+  assert.match(component,/event\.stopPropagation\(\)/);
   assert.match(component,/hidden=\{!levelPickerOpen\}/);
   assert.match(css,/\.ri-level-popover\{[\s\S]*position:absolute/);
   assert.match(css,/\.ri-level-popover\[hidden\]\{display:none\}/);
