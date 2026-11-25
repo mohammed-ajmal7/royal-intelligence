@@ -47,10 +47,11 @@ export function profileArtwork(rawPlayer: unknown): ProfileArtwork | null {
   const badges = Array.isArray(player.badges) ? player.badges : [];
   for (const badge of badges) {
     const src = icon(badge);
+    const name = record(badge).name;
     if (src) return {
       src,
       alt: "Clash Royale player badge" +
-        (typeof record(badge).name === "string" ? ": " + record(badge).name : ""),
+        (typeof name === "string" ? ": " + name : ""),
       kind: "badge",
     };
   }
