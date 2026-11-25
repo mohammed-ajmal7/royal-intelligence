@@ -57,4 +57,9 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(css,/@media\(max-width:560px\)/);
   assert.match(home,/elixirAsset\(card\.elixir\)/);
   assert.match(home,/className="ri-cost"/);
+  assert.match(ui,/const heroStatus = formStatus\\(hasHero, card\\.hero\\)/);
+  assert.match(ui,/Hero: heroStatus/);
+  assert.match(ui,/unavailableFacts=\\{heroStatus === "Not available" \\? \\["Hero"\\] : \\[\\]\\}/);
+  assert.match(css,/\\.ri-inspector-fact\\.is-unavailable/);
+  assert.match(css,/filter:grayscale\\(1\\)/);
 });
