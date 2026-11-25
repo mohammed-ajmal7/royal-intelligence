@@ -86,13 +86,13 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Evolutions",query:""}).map(c=>c.name),["Archers","Valkyrie"]);
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Heroes",query:""}).map(c=>c.name),["Knight"]);
 });
-test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>{
+test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty states",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
   const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
   assert.match(page,/useState<FormStatusFilter>\("All"\)/);
-  assert.match(page,/useState<CardTypeFilter>\(""\)/);
+  assert.match(page,/useState<CardTypeFilter>\("+"\)/);
   assert.match(page,/role="group" aria-label="Collection filter"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
   assert.match(page,/\["All","Owned","Locked"\] as const/);
@@ -105,15 +105,22 @@ test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>
   assert.doesNotMatch(cardsSection,/<select/);
   assert.doesNotMatch(cardsSection,/All card types/);
   assert.match(page,/filterCollection\(collection/);
-  assert.match(page,/cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&cardsFormStatus==="All"&&!cardsQuery\.trim\(\)/);
-  assert.match(page,/You haven.t unlocked any Hero cards yet/);
-  assert.match(page,/<svg viewBox="0 0 180 150"/);
-  assert.match(page,/Browse all Hero cards/);
+  assert.match(page,/function SpecialFormEmptyState/);
+  assert.match(page,/type: "Heroes" \| "Evolutions"/);
+  assert.match(page,/status: FormStatusFilter/);
+  assert.match(page,/status==="Unlocked"/);
+  assert.match(page,/status==="Locked"/);
+  assert.match(page,/You haven’t unlocked any /);
+  assert.match(page,/No locked /);
+  assert.match(page,/type={cardsFilter} status={cardsFormStatus}/);
+  assert.match(page,/cardsFilter==="Heroes"\|\|cardsFilter==="Evolutions"/);
+  assert.match(page,/Browse all \{label\} cards/);
   assert.match(page,/setCardsOwnership\("All"\);setCardsFormStatus\("All"\)/);
   assert.match(page,/No cards match these filters/);
+  assert.match(page,/<svg viewBox="0 0 180 150"/);
+  assert.match(page,/F2EDFC|F2/);
   assert.match(cardCss,/\.ri-cards-toolbar/);
-  assert.match(cardCss,/\.ri-cards-toolbar \.ri-filter-count[\s\S]*border-radius:999px/);
-  assert.match(cardCss,/\.ri-hero-empty-art/);
-  assert.match(cardCss,/\.ri-hero-empty-action/);
+  assert.match(cardCss,/\.ri-special-empty-art/);
+  assert.match(cardCss,/\.ri-special-empty-action/);
   assert.match(css,/@media\(max-width:760px\)/);
 });
