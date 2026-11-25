@@ -168,6 +168,7 @@ export default function Home() {
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(false);
   const [mechanics,setMechanics]=useState<MechanicsCatalog|null>(null);
+  const [mechanicsStatus,setMechanicsStatus]=useState<"idle"|"loading"|"ready"|"unavailable">("idle");
   const [self,setSelf]=useState<SelfMadeResult|null>(null);
   const [focus,setFocus]=useState<StrategyFocus>("balanced");
   const [maxElixir,setMaxElixir]=useState(5);
@@ -201,13 +202,23 @@ export default function Home() {
   }
   useEffect(()=>{
     fetch("/api/status").then(r=>r.json()).then(x=>setApiReady(!!x.live)).catch(()=>setApiReady(false));
-    fetch("/api/mechanics").then(r=>r.ok?r.json():null).then(x=>{if(x&&Array.isArray(x.cards))setMechanics(x);}).catch(()=>{});
     try{
       const url=new URL(window.location.href);
       const input=url.searchParams.get("tag")||localStorage.getItem("ri-last-player-tag");
       if(input){setTagInput(input);void loadPlayer(input);}
     }catch{}
   },[]);
+  // Optional community mechanics are only loaded if the user opens cards
+  // or deck analysis; the simple overview never downloads the large catalog.
+  useEffect(()=>{
+    if((tab!=="Cards"&&tab!=="Decks")||mechanicsStatus!=="idle")return;
+    setMechanicsStatus("loading");
+    fetch("/api/mechanics").then(r=>r.ok?r.json():null)
+      .then(x=>{
+        if(x&&Array.isArray(x.cards)){setMechanics(x);setMechanicsStatus("ready");}
+        else setMechanicsStatus("unavailable");
+      }).catch(()=>setMechanicsStatus("unavailable"));
+  },[tab,mechanicsStatus]);
   const collection=player?.catalog??[];
   const visible=useMemo(()=>collection.filter(c=>
     c.name.toLowerCase().includes(cardsQuery.trim().toLowerCase())&&
@@ -295,6 +306,7 @@ export default function Home() {
           </div>}
           {tab==="Cards"&&<div className="ri-stack">
             <div className="ri-section-title"><div><h2>Card collection</h2><p>{visible.length} cards · tap one for its known details</p></div></div>
+            {mechanicsStatus==="loading"&&<p className="ri-muted ri-tiny">Loading optional combat reference…</p>}
             {replaceId!==null&&<div className="ri-status ri-replace-note">
               Choose a card to replace {deck.find(c=>c.id===replaceId)?.name??"the selected slot"}.
               <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
@@ -347,11 +359,12 @@ export default function Home() {
                 <label className="ri-field ri-field-small"><span>Maximum average elixir</span>
                   <select value={maxElixir} onChange={e=>{setMaxElixir(Number(e.target.value));setSelf(null);}}>
                     {[3,3.5,4,4.5,5,5.5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></label>
-                <button type="button" className="ri-button" onClick={()=>{
+                <button type="button" className="ri-button" disabled={mechanicsStatus==="loading"||mechanicsStatus==="idle"} onClick={()=>{
                   const res=generateSelfMadeDecks(player.cards,{...defaults,maxElixir,cap:player.cap},mechanics,focus);
                   setSelf(res);if(res.candidates[0])setDeck(res.candidates[0].cards);
-                }}>Find my best deck <ArrowRight size={16}/></button>
+                }}>{mechanicsStatus==="loading"||mechanicsStatus==="idle"?"Loading card stats…":"Find my best deck"} <ArrowRight size={16}/></button>
               </div>
+              {mechanicsStatus==="unavailable"&&<p className="ri-alert">The external combat reference is unavailable. Only your owned level, costs and classified roles can be compared.</p>}
               <p className="ri-footnote">Compares suitable owned cards for win condition, mini tank, air, air+splash, tank killer, ground defense, small spell and heavy spell. Rank is a heuristic, not a win probability.</p>
               {self&&<div className="ri-generated">
                 {self.issues.map((s,i)=><div className="ri-alert" key={i}>{s}</div>)}
