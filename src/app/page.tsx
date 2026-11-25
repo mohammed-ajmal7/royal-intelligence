@@ -280,7 +280,7 @@ export default function Home() {
     <header className="ri-header">
       <div className="ri-topbar">
         <button type="button" className="ri-brand" onClick={()=>chooseTab("Overview")} aria-label="Crown-pilot home">
-          <span className="ri-logo"><img src="/brand/crown-pilot-mark.svg" width={34} height={34} alt="" /></span><span>Crown<span className="ri-brand-light">Pilot</span></span>
+          <span className="ri-logo"><img src="/brand/crown-pilot-mark.svg" width={34} height={34} alt="" /></span><span>Crown-<span className="ri-brand-light">pilot</span></span>
         </button>
         <nav className="ri-nav" aria-label="Main navigation">{NAV.map(({name})=>
           <button key={name} type="button" onClick={()=>chooseTab(name)}
