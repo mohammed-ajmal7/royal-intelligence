@@ -324,21 +324,32 @@ export default function Home() {
               Choose a card to replace {deck.find(c=>c.id===replaceId)?.name??"the selected slot"}.
               <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
             </div>}
-            <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
-              <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
-                {(["Owned","Unowned","All"] as const).map(ownership=><button key={ownership} type="button"
-                  aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
-                  onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
+            <div className="ri-cards-toolbar">
+              <div className="ri-filterbar">
+                <label className="ri-card-search">
+                  <Search size={17} aria-hidden="true"/>
+                  <input aria-label="Search cards" placeholder="Search cards by name…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
+                </label>
+                <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
+                  {(cardsFilter ? (["All","Owned"] as const) : (["Owned","Unowned","All"] as const)).map(ownership=><button key={ownership} type="button"
+                    aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
+                    onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
+                </div>
+                <label className="ri-card-type">
+                  <span className="ri-sr-only">Card form filter</span>
+                  <select aria-label="Card type" value={cardsFilter} onChange={e=>{
+                    const next=e.target.value as CardTypeFilter;
+                    setCardsFilter(next);
+                    if(next&&cardsOwnership==="Unowned")setCardsOwnership("All");
+                    setCardsFormStatus("All");setSelectedCard(null);
+                  }}>
+                    <option value="">All card types</option>
+                    {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}
+                  </select>
+                </label>
+                <div className="ri-filter-count" aria-live="polite"><strong>{visible.length}</strong><span>cards</span></div>
               </div>
-              <select aria-label="Card type" value={cardsFilter} onChange={e=>{setCardsFilter(e.target.value as CardTypeFilter);setCardsFormStatus("All");setSelectedCard(null);}}>
-                <option value="">Filter</option>
-                {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
-              <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
-            {cardsFilter&&cardsOwnership==="Owned"&&<div className="ri-ownership-toggle ri-form-status-toggle" role="group" aria-label={cardsFilter+" unlock status"}>
-              {(["All","Unlocked","Locked"] as const).map(status=><button key={status} type="button"
-                aria-pressed={cardsFormStatus===status} className={cardsFormStatus===status?"is-active":""}
-                onClick={()=>{setCardsFormStatus(status);setSelectedCard(null);}}>{status}</button>)}
-            </div>}
+            </div>
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
               onClose={()=>setSelectedCard(null)}
