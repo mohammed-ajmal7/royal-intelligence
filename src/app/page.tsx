@@ -176,7 +176,7 @@ export default function Home() {
   const [maxElixir,setMaxElixir]=useState(5);
   const [cardsQuery,setCardsQuery]=useState("");
   const [cardsOwnership,setCardsOwnership]=useState<CardOwnership>("Owned");
-  const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("All");
+  const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
   const [replaceId,setReplaceId]=useState<number|null>(null);
   const [battleFilter,setBattleFilter]=useState("All");
@@ -324,12 +324,13 @@ export default function Home() {
             </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
               <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
-                {(["Owned","Unowned"] as const).map(ownership=><button key={ownership} type="button"
+                {(["Owned","Unowned","All"] as const).map(ownership=><button key={ownership} type="button"
                   aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
                   onClick={()=>{setCardsOwnership(ownership);setSelectedCard(null);}}>{ownership}</button>)}
               </div>
               <select aria-label="Card type" value={cardsFilter} onChange={e=>{setCardsFilter(e.target.value as CardTypeFilter);setSelectedCard(null);}}>
-                {(["All","Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
+                <option value="">Filter</option>
+                {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
               <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
@@ -351,10 +352,10 @@ export default function Home() {
               <p>{deck.length}/8 · {current?.avg?.toFixed(2)??"—"} elixir · {current?.cycle??"—"} cycle</p></div>
               {deck.length===8&&<a href={deckLink(deck)} className="ri-button-secondary" target="_blank" rel="noreferrer">Open in game <ExternalLink size={14}/></a>}</div>
               <MiniDeck cards={deck} select={c=>setSelectedCard(c)} active={selectedCard?.id}/>
-              {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("All");chooseTab("Cards");}}>Browse owned cards</button>}
+              {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("");chooseTab("Cards");}}>Browse owned cards</button>}
               {selectedCard&&deck.some(c=>c.id===selectedCard.id)&&<div className="ri-row ri-selection">
                 <span>{selectedCard.name} selected</span>
-                <button className="ri-text-button" onClick={()=>{setReplaceId(selectedCard.id);setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("All");chooseTab("Cards");}}>Replace card</button>
+                <button className="ri-text-button" onClick={()=>{setReplaceId(selectedCard.id);setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("");chooseTab("Cards");}}>Replace card</button>
                 <button className="ri-text-button" onClick={()=>{setDeck(deck.filter(c=>c.id!==selectedCard.id));setSelectedCard(null);setSelf(null);setReplaceId(null);}}>Remove <X size={14}/></button>
               </div>}
               {strategy&&<div className="ri-mini-metrics"><span>Air defense <strong>{strategy.scenarios.find(x=>x.id==="air")?.score??"—"}/100</strong></span>
