@@ -113,8 +113,10 @@ test("filters distinguish troops, spells, missing source and unowned cards",()=>
   assert.equal(allFiltered.length,0);
 });
 
-test("page exposes Deck Item from sidebar and collection",()=>{
-  const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+test("advanced workspace preserves the full Deck Item inspector",()=>{
+  const page=readFileSync(new URL("../src/components/LegacyWorkspace.tsx",import.meta.url),"utf8");
+  const home=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+  assert.match(home,/href="\/advanced"/);
   const component=readFileSync(new URL("../src/components/DeckItemView.tsx",import.meta.url),"utf8");
   assert.match(page,/\["Deck Item", ListOrdered\]/);
   assert.match(page,/page === "Deck Item"/);
