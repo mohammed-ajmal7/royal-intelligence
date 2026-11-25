@@ -89,7 +89,8 @@ test("Cards UI has Owned, Unowned and All; type options are only Evolutions and 
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
   assert.match(page,/role="group" aria-label="Card ownership"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
-  assert.match(page,/\["Owned","Unowned","All"\] as const/);
+  assert.match(page,/cardsFilter \? \(\["All","Owned"\] as const\) : \(\["Owned","Unowned","All"\] as const\)/);
+  assert.match(page,/if\(next&&cardsOwnership==="Unowned"\)setCardsOwnership\("All"\)/);
   assert.match(page,/\["Evolutions","Heroes"\] as const/);
   assert.match(page,/<option value="">Filter<\/option>/);
   assert.match(page,/aria-label="Card type"/);
