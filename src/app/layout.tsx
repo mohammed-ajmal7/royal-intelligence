@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://crownpilot.vercel.app"),
+  alternates: { canonical: "/" },
   applicationName: "CrownPilot",
   title: {
     default: "CrownPilot — Clash Royale Companion",
@@ -27,6 +29,13 @@ export const metadata: Metadata = {
     title: "CrownPilot — Clash Royale Companion",
     description: "Your cards. Your deck. Your arena. One simple companion.",
     siteName: "CrownPilot",
+    url: "/",
+    images: [{ url: "/brand/crownpilot-192.png", width: 192, height: 192, alt: "CrownPilot logo" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "CrownPilot — Clash Royale Companion",
+    images: ["/brand/crownpilot-192.png"],
   },
 };
 
