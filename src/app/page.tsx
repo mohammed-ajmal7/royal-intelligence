@@ -333,12 +333,12 @@ export default function Home() {
               <select aria-label="Card type" value={cardsFilter} onChange={e=>{setCardsFilter(e.target.value as CardTypeFilter);setCardsFormStatus("All");setSelectedCard(null);}}>
                 <option value="">Filter</option>
                 {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
-              {cardsFilter&&cardsOwnership==="Owned"&&<div className="ri-ownership-toggle ri-form-status-toggle" role="group" aria-label={cardsFilter+" unlock status"}>
-                {(["All","Unlocked","Locked"] as const).map(status=><button key={status} type="button"
-                  aria-pressed={cardsFormStatus===status} className={cardsFormStatus===status?"is-active":""}
-                  onClick={()=>{setCardsFormStatus(status);setSelectedCard(null);}}>{status}</button>)}
-              </div>}
               <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
+            {cardsFilter&&cardsOwnership==="Owned"&&<div className="ri-ownership-toggle ri-form-status-toggle" role="group" aria-label={cardsFilter+" unlock status"}>
+              {(["All","Unlocked","Locked"] as const).map(status=><button key={status} type="button"
+                aria-pressed={cardsFormStatus===status} className={cardsFormStatus===status?"is-active":""}
+                onClick={()=>{setCardsFormStatus(status);setSelectedCard(null);}}>{status}</button>)}
+            </div>}
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
               onClose={()=>setSelectedCard(null)}
