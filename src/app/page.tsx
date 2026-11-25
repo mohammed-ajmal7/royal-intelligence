@@ -6,11 +6,11 @@ import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
 import { type MechanicsCatalog, resolveMechanics } from "../lib/mechanics";
-import { generateSelfMadeDecks, type SelfMadeResult, SELF_SLOTS } from "../lib/selfMadeDeckLab";
+import { generateSelfMadeDecks, type SelfMadeResult } from "../lib/selfMadeDeckLab";
 import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
-import { emptyHistory, readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
+import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy;description:string}[] = [
@@ -24,9 +24,6 @@ const fmt=(v:number|null|undefined)=>v==null?"—":v.toLocaleString("en-IN");
 const text=(v:unknown)=>typeof v==="string"||typeof v==="number"?String(v):"";
 const asObject=(v:unknown):Record<string,unknown> =>
   v&&typeof v==="object"&&!Array.isArray(v)?v as Record<string,unknown>:{};
-const stat=(v:Record<string,unknown>,k:string)=> {
-  const x=v[k];return typeof x==="number"&&Number.isFinite(x)?x:null;
-};
 const digits=(v:number|null|undefined)=>v==null?"—":Number.isInteger(v)?fmt(v):v.toFixed(1);
 function CardArt({card,size="normal"}:{card:Card;size?:"normal"|"small"}){
   return <div className={"ri-art "+(size==="small"?"ri-art-small":"")}>
@@ -62,7 +59,7 @@ function RecordList({value}:{value:unknown}){
       <span key={k}><small>{k}</small><b>{String(v)}</b></span>)}</div><JsonDetails value={value}/></>;
   }
   return <><div className="ri-result-count">{list.length} record{list.length===1?"":"s"} returned</div>
-    <div className="ri-records">{list.slice(0,100).map((raw,i)=>{
+    <div className="ri-records">{list.slice(0,150).map((raw,i)=>{
       const row=asObject(raw);
       const title=text(row.name)||text(row.title)||text(row.tag)||text(row.id)||"Entry "+(i+1);
       const details=["rank","tag","trophies","clanScore","clanWarTrophies","location","state","status","index","maxPlayers","members"].filter(k=>row[k]!=null).slice(0,5);
@@ -70,7 +67,7 @@ function RecordList({value}:{value:unknown}){
       return <details key={i} className="ri-record"><summary><span className="ri-record-index">{i+1}</span><span><strong>{title}</strong>
         <small>{details.map(k=>k+": "+text(row[k])).join(" · ")}{nested.name?" · "+text(nested.name):""}</small></span><ChevronRight size={15}/></summary>
         <pre>{JSON.stringify(raw,null,2)}</pre></details>;
-    })}</div>{list.length>100&&<p className="ri-muted">Showing the first 100 records. Use pagination to retrieve more.</p>}
+    })}</div>{list.length>150&&<p className="ri-muted">Showing the first 150 records. Use pagination to retrieve more.</p>}
     <JsonDetails value={value}/></>;
 }
 function ApiExplorer({playerTag,clanTag}:{playerTag:string;clanTag:string}){
