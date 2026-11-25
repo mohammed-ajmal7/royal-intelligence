@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Crown, X } from "lucide-react";
+import { ChevronDown, Crown, X } from "lucide-react";
 import type { Card } from "../lib/model";
 import type { CardReferenceSection, CurrentReference } from "../lib/liveCardReference";
 import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../lib/mechanics";
@@ -133,10 +133,13 @@ const formLabels: Record<Form, string> = { base: "Base", evolution: "Evolution",
 
 export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, deckAction, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const levelPickerRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const levelPickerId = useId();
   const [form, setForm] = useState<Form>("base");
   const [level, setLevel] = useState(card.level ?? Math.min(11, cap));
   const [allLevels, setAllLevels] = useState(false);
+  const [levelPickerOpen, setLevelPickerOpen] = useState(false);
   const [reference, setReference] = useState<CurrentReference | null>(null);
   const [referenceStatus, setReferenceStatus] = useState<"loading" | "ready" | "unavailable">("loading");
   const [attempt, setAttempt] = useState(0);
@@ -144,6 +147,23 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   useEffect(() => {
     if (!dialog.current?.open) dialog.current?.showModal();
   }, []);
+  useEffect(() => {
+    if (!levelPickerOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !levelPickerRef.current?.contains(event.target)) {
+        setLevelPickerOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLevelPickerOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [levelPickerOpen]);
   useEffect(() => {
     const controller = new AbortController();
     const query = new URLSearchParams({ id: String(card.id), name: card.name, view: "details" });
@@ -218,31 +238,46 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
         </div>}
         <section className="ri-level-design" aria-labelledby="ri-level-design-title">
           <h2 id="ri-level-design-title" className="ri-level-design-heading">Recommended design</h2>
-          <div className="ri-level-panel">
-            <div className="ri-level-panel-header">
-              <div>
-                <h3>Card Level</h3>
-                <p>Choose a level to view card stats</p>
-              </div>
+          <div className="ri-level-picker" ref={levelPickerRef}>
+            <button type="button" className="ri-level-trigger" aria-expanded={levelPickerOpen}
+              aria-controls={levelPickerId} onClick={() => setLevelPickerOpen(open => !open)}>
+              <span className="ri-level-trigger-copy">
+                <span>Card level</span>
+                <strong>Level {viewing}</strong>
+              </span>
               <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
                 {card.owned && card.level != null ? "OWNED · " + card.level : card.owned ? "OWNED" : "NOT OWNED"}
               </span>
-            </div>
-            <div className="ri-level-grid" role="group" aria-label="Choose card level">
-              {Array.from({ length: cap - minimum + 1 }, (_, index) => minimum + index).map(value => {
-                const isOwned = card.owned && value === card.level;
-                return <button key={value} type="button"
-                  className={"ri-level-option" + (viewing === value ? " is-selected" : "") + (isOwned ? " is-owned" : "")}
-                  aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your owned level" : "")}
-                  onClick={() => { setLevel(value); setAllLevels(false); }}>
-                  <strong>{value}</strong>
-                  <span>{isOwned ? "✓ OWNED" : "LEVEL"}</span>
-                </button>;
-              })}
-            </div>
-            <div className="ri-level-panel-footer">
-              <span>Your actual card level</span>
-              <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Owned · level unknown" : "Not owned"}</strong>
+              <ChevronDown className="ri-level-trigger-chevron" size={18} aria-hidden="true"/>
+            </button>
+            <div className="ri-level-popover" id={levelPickerId} hidden={!levelPickerOpen}>
+              <div className="ri-level-panel">
+                <div className="ri-level-panel-header">
+                  <div>
+                    <h3>Card Level</h3>
+                    <p>Choose a level to view card stats</p>
+                  </div>
+                  <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
+                    {card.owned && card.level != null ? "OWNED · " + card.level : card.owned ? "OWNED" : "NOT OWNED"}
+                  </span>
+                </div>
+                <div className="ri-level-grid" role="group" aria-label="Choose card level">
+                  {Array.from({ length: cap - minimum + 1 }, (_, index) => minimum + index).map(value => {
+                    const isOwned = card.owned && value === card.level;
+                    return <button key={value} type="button"
+                      className={"ri-level-option" + (viewing === value ? " is-selected" : "") + (isOwned ? " is-owned" : "")}
+                      aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your owned level" : "")}
+                      onClick={() => { setLevel(value); setAllLevels(false); setLevelPickerOpen(false); }}>
+                      <strong>{value}</strong>
+                      <span>{isOwned ? "✓ OWNED" : "LEVEL"}</span>
+                    </button>;
+                  })}
+                </div>
+                <div className="ri-level-panel-footer">
+                  <span>Your actual card level</span>
+                  <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Owned · level unknown" : "Not owned"}</strong>
+                </div>
+              </div>
             </div>
           </div>
           {hasRows && <button type="button" className="ri-button-secondary ri-inspector-all-levels" aria-pressed={allLevels}
