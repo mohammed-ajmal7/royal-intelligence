@@ -2,40 +2,40 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://crown-pilot.vercel.app"),
+  metadataBase: new URL("https://royaleon.vercel.app"),
   alternates: { canonical: "/" },
-  applicationName: "Crown-pilot",
+  applicationName: "Royaleon",
   title: {
-    default: "Crown-pilot — Clash Royale Companion",
-    template: "%s | Crown-pilot",
+    default: "Royaleon — Clash Royale Companion",
+    template: "%s | Royaleon",
   },
-  description: "Crown-pilot is an unofficial Clash Royale companion for your cards, decks, battles, strategies, and public game data.",
+  description: "Royaleon is an unofficial Clash Royale companion for your cards, decks, battles, strategies, and public game data.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/brand/crown-pilot-mark.svg", type: "image/svg+xml" },
-      { url: "/brand/crown-pilot-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/royaleon-mark.svg", type: "image/svg+xml" },
+      { url: "/brand/royaleon-192.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/brand/crown-pilot-mark.svg",
-    apple: [{ url: "/brand/crown-pilot-192.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/brand/royaleon-mark.svg",
+    apple: [{ url: "/brand/royaleon-192.png", sizes: "192x192", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
-    title: "Crown-pilot",
+    title: "Royaleon",
     statusBarStyle: "default",
   },
   openGraph: {
     type: "website",
-    title: "Crown-pilot — Clash Royale Companion",
+    title: "Royaleon — Clash Royale Companion",
     description: "Your cards. Your deck. Your arena. One simple companion.",
-    siteName: "Crown-pilot",
+    siteName: "Royaleon",
     url: "/",
-    images: [{ url: "/brand/crown-pilot-192.png", width: 192, height: 192, alt: "Crown-pilot logo" }],
+    images: [{ url: "/brand/royaleon-192.png", width: 192, height: 192, alt: "Royaleon logo" }],
   },
   twitter: {
     card: "summary",
-    title: "Crown-pilot — Clash Royale Companion",
-    images: ["/brand/crown-pilot-192.png"],
+    title: "Royaleon — Clash Royale Companion",
+    images: ["/brand/royaleon-192.png"],
   },
 };
 
