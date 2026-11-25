@@ -106,8 +106,8 @@ test("Cards toolbar uses contextual ownership filters and Hero empty state",()=>
   assert.match(page,/Browse all Hero cards/);
   assert.match(page,/setCardsOwnership\("All"\);setCardsFormStatus\("All"\)/);
   assert.match(page,/No cards match these filters/);
-  assert.match(css,/\.ri-cards-toolbar/);
-  assert.match(css,/\.ri-cards-toolbar \.ri-filter-count[\s\S]*border-radius:999px/);
+  assert.match(cardCss,/\.ri-cards-toolbar/);
+  assert.match(cardCss,/\.ri-cards-toolbar \.ri-filter-count[\s\S]*border-radius:999px/);
   assert.match(cardCss,/\.ri-hero-empty-art/);
   assert.match(cardCss,/\.ri-hero-empty-action/);
   assert.match(css,/@media\(max-width:760px\)/);
