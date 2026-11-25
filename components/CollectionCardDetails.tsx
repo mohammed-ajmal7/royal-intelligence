@@ -1,5 +1,6 @@
-import "./collection-card-level.css";
 "use client";
+
+import "./collection-card-level.css";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Crown, X } from "lucide-react";
