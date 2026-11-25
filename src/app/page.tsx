@@ -354,28 +354,42 @@ export default function Home() {
             </div>}
             <div className="ri-cards-toolbar">
               <div className="ri-filterbar">
-                <label className="ri-card-search">
-                  <Search size={17} aria-hidden="true"/>
-                  <input aria-label="Search cards" placeholder="Search cards by name…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
-                </label>
-                <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
-                  {(cardsFilter ? (["All","Owned"] as const) : (["Owned","Unowned","All"] as const)).map(ownership=><button key={ownership} type="button"
-                    aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
-                    onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
+                <div className="ri-card-toolbar-search-row">
+                  <label className="ri-card-search">
+                    <Search size={17} aria-hidden="true"/>
+                    <input aria-label="Search cards" placeholder="Search cards by name…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
+                  </label>
+                  <div className="ri-filter-count" aria-live="polite"><strong>{visible.length}</strong><span>cards</span></div>
                 </div>
-                <label className="ri-card-type">
-                  <span className="ri-sr-only">Card form filter</span>
-                  <select aria-label="Card type" value={cardsFilter} onChange={e=>{
-                    const next=e.target.value as CardTypeFilter;
-                    setCardsFilter(next);
-                    if(next&&cardsOwnership==="Unowned")setCardsOwnership("All");
-                    setCardsFormStatus("All");setSelectedCard(null);
-                  }}>
-                    <option value="">All cards</option>
-                    {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}
-                  </select>
-                </label>
-                <div className="ri-filter-count" aria-live="polite"><strong>{visible.length}</strong><span>cards</span></div>
+
+                <div className="ri-card-filter-groups">
+                  <div className="ri-filter-group">
+                    <span className="ri-filter-group-label">Collection</span>
+                    <div className="ri-ownership-toggle" role="group" aria-label="Collection filter">
+                      {(["All","Owned","Locked"] as const).map(ownership=><button key={ownership} type="button"
+                        aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
+                        onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
+                    </div>
+                  </div>
+
+                  <div className="ri-filter-group">
+                    <span className="ri-filter-group-label">Card type</span>
+                    <div className="ri-ownership-toggle ri-card-type-toggle" role="group" aria-label="Card type">
+                      {([{value:"",label:"All cards"},{value:"Evolutions",label:"Evolution"},{value:"Heroes",label:"Hero"}] as const).map(option=><button key={option.value||"all"} type="button"
+                        aria-pressed={cardsFilter===option.value} className={cardsFilter===option.value?"is-active":""}
+                        onClick={()=>{setCardsFilter(option.value);setCardsFormStatus("All");setSelectedCard(null);}}>{option.label}</button>)}
+                    </div>
+                  </div>
+
+                  {cardsFilter&&cardsOwnership==="Owned"&&<div className="ri-filter-group ri-form-status-group">
+                    <span className="ri-filter-group-label">{cardsFilter==="Evolutions"?"Evolution":"Hero"} status</span>
+                    <div className="ri-ownership-toggle ri-form-status-toggle" role="group" aria-label={cardsFilter+" unlock status"}>
+                      {(["All","Unlocked","Locked"] as const).map(status=><button key={status} type="button"
+                        aria-pressed={cardsFormStatus===status} className={cardsFormStatus===status?"is-active":""}
+                        onClick={()=>{setCardsFormStatus(status);setSelectedCard(null);}}>{status}</button>)}
+                    </div>
+                  </div>}
+                </div>
               </div>
             </div>
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
@@ -387,7 +401,7 @@ export default function Home() {
                   deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck",
                 run: ()=>{replaceDeckCard(activeCard);setSelectedCard(null);chooseTab("Decks");},
               } : undefined}/>}
-            {!visible.length&&(cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&!cardsQuery.trim()
+            {!visible.length&&(cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&cardsFormStatus==="All"&&!cardsQuery.trim()
               ? <HeroEmptyState onShowAll={()=>{setCardsOwnership("All");setCardsFormStatus("All");setSelectedCard(null);}}/>
               : <div className="ri-empty">No cards match these filters.</div>)}
             <div className="ri-cards">{visible.map(c=>
