@@ -12,14 +12,15 @@ test("one five-tab workspace rather than thirteen competing destinations",()=>{
   assert.match(page,/aria-label="Main navigation"/);
   assert.match(page,/aria-label="Mobile navigation"/);
   assert.match(page,/aria-current=\{tab===name\?"page":undefined\}/);
-  assert.match(page,/href="\/advanced#Deck%20Laboratory"/);
+  assert.match(page,/const labPath=advancedPath\+"#Deck%20Laboratory"/);
+  assert.match(page,/href=\{labPath\}/);
   assert.ok(!page.includes('name:"AI Coach"'));
 });
 
 test("the primary homepage is small and classic analytics are available separately",()=>{
   assert.ok(page.length<45000,"Homepage grew too large");
   assert.ok(css.length<25000,"Primary stylesheet grew too large");
-  assert.ok(legacy.includes("Top Global Player Comparison Deck Generator"));
+  assert.ok(legacy.includes('<Panel title="Build from Ranked decks">'));
   assert.ok(legacy.includes("Self-Made Deck Generator"));
 });
 
