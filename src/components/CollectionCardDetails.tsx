@@ -184,7 +184,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const starLevel = card.starLevel == null ? "Not reported" : card.starLevel === 0 ? "None" : String(card.starLevel);
   const costIcon=elixirAsset(card.elixir);
   const formStatus = (available: boolean | null, unlocked: boolean | null, unavailableLabel = "No form listed") =>
-    unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Available · not unlocked" : "Available" :
+    unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Locked" : "Available" :
       available === false || profile ? unavailableLabel : "Unknown";
   const evolutionStatus = formStatus(hasEvolution, card.evo, "Not available");
   const heroStatus = formStatus(hasHero, card.hero, "Not available");
