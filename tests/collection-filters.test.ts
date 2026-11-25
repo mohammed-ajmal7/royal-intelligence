@@ -103,7 +103,7 @@ test("Cards UI shows ownership first and nested unlock status only for owned spe
   assert.match(page,/aria-label="Card type"/);
   assert.match(page,/filterCollection\(collection/);
   assert.match(page,/setCardsOwnership\("Owned"\);setCardsFilter\(""\)/);
-  assert.match(css,/\.ri-ownership-toggle button\.is-active/);
+  assert.match(css,/\.ri-ownership-toggle button\.is-active/);\n  assert.match(css,/\.ri-cards-toolbar \.ri-filter-count[\\s\\S]*border-radius:999px/);
   assert.match(css,/@media\(max-width:480px\)/);
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
