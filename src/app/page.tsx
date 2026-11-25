@@ -35,6 +35,34 @@ function CardArt({card,size="normal"}:{card:Card;size?:"normal"|"small"}){
     {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}>{elixirAsset(card.elixir)?<img src={elixirAsset(card.elixir)!} alt="" width={28} height={28}/>:card.elixir??"—"}</span>}
   </div>;
 }
+
+function HeroEmptyState({onShowAll}:{onShowAll:()=>void}){
+  return <section className="ri-empty-state ri-hero-empty" aria-labelledby="ri-hero-empty-title">
+    <div className="ri-hero-empty-art" aria-hidden="true">
+      <svg viewBox="0 0 180 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="90" cy="72" r="59" fill="#EEF3FC"/>
+        <circle cx="90" cy="72" r="48" fill="#F8FAFF"/>
+        <path d="M31 45l5 8 8 2-8 4-5 8-3-8-8-4 8-2 3-8Z" fill="#E4B64D"/>
+        <path d="M145 35l3 6 7 2-7 3-3 7-3-7-7-3 7-2 3-6Z" fill="#E4B64D"/>
+        <path d="M147 103l3 5 6 2-6 3-3 6-3-6-6-3 6-2 3-5Z" fill="#A9BCE5"/>
+        <path d="M54 42 90 27l36 15v35c0 25-15 39-36 50-21-11-36-25-36-50V42Z" fill="#fff" stroke="#3157A5" strokeWidth="3" strokeLinejoin="round"/>
+        <path d="M63 49 90 38l27 11v27c0 18-10 29-27 39-17-10-27-21-27-39V49Z" fill="#E8EFFB"/>
+        <path d="M71 69c0-11 8-19 19-19s19 8 19 19v5H71v-5Z" fill="#3157A5"/>
+        <path d="M68 73h44l-5 14H73l-5-14Z" fill="#E4B64D" stroke="#24447F" strokeWidth="2" strokeLinejoin="round"/>
+        <path d="M80 72v-7m20 7v-7" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
+        <path d="M90 88v12" stroke="#3157A5" strokeWidth="3" strokeLinecap="round"/>
+        <path d="m84 91 6 5 6-5" stroke="#3157A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M44 116c10-7 18-8 27-4m65 4c-10-7-18-8-27-4" stroke="#9CB1DD" strokeWidth="3" strokeLinecap="round"/>
+      </svg>
+    </div>
+    <span className="ri-hero-empty-eyebrow">HERO COLLECTION</span>
+    <h2 id="ri-hero-empty-title">You haven’t unlocked any Hero cards yet</h2>
+    <p>There are no owned Hero cards in your collection right now. Browse all Hero cards to see the cards available in the game.</p>
+    <button type="button" className="ri-button ri-hero-empty-action" onClick={onShowAll}>
+      Browse all Hero cards <ChevronRight size={16}/>
+    </button>
+  </section>;
+}
 function Stat({label,value,hint}:{label:string;value:string|number;hint?:string}){
   return <div className="ri-stat"><div className="ri-muted ri-tiny">{label}</div>
     <strong>{value}</strong>{hint&&<small>{hint}</small>}</div>;
@@ -359,7 +387,9 @@ export default function Home() {
                   deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck",
                 run: ()=>{replaceDeckCard(activeCard);setSelectedCard(null);chooseTab("Decks");},
               } : undefined}/>}
-            {!visible.length&&<div className="ri-empty">No cards match these filters.</div>}
+            {!visible.length&&(cardsFilter==="Heroes"&&cardsOwnership==="Owned"&&!cardsQuery.trim()
+              ? <HeroEmptyState onShowAll={()=>{setCardsOwnership("All");setCardsFormStatus("All");setSelectedCard(null);}}/>
+              : <div className="ri-empty">No cards match these filters.</div>)}
             <div className="ri-cards">{visible.map(c=>
               <button type="button" key={c.id} className={"ri-card "+(selectedCard?.id===c.id?"is-selected":"")}
                 aria-haspopup="dialog" onClick={()=>setSelectedCard(c)}><CardArt card={c}/><strong>{c.name}</strong>
