@@ -1,28 +1,34 @@
 import type { Card } from "./model";
 
-export type CardOwnership = "Owned" | "Unowned";
-export type CardTypeFilter = "All" | "Evolutions" | "Heroes";
+export type CardOwnership = "Owned" | "Unowned" | "All";
+export type CardTypeFilter = "" | "Evolutions" | "Heroes";
 
 /**
- * Independent ownership and card-type filters. "All" means all cards
- * within the selected ownership group, not all owned + unowned cards.
+ * Ownership and card capability are independent filters.
+ * "All" includes unlocked and locked cards. Type filtering checks whether
+ * the card supports a special form, not whether the player has unlocked it.
  *
- * The official player collection only confirms unlocked special forms.
- * Missing evolution/hero metadata is unknown, never interpreted as unlocked.
+ * Missing form availability metadata is unknown, never assumed true.
+ * A reported unlocked form is also evidence that the card supports that form.
  */
 export function filterCollection(
   cards: readonly Card[],
   options: { ownership: CardOwnership; type: CardTypeFilter; query: string },
 ): Card[] {
   const search = options.query.trim().toLocaleLowerCase();
-  const owned = options.ownership === "Owned";
   return cards.filter(card =>
-    card.owned === owned &&
+    !card.tower &&
+    (options.ownership === "All" ||
+      card.owned === (options.ownership === "Owned")) &&
     card.name.toLocaleLowerCase().includes(search) &&
-    (options.type === "All" ||
-      (options.type === "Evolutions" && card.evo === true) ||
-      (options.type === "Heroes" && card.hero === true))
+    (options.type === "" ||
+      (options.type === "Evolutions" &&
+        (card.hasEvolution === true || card.evo === true)) ||
+      (options.type === "Heroes" &&
+        (card.hasHero === true || card.hero === true)))
   ).sort((a,b) =>
-    (b.level ?? 0) - (a.level ?? 0) || a.name.localeCompare(b.name)
+    Number(b.owned) - Number(a.owned) ||
+    (b.level ?? 0) - (a.level ?? 0) ||
+    a.name.localeCompare(b.name)
   );
 }
