@@ -5,7 +5,7 @@ import "./workspace.css";
 
 export const metadata: Metadata = {
   title: "Advanced Tools",
-  description: "CrownPilot advanced Clash Royale deck lab, global-ranked analysis, and card comparisons.",
+  description: "Crown-pilot advanced Clash Royale deck lab, global-ranked analysis, and card comparisons.",
 };
 
 export default function AdvancedPage() {

@@ -279,8 +279,8 @@ export default function Home() {
   return <div className="ri-shell">
     <header className="ri-header">
       <div className="ri-topbar">
-        <button type="button" className="ri-brand" onClick={()=>chooseTab("Overview")} aria-label="CrownPilot home">
-          <span className="ri-logo"><img src="/brand/crownpilot-mark.svg" width={34} height={34} alt="" /></span><span>Crown<span className="ri-brand-light">Pilot</span></span>
+        <button type="button" className="ri-brand" onClick={()=>chooseTab("Overview")} aria-label="Crown-pilot home">
+          <span className="ri-logo"><img src="/brand/crown-pilot-mark.svg" width={34} height={34} alt="" /></span><span>Crown-<span className="ri-brand-light">pilot</span></span>
         </button>
         <nav className="ri-nav" aria-label="Main navigation">{NAV.map(({name})=>
           <button key={name} type="button" onClick={()=>chooseTab(name)}
@@ -302,7 +302,7 @@ export default function Home() {
       </div>
       {error&&<div className="ri-alert" role="alert">{error}</div>}
       {tab==="Explore"?<ApiExplorer playerTag={player?.tag??tagInput} clanTag={text(asObject(player?.raw).clan&&asObject(asObject(player?.raw).clan).tag)}/>:<>
-        <div className="ri-heading"><div><p className="ri-eyebrow">CROWNPILOT / {tab.toUpperCase()}</p>
+        <div className="ri-heading"><div><p className="ri-eyebrow">CROWN-PILOT / {tab.toUpperCase()}</p>
           <h1>{tab==="Overview"?"Player overview":tab==="Cards"?"Card collection":tab==="Decks"?"Deck builder":"Battle history"}</h1>
           <p>{tab==="Overview"?"Trophies, your current deck and recent results.":NAV.find(x=>x.name===tab)?.description}</p>
         </div>{player&&<span className="ri-tag">#{player.tag.replace(/^#/,"")}</span>}</div>
@@ -442,7 +442,7 @@ export default function Home() {
           </div>}
         </>}
       </>}
-      <footer className="ri-footer"><span>CrownPilot · Unofficial Clash Royale fan tool. Not affiliated with Supercell.</span>
+      <footer className="ri-footer"><span>Crown-pilot · Unofficial Clash Royale fan tool. Not affiliated with Supercell.</span>
         <div><a href="https://developer.clashroyale.com/#/documentation" target="_blank" rel="noreferrer">API docs</a><a href={advancedPath}>Advanced tools</a></div></footer>
     </main>
     <nav className="ri-mobile-nav" aria-label="Mobile navigation">{NAV.map(({name,Icon})=>
