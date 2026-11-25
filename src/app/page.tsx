@@ -364,20 +364,20 @@ export default function Home() {
 
                 <div className="ri-card-filter-groups">
                   <div className="ri-filter-group">
-                    <span className="ri-filter-group-label">Collection</span>
-                    <div className="ri-ownership-toggle" role="group" aria-label="Collection filter">
-                      {(["All","Owned","Locked"] as const).map(ownership=><button key={ownership} type="button"
-                        aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
-                        onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
-                    </div>
-                  </div>
-
-                  <div className="ri-filter-group">
                     <span className="ri-filter-group-label">Card type</span>
                     <div className="ri-ownership-toggle ri-card-type-toggle" role="group" aria-label="Card type">
                       {([{value:"",label:"All cards"},{value:"Evolutions",label:"Evolution"},{value:"Heroes",label:"Hero"}] as const).map(option=><button key={option.value||"all"} type="button"
                         aria-pressed={cardsFilter===option.value} className={cardsFilter===option.value?"is-active":""}
                         onClick={()=>{setCardsFilter(option.value);setCardsFormStatus("All");setSelectedCard(null);}}>{option.label}</button>)}
+                    </div>
+                  </div>
+
+                  <div className="ri-filter-group">
+                    <span className="ri-filter-group-label">Collection</span>
+                    <div className="ri-ownership-toggle" role="group" aria-label="Collection filter">
+                      {(["All","Owned","Locked"] as const).map(ownership=><button key={ownership} type="button"
+                        aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
+                        onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
                     </div>
                   </div>
 
