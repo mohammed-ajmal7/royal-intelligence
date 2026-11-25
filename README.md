@@ -1,14 +1,14 @@
-# Crown-pilot
+# Royaleon
 
 A minimal, mobile-first Clash Royale companion app built with Next.js, React and TypeScript.
 
-**Brand:** Crown-pilot · **Package:** `crown-pilot` · **Icon:** original blue crown with gold navigation arrow.
+**Brand:** Royaleon · **Package:** `royaleon` · **Icon:** blue-and-gold royal crown emblem.
 
 Installable web app metadata, branded browser icons and a responsive mobile launcher experience are included. This remains an unofficial fan tool.
 
-**Live:** https://crown-pilot.vercel.app
+**Live:** https://royaleon.vercel.app
 
-**Previous URLs (kept working):** https://crownpilot.vercel.app and https://royal-intelligence.vercel.app
+**Previous URLs (kept working):** https://crown-pilot.vercel.app, https://crownpilot.vercel.app, and https://royal-intelligence.vercel.app
 
 ## Five simple sections
 
@@ -84,4 +84,4 @@ This is an unofficial fan site, not affiliated with or endorsed by Supercell.
 
 ## Brand migration
 
-The visible website, advanced tools, app title, install metadata, logo, and package name are Crown-pilot. The existing `ri-*` local-storage keys remain unchanged for backwards compatibility so player history and settings are not lost. The GitHub repository's legacy URL is retained until its repository slug can be renamed by an administrator; repository renaming is not exposed by the current connected GitHub integration. Existing deployment links should continue to resolve during the rollout.
+The visible website, advanced tools, app title, install metadata, logo, and package name are Royaleon. The existing `ri-*` local-storage keys remain unchanged for backwards compatibility so player history and settings are not lost. The GitHub repository is still at `mohammed-ajmal7/royal-intelligence` because the connected GitHub integration does not expose repository renaming; this URL is a repository identifier, not the app's display brand. Existing deployment links should continue to resolve during the rollout.

@@ -918,12 +918,12 @@ export default function App() {
     <div className="royal-app">
       <aside ref={drawerRef} id="advanced-navigation" className={mobile ? "sidebar open" : "sidebar"}
         role={mobile?"dialog":undefined} aria-modal={mobile||undefined} aria-label="All workspace sections">
-        <a className="brand" href={dashboardPath} aria-label="Crown-pilot dashboard">
+        <a className="brand" href={dashboardPath} aria-label="Royaleon dashboard">
           <span className="brand-icon">
-            <img src="/brand/crown-pilot-mark.svg" width={38} height={38} alt="" />
+            <img src="/brand/royaleon-mark.svg" width={38} height={38} alt="" />
           </span>
           <span>
-            Crown-pilot
+            Royaleon
           </span>
         </a>
         <div className="nav-kicker">
@@ -986,9 +986,9 @@ export default function App() {
           >
             <Menu size={22} />
           </button>
-          <a className="mobile-brand" href={dashboardPath} aria-label="Crown-pilot dashboard">
-            <span className="mobile-crown"><img src="/brand/crown-pilot-mark.svg" width={32} height={32} alt="" /></span>
-            <span className="mobile-brand-wordmark">Crown-pilot</span>
+          <a className="mobile-brand" href={dashboardPath} aria-label="Royaleon dashboard">
+            <span className="mobile-crown"><img src="/brand/royaleon-mark.svg" width={32} height={32} alt="" /></span>
+            <span className="mobile-brand-wordmark">Royaleon</span>
           </a>
           <div className="desktop-breadcrumb">
             <a href={dashboardPath}>Dashboard</a>
@@ -2860,7 +2860,7 @@ export default function App() {
                       );
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = "crown-pilot-export.json";
+                      a.download = "royaleon-export.json";
                       a.click();
                       setTimeout(() => URL.revokeObjectURL(url), 1000);
                     }}
@@ -2972,8 +2972,8 @@ export default function App() {
           )}
           <footer>
             <div>
-              <img src="/brand/crown-pilot-mark.svg" width={18} height={18} alt="" />
-              <strong>CROWN-PILOT</strong>
+              <img src="/brand/royaleon-mark.svg" width={18} height={18} alt="" />
+              <strong>ROYALEON</strong>
             </div>
             <p>
               Unofficial fan content, not endorsed by Supercell.{" "}
