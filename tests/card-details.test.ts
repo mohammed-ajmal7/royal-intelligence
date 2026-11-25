@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { projectMechanics, resolveMechanics } from "../src/lib/mechanics";
 import { comparisonDelta, detailStats } from "../src/lib/cardDetails";
 import { demo } from "../src/lib/demo";
+import { readFileSync } from "node:fs";
 
 test("comparison preserves signed differences and reverses lower-is-better metrics", () => {
   assert.deepEqual(comparisonDelta(1000, 800, "higher"), {delta:200,tone:"better"});
@@ -37,4 +38,23 @@ test("details never manufacture stats for absent cards and retain known elixir",
   assert.equal(stats.find(s=>s.key==="hp")?.value,null);
   assert.equal(stats.find(s=>s.key==="hits")?.value,null);
   assert.equal(stats.find(s=>s.key==="elixir")?.value,card.elixir);
+});
+
+
+test("card level selector opens as a dropdown popover and closes after selection",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+  assert.match(component,/const \[levelPickerOpen, setLevelPickerOpen\] = useState\(false\)/);
+  assert.match(component,/aria-expanded=\{levelPickerOpen\}/);
+  assert.match(component,/aria-controls=\{levelPickerId\}/);
+  assert.match(component,/onClick=\{\(\) => setLevelPickerOpen\(open => !open\)\}/);
+  assert.match(component,/setLevel\(value\); setAllLevels\(false\); setLevelPickerOpen\(false\);/);
+  assert.match(component,/closeOnOutsidePointer/);
+  assert.match(component,/event\.key === "Escape"/);
+  assert.match(component,/event\.preventDefault\(\)/);
+  assert.match(component,/event\.stopPropagation\(\)/);
+  assert.match(component,/hidden=\{!levelPickerOpen\}/);
+  assert.match(css,/\.ri-level-popover\{[\s\S]*position:absolute/);
+  assert.match(css,/\.ri-level-popover\[hidden\]\{display:none\}/);
+  assert.match(css,/\.ri-level-trigger\[aria-expanded="true"\]/);
 });

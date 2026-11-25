@@ -481,3 +481,44 @@
   .ri-filter-group-label{flex:auto}
   .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{width:100%}
 }
+
+
+/* Card level picker: closed select control with an anchored level-grid popover. */
+.ri-level-picker{position:relative;z-index:4;min-width:0}
+.ri-level-trigger{
+  display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:58px;
+  padding:9px 12px;border:1px solid var(--ri-border);border-radius:10px;
+  background:var(--ri-paper);color:var(--ri-text);text-align:left;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.ri-level-trigger:hover,.ri-level-trigger[aria-expanded="true"]{
+  border-color:var(--ri-accent);background:var(--ri-paper);
+}
+.ri-level-trigger:focus-visible{
+  outline:2px solid var(--ri-accent);outline-offset:2px;
+}
+.ri-level-trigger-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.ri-level-trigger-copy>span{color:var(--ri-sub);font-size:11px;font-weight:650}
+.ri-level-trigger-copy strong{color:var(--ri-text);font-size:15px;font-weight:750;line-height:1.2}
+.ri-level-trigger-chevron{flex:0 0 auto;color:var(--ri-sub);transition:transform .15s}
+.ri-level-trigger[aria-expanded="true"] .ri-level-trigger-chevron{transform:rotate(180deg)}
+.ri-level-popover{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:25;
+  max-height:min(72dvh,560px);overflow:auto;overscroll-behavior:contain;
+  border:1px solid var(--ri-border);border-radius:16px;
+  background:var(--ri-paper);box-shadow:0 18px 48px rgba(16,24,40,.2);
+}
+.ri-level-popover[hidden]{display:none}
+.ri-level-popover .ri-level-panel{
+  border:0;border-radius:inherit;box-shadow:none;
+}
+@media(max-width:560px){
+  .ri-level-trigger{min-height:54px;padding:8px 10px;gap:8px}
+  .ri-level-popover{top:calc(100% + 6px);max-height:68dvh}
+}
+@media(max-width:360px){
+  .ri-level-popover .ri-level-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  .ri-level-trigger,.ri-level-trigger-chevron{transition:none}
+}
