@@ -7,6 +7,13 @@ export type Card = {
   elixir: number | null;
   owned: boolean;
   image?: string;
+  evolutionImage?: string;
+  heroImage?: string;
+  hasEvolution?: boolean;
+  hasHero?: boolean;
+  minimumLevel?: number;
+  starLevel?: number;
+  maxStarLevel?: number;
   evo: boolean | null;
   hero: boolean | null;
   active: string;
@@ -318,6 +325,10 @@ export function level(
     ? v! + cap - max!
     : null;
 }
+function cosmeticLevel(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 3
+    ? value : undefined;
+}
 export function card(
   input: unknown,
   owned = false,
@@ -337,6 +348,18 @@ export function card(
     elixir: c.elixirCost ?? null,
     owned,
     image: c.iconUrls?.medium,
+    evolutionImage: c.iconUrls?.evolutionMedium,
+    heroImage: c.iconUrls?.heroMedium,
+    hasEvolution: c.iconUrls?.evolutionMedium ? true :
+      typeof c.maxEvolutionLevel === "number" && Number.isInteger(c.maxEvolutionLevel) &&
+      c.maxEvolutionLevel >= 0 && c.maxEvolutionLevel <= 3 ? !!(c.maxEvolutionLevel & 1) : undefined,
+    hasHero: c.iconUrls?.heroMedium ? true :
+      typeof c.maxEvolutionLevel === "number" && Number.isInteger(c.maxEvolutionLevel) &&
+      c.maxEvolutionLevel >= 0 && c.maxEvolutionLevel <= 3 ? !!(c.maxEvolutionLevel & 2) : undefined,
+    minimumLevel: c.maxLevel && Number.isInteger(c.maxLevel) && c.maxLevel > 0 && c.maxLevel <= cap
+      ? cap - c.maxLevel + 1 : undefined,
+    starLevel: cosmeticLevel(c.starLevel),
+    maxStarLevel: cosmeticLevel(c.maxStarLevel),
     // The collection omits evolutionLevel when no special form is unlocked.
     // Battle/deck entries omit it when the base form is equipped or played.
     evo: valid ? !!(flag! & 1) : flag === undefined && owned && !active ? false : null,
@@ -441,7 +464,7 @@ export function normalize(
     card(x, true, false, true, cap),
   );
   const catalog = c.items.map(
-    (x) => cards.find((y) => y.id === x.id) ?? card(x),
+    (x) => cards.find((y) => y.id === x.id) ?? card(x, false, false, false, cap),
   );
   for (const x of cards)
     if (!catalog.some((y) => y.id === x.id)) catalog.push(x);

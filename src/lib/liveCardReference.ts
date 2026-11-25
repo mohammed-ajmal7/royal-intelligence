@@ -46,7 +46,106 @@ const seconds=(v:string|null):number|null => {
   const match=v?.match(/^([\d.]+)\s*sec$/i);
   return match?Number(match[1]):null;
 };
-export type CurrentReference={card:MechanicsCard;updatedAt:string|null;version:string|null;rows:number};
+type FormName = "base" | "evolution" | "hero";
+export type CardReferenceSection = {
+  name: string;
+  facts: Record<string, string>;
+  description?: string;
+  levels: Record<number, Record<string, string>>;
+};
+type CardReferenceForm = {
+  description: string | null;
+  cycles: number | null;
+  sections: CardReferenceSection[];
+};
+export type CardReferenceProfile = {
+  type: string | null;
+  rarity: string | null;
+  arena: string | null;
+  forms: Partial<Record<FormName, CardReferenceForm>>;
+};
+
+function profileSections(html: string): CardReferenceSection[] {
+  const sections = new Map<string, CardReferenceSection>();
+  let name = "Card stats";
+  for (const block of html.matchAll(/<(h[234]|dl|table)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+    const [, tag, content] = block;
+    if (tag[0].toLowerCase() === "h") {
+      if (/\bid="(?:evolved|hero)-title"/i.test(block[0])) continue;
+      const label = htmlText(content);
+      if (/^Unlocked in /i.test(label)) break;
+      name = label || "Card stats";
+      const cost = content.match(/aria-label="(\d+) Elixir"/i)?.[1];
+      if (cost) {
+        const afterHeading = html.slice((block.index ?? 0) + block[0].length);
+        const description = afterHeading.match(/^\s*<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1];
+        sections.set(name, { name, facts: { "Ability elixir": cost }, levels: {},
+          ...(description ? { description: htmlText(description) } : {}) });
+      }
+      continue;
+    }
+    const section = sections.get(name) ?? { name, facts: {}, levels: {} };
+    if (tag.toLowerCase() === "dl") {
+      for (const pair of content.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
+        const label = htmlText(pair[1]);
+        const value = htmlText(pair[2]);
+        if (label && value) section.facts[label] = value;
+      }
+    } else {
+      const cells = (row: string) => [...row.matchAll(/<(?:td|th)\b[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)]
+        .map(cell => htmlText(cell[1]));
+      const rows = [...content.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
+      const headers = cells(rows.find(row => /<th\b[^>]*scope="col"/i.test(row[1]))?.[1] ?? rows[0]?.[1] ?? "");
+      for (const row of rows) {
+        const values = cells(row[1]);
+        const position = values[0]?.match(/^(?:level|lv\.?)\s*(\d{1,2})$/i);
+        if (!position) continue;
+        const level = Number(position[1]);
+        if (level < 1 || level > 30) continue;
+        const fields = section.levels[level] ?? {};
+        for (let column = 1; column < headers.length; column++) {
+          if (headers[column] && values[column] && !/^[—–-]$/.test(values[column])) {
+            fields[headers[column]] = values[column];
+          }
+        }
+        if (Object.keys(fields).length) section.levels[level] = fields;
+      }
+    }
+    if (Object.keys(section.facts).length || Object.keys(section.levels).length) sections.set(name, section);
+  }
+  return [...sections.values()];
+}
+
+function profileFrom(body: string): CardReferenceProfile {
+  const headings = [...body.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)];
+  const unlock = headings.find(item => /^Unlocked in /i.test(htmlText(item[1])));
+  const limit = unlock?.index ?? body.length;
+  const starts = [...body.slice(0, limit).matchAll(/<section\b[^>]*data-form="(evolved|hero)"[^>]*>/gi)];
+  const boundaries = [{ index: 0, name: "base" as const }, ...starts.map(item => ({
+    index: item.index ?? 0,
+    name: (item[1] === "evolved" ? "evolution" : "hero") as FormName,
+  }))];
+  const forms: CardReferenceProfile["forms"] = {};
+  for (const [index, entry] of boundaries.entries()) {
+    const html = body.slice(entry.index, boundaries[index + 1]?.index ?? limit);
+    const description = html.match(/<p\b[^>]*class="[^"]*\b(?:whitespace-pre-line|form-info)\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
+    const cycles = html.match(/<span\b[^>]*>\s*Cycles\s*<\/span>\s*<b\b[^>]*>(\d+)<\/b>/i);
+    forms[entry.name] = {
+      description: description ? htmlText(description[1]) : null,
+      cycles: cycles ? Number(cycles[1]) : null,
+      sections: profileSections(html),
+    };
+  }
+  const facts = htmlText(body.match(/<p\b[^>]*class="facts\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? "");
+  return {
+    type: facts.match(/\b(Tower Troop|Troop|Building|Spell)\b/i)?.[1] ?? null,
+    rarity: facts.match(/\b(Common|Rare|Epic|Legendary|Champion)\b/i)?.[1] ?? null,
+    arena: unlock ? htmlText(unlock[1]).replace(/^Unlocked in /i, "") : null,
+    forms,
+  };
+}
+
+export type CurrentReference={card:MechanicsCard;updatedAt:string|null;version:string|null;rows:number;profile?:CardReferenceProfile};
 export function parseCurrentReference(
   html:string, card:{id:number;name:string}, sourceUrl:string
 ):CurrentReference|null {
@@ -54,13 +153,14 @@ export function parseCurrentReference(
   const title=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   if(!title||clean(htmlText(title[1]))!==clean(card.name))return null;
   const body=html.slice(title.index??0);
+  const profile=profileFrom(body);
   const alt=[...body.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi)]
     .find(x=>/\b(evolution|hero)\b/i.test(htmlText(x[1])));
   const base=alt?.index===undefined?body:body.slice(0,alt.index);
   const tables=[...base.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)]
     .map(x=>tableFrom(x[0])).filter((t):t is DataTable=>t!==null);
   const first=tables.find(t=>t.headers.some(x=>/(hitpoints|damage)/i.test(x)));
-  if(!first)return null;
+  if(!first&&!profile.type&&!profile.forms.base?.description&&!profile.forms.base?.sections.length)return null;
   const otherSections:Record<string,Record<string,number[]>>={};
   const headings=[...body.matchAll(/<h[234]\b[^>]*>([\s\S]*?)<\/h[234]>/gi)]
     .map(h=>({at:h.index??0,label:htmlText(h[1])}));
@@ -74,10 +174,10 @@ export function parseCurrentReference(
       if(label)(group[label]??=[])[row.level-1]=row.stats[i]??0;
     });
   }
-  const fieldLabels=first.headers.slice(1);
+  const fieldLabels=first?.headers.slice(1)??[];
   const series:Record<string,number[]>={};
   const seen=new Set<number>();
-  for(const table of tables.filter(t=>t.headers.join("|")===first.headers.join("|"))) {
+  for(const table of tables.filter(t=>first&&t.headers.join("|")===first.headers.join("|"))) {
     for(const row of table.rows){
       seen.add(row.level);
       fieldLabels.forEach((key,i)=>{
@@ -201,6 +301,5 @@ export function parseCurrentReference(
       )}
     }
   };
-  if(!record.hpByLevel&&!record.damageByLevel&&!Object.keys(series).length)return null;
-  return {card:record,updatedAt,version,rows:seen.size};
+  return {card:record,updatedAt,version,rows:seen.size,profile};
 }

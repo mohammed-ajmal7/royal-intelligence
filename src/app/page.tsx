@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
-import { type MechanicsCatalog, resolveMechanics } from "../lib/mechanics";
+import { type MechanicsCatalog } from "../lib/mechanics";
 import { generateSelfMadeDecks, type SelfMadeResult } from "../lib/selfMadeDeckLab";
 import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
+import { CollectionCardDetails } from "../components/CollectionCardDetails";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 
@@ -180,7 +181,6 @@ export default function Home() {
   const [localBattles,setLocalBattles]=useState<Snapshot["battles"]>([]);
   const [apiReady,setApiReady]=useState<boolean|null>(null);
   const [battleLimit,setBattleLimit]=useState(20);
-  const cardDialog=useRef<HTMLDialogElement>(null);
   async function loadPlayer(raw:string){
     setLoading(true);setError("");
     try{
@@ -248,12 +248,7 @@ export default function Home() {
     (battleFilter==="Wins"&&b.outcome==="win")||
     (battleFilter==="Losses"&&b.outcome==="loss"));
   const activeCard=selectedCard?collection.find(c=>c.id===selectedCard.id)??selectedCard:null;
-  const cardStats=activeCard?resolveMechanics(activeCard,mechanics):null;
   const recent=matches.slice(0,battleLimit);
-  const showCard=tab==="Cards"&&activeCard!==null;
-  useEffect(()=>{
-    if(showCard&&!cardDialog.current?.open)cardDialog.current?.showModal();
-  },[showCard]);
   function chooseTab(next:Tab){
     if(next!==tab){
       const url=new URL(window.location.href);
@@ -334,27 +329,15 @@ export default function Home() {
               <select aria-label="Card filter" value={cardsFilter} onChange={e=>setCardsFilter(e.target.value)}>
                 {["Owned","All","Unowned","Evolutions","Heroes"].map(x=><option key={x}>{x}</option>)}</select>
               <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
-            {activeCard&&<dialog ref={cardDialog} className="ri-card-dialog" aria-labelledby="ri-card-name"
-              onClose={()=>setSelectedCard(null)} onClick={event=>{if(event.target===event.currentTarget)event.currentTarget.close();}}>
-              <section className="ri-card-detail">
-              <button type="button" className="ri-close" aria-label="Close card details" onClick={()=>cardDialog.current?.close()}><X size={20}/></button>
-              <CardArt card={activeCard}/><div><h2 id="ri-card-name">{activeCard.name}</h2>
-                <p>{activeCard.owned?"Level "+(activeCard.level??"unknown"):"Not owned"} · {activeCard.elixir??"?"} elixir · {activeCard.rarity}</p>
-                <div className="ri-mini-metrics">
-                  <span>HP <strong>{digits(cardStats?.hitpoints)}</strong></span>
-                  <span>DPS <strong>{digits(cardStats?.dps)}</strong></span>
-                  <span>Hit damage <strong>{digits(cardStats?.damage)}</strong></span>
-                  <span>Range <strong>{digits(cardStats?.rangeTiles)}</strong></span>
-                </div><p className="ri-muted ri-tiny">{activeCard.roles.join(" · ")||"No role classification"}
-                  {activeCard.evo===true?" · Evolution unlocked":""}{activeCard.hero===true?" · Hero unlocked":""}</p>
-                {activeCard.owned&&<button className="ri-button-secondary"
-                  disabled={deck.some(c=>c.id===activeCard.id)||(deck.length===8&&replaceId===null)}
-                  onClick={()=>{replaceDeckCard(activeCard);cardDialog.current?.close();setSelectedCard(null);chooseTab("Decks")}}>
-                  {deck.some(c=>c.id===activeCard.id)?"Already in deck":
-                    deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck"}
-                 </button>}
-                {mechanicsStatus==="loading"&&<small>Loading stats…</small>}
-              </div></section></dialog>}
+            {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
+              mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
+              onClose={()=>setSelectedCard(null)}
+              deckAction={activeCard.owned&&!activeCard.tower ? {
+                disabled: deck.some(c=>c.id===activeCard.id)||(deck.length===8&&replaceId===null),
+                label: deck.some(c=>c.id===activeCard.id)?"Already in deck":
+                  deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck",
+                run: ()=>{replaceDeckCard(activeCard);setSelectedCard(null);chooseTab("Decks");},
+              } : undefined}/>}
             {!visible.length&&<div className="ri-empty">No cards match these filters.</div>}
             <div className="ri-cards">{visible.map(c=>
               <button type="button" key={c.id} className={"ri-card "+(selectedCard?.id===c.id?"is-selected":"")}

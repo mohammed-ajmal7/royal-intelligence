@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const html=await response.text();
     const result=parseCurrentReference(html,{id,name},sourceUrl);
     if(!result) return NextResponse.json({
-      error:"No matching, unambiguous base-card level table was published at this source.",
+      error:"No matching card information was published at this source.",
       sourceUrl
     },{status:422,headers:{"Cache-Control":"public, s-maxage=900"}});
     cache.set(key,{at:Date.now(),value:result});
