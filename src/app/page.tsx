@@ -11,7 +11,7 @@ import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
-import { filterCollection, type CardCollectionFilter, type CardTypeFilter } from "../lib/collectionFilter";
+import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { elixirAsset } from "../lib/statAssets";
@@ -176,8 +176,9 @@ export default function Home() {
   const [focus,setFocus]=useState<StrategyFocus>("balanced");
   const [maxElixir,setMaxElixir]=useState(5);
   const [cardsQuery,setCardsQuery]=useState("");
-  const [cardsOwnership,setCardsOwnership]=useState<CardCollectionFilter>("Owned");
+  const [cardsOwnership,setCardsOwnership]=useState<CardOwnership>("Owned");
   const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("");
+  const [cardsFormStatus,setCardsFormStatus]=useState<FormStatusFilter>("All");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
   const [replaceId,setReplaceId]=useState<number|null>(null);
   const [battleFilter,setBattleFilter]=useState("All");
@@ -237,8 +238,8 @@ export default function Home() {
   },[tab,mechanicsStatus]);
   const collection=player?.catalog??[];
   const visible=useMemo(()=>filterCollection(collection,{
-    ownership:cardsOwnership,type:cardsFilter,query:cardsQuery,
-  }),[collection,cardsQuery,cardsOwnership,cardsFilter]);
+    ownership:cardsOwnership,type:cardsFilter,formStatus:cardsFormStatus,query:cardsQuery,
+  }),[collection,cardsQuery,cardsOwnership,cardsFilter,cardsFormStatus]);
   const current=player?evaluate(deck,{...defaults,cap:player.cap},mechanics):null;
   const strategy=deck.length===8?assessStrategy(deck,mechanics,{focus}):null;
   const battleSummary=player?stats(localBattles):null;
@@ -324,14 +325,19 @@ export default function Home() {
               <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
             </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
-              <div className="ri-ownership-toggle" role="group" aria-label={cardsFilter ? "Special form status and card ownership" : "Card ownership"}>
-                {(cardsFilter ? (["All","Locked","Unlocked","Owned","Unowned"] as const) : (["Owned","Unowned","All"] as const)).map(ownership=><button key={ownership} type="button"
+              <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
+                {(["Owned","Unowned","All"] as const).map(ownership=><button key={ownership} type="button"
                   aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
-                  onClick={()=>{setCardsOwnership(ownership);setSelectedCard(null);}}>{ownership}</button>)}
+                  onClick={()=>{setCardsOwnership(ownership);setCardsFormStatus("All");setSelectedCard(null);}}>{ownership}</button>)}
               </div>
-              <select aria-label="Card type" value={cardsFilter} onChange={e=>{const next=e.target.value as CardTypeFilter;setCardsFilter(next);if(next&&cardsOwnership==="Unowned")setCardsOwnership("All");setSelectedCard(null);}}>
+              <select aria-label="Card type" value={cardsFilter} onChange={e=>{setCardsFilter(e.target.value as CardTypeFilter);setCardsFormStatus("All");setSelectedCard(null);}}>
                 <option value="">Filter</option>
                 {(["Evolutions","Heroes"] as const).map(x=><option key={x}>{x}</option>)}</select>
+              {cardsFilter&&cardsOwnership==="Owned"&&<div className="ri-ownership-toggle ri-form-status-toggle" role="group" aria-label={cardsFilter+" unlock status"}>
+                {(["All","Unlocked","Locked"] as const).map(status=><button key={status} type="button"
+                  aria-pressed={cardsFormStatus===status} className={cardsFormStatus===status?"is-active":""}
+                  onClick={()=>{setCardsFormStatus(status);setSelectedCard(null);}}>{status}</button>)}
+              </div>}
               <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
             {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
