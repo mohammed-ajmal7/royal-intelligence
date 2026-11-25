@@ -454,3 +454,30 @@
   .ri-form-status-group{grid-column:auto}
   .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{justify-content:stretch}
 }
+
+
+/* Keep collection scope first, with card-type choices beneath it. */
+.ri-card-filter-groups{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+}
+.ri-filter-group{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:12px;
+}
+.ri-filter-group-label{
+  flex:0 0 104px;
+}
+@media(max-width:760px){
+  .ri-card-filter-groups{display:flex;flex-direction:column;align-items:stretch}
+  .ri-filter-group{display:flex;flex-direction:row;align-items:center}
+}
+@media(max-width:480px){
+  .ri-filter-group{flex-direction:column;align-items:stretch;gap:7px}
+  .ri-filter-group-label{flex:auto}
+  .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{width:100%}
+}
