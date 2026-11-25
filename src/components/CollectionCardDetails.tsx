@@ -155,7 +155,11 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setLevelPickerOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setLevelPickerOpen(false);
+      }
     };
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     document.addEventListener("keydown", closeOnEscape);
