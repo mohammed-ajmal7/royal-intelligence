@@ -11,7 +11,7 @@ import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
-import { filterCollection, type CardOwnership, type CardTypeFilter } from "../lib/collectionFilter";
+import { filterCollection, type CardCollectionFilter, type CardTypeFilter } from "../lib/collectionFilter";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { elixirAsset } from "../lib/statAssets";
@@ -176,7 +176,7 @@ export default function Home() {
   const [focus,setFocus]=useState<StrategyFocus>("balanced");
   const [maxElixir,setMaxElixir]=useState(5);
   const [cardsQuery,setCardsQuery]=useState("");
-  const [cardsOwnership,setCardsOwnership]=useState<CardOwnership>("Owned");
+  const [cardsOwnership,setCardsOwnership]=useState<CardCollectionFilter>("Owned");
   const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
   const [replaceId,setReplaceId]=useState<number|null>(null);
@@ -324,8 +324,8 @@ export default function Home() {
               <button className="ri-text-button" onClick={()=>setReplaceId(null)}>Cancel</button>
             </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
-              <div className="ri-ownership-toggle" role="group" aria-label="Card ownership">
-                {(cardsFilter ? (["All","Owned"] as const) : (["Owned","Unowned","All"] as const)).map(ownership=><button key={ownership} type="button"
+              <div className="ri-ownership-toggle" role="group" aria-label={cardsFilter ? "Special form status and card ownership" : "Card ownership"}>
+                {(cardsFilter ? (["All","Locked","Unlocked","Owned","Unowned"] as const) : (["Owned","Unowned","All"] as const)).map(ownership=><button key={ownership} type="button"
                   aria-pressed={cardsOwnership===ownership} className={cardsOwnership===ownership?"is-active":""}
                   onClick={()=>{setCardsOwnership(ownership);setSelectedCard(null);}}>{ownership}</button>)}
               </div>
