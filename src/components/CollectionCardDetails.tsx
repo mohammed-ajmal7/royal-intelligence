@@ -27,12 +27,12 @@ const priority = (label:string) =>
   /range/i.test(label) ? 5 :
   /count/i.test(label) ? 6 : 7;
 
-function FactGrid({ facts, combat = false }: { facts: Record<string,string>; combat?: boolean }) {
+function FactGrid({ facts, combat = false, unavailableFacts = [] }: { facts: Record<string,string>; combat?: boolean; unavailableFacts?: readonly string[] }) {
   const entries=Object.entries(facts);
   if (!entries.length) return null;
   if (combat) entries.sort(([a],[b]) => priority(a)-priority(b));
   return <dl className={"ri-inspector-facts "+(combat?"ri-inspector-combat-facts":"ri-inspector-information-facts")}>
-    {entries.map(([label,value])=><div key={label} className="ri-inspector-fact">
+    {entries.map(([label,value])=><div key={label} className={"ri-inspector-fact" + (unavailableFacts.includes(label) ? " is-unavailable" : "")}>
       {statIconPath(label)&&<img className="ri-inspector-stat-icon" src={statIconPath(label)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
         <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
@@ -185,7 +185,8 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const costIcon=elixirAsset(card.elixir);
   const formStatus = (available: boolean | null, unlocked: boolean | null) =>
     unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Available · not unlocked" : "Available" :
-      available === false || profile ? "No form listed" : "Unknown";
+      available === false || profile ? "Not available" : "Unknown";
+  const heroStatus = formStatus(hasHero, card.hero);
 
   return <dialog ref={dialog} className="ri-card-dialog ri-inspector" aria-labelledby={titleId}
     onClose={onClose} onClick={event => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
@@ -248,10 +249,10 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
             "Star level": starLevel,
             ...(card.maxStarLevel != null ? { "Maximum star level": String(card.maxStarLevel) } : {}),
             Evolution: formStatus(hasEvolution, card.evo),
-            Hero: formStatus(hasHero, card.hero),
+            Hero: heroStatus,
             ...(profile?.arena ? { "Unlock arena": profile.arena } : {}),
             ...(card.roles.length ? { Roles: card.roles.join(", ") } : {}),
-          }}/>
+          }} unavailableFacts={heroStatus === "Not available" ? ["Hero"] : []}/>
 
         </section>
         {sourceUrl && <p className="ri-inspector-note">
