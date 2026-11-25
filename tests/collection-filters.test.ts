@@ -36,12 +36,16 @@ test("Unowned includes only unowned cards while All includes both",()=>{
 test("All plus Evolutions includes every known evolution-capable owned and unowned card",()=>{
   assert.deepEqual(filter("All","Evolutions"),["Archers","Goblin","Valkyrie"]);
   assert.deepEqual(filter("Owned","Evolutions"),["Archers","Goblin"]);
+  assert.deepEqual(filter("Locked","Evolutions"),["Archers"]);
+  assert.deepEqual(filter("Unlocked","Evolutions"),["Goblin"]);
   assert.deepEqual(filter("Unowned","Evolutions"),["Valkyrie"]);
 });
 test("All plus Heroes includes every known hero-capable owned and unowned card",()=>{
   assert.deepEqual(filter("All","Heroes"),["Knight","Bowler","Mini P.E.K.K.A"]);
   assert.deepEqual(filter("Owned","Heroes"),["Knight"]);
   assert.deepEqual(filter("Unowned","Heroes"),["Bowler","Mini P.E.K.K.A"]);
+  assert.deepEqual(filter("Locked","Heroes"),["Knight"]);
+  assert.deepEqual(filter("Unlocked","Heroes"),["Bowler"]);
 });
 test("capability is not mistaken for an unlocked evolution or hero",()=>{
   assert.equal(cards.find(c=>c.name==="Archers")?.evo,false);
@@ -82,15 +86,14 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Evolutions",query:""}).map(c=>c.name),["Archers","Valkyrie"]);
   assert.deepEqual(filterCollection(result.catalog,{ownership:"All",type:"Heroes",query:""}).map(c=>c.name),["Knight"]);
 });
-test("Cards UI has Owned, Unowned and All; type options are only Evolutions and Heroes",()=>{
+test("Cards UI exposes special-form status and ownership filters for Evolutions and Heroes",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
-  assert.match(page,/useState<CardOwnership>\("Owned"\)/);
+  assert.match(page,/useState<CardCollectionFilter>\("Owned"\)/);
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
   assert.match(page,/role="group" aria-label="Card ownership"/);
   assert.match(page,/aria-pressed=\{cardsOwnership===ownership\}/);
   assert.match(page,/cardsFilter \? \(\["All","Owned"\] as const\) : \(\["Owned","Unowned","All"\] as const\)/);
-  assert.match(page,/if\(next&&cardsOwnership==="Unowned"\)setCardsOwnership\("All"\)/);
   assert.match(page,/\["Evolutions","Heroes"\] as const/);
   assert.match(page,/<option value="">Filter<\/option>/);
   assert.match(page,/aria-label="Card type"/);
