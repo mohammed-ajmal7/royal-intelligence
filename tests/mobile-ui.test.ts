@@ -35,7 +35,33 @@ test("mobile controls, safe areas and deck grids are usable",()=>{
 
 test("lightweight neutral design does not need network fonts or heavy visual layers",()=>{
   assert.ok(!css.includes("@import url("));
-  assert.match(css,/--ri-bg:#f8fafc/);
+  assert.match(css,/--ri-bg:#f7f8fa/);
   assert.match(css,/\.ri-panel/);
   assert.match(css,/\.ri-card/);
+});
+
+test("enterprise layout avoids repeated explanatory copy and duplicate shortcut panels",()=>{
+  assert.doesNotMatch(page,/ROYALEON \/ \{tab\.toUpperCase\(\)\}/);
+  assert.doesNotMatch(page,/className="ri-shortcuts"/);
+  assert.doesNotMatch(page,/className="ri-deck-hint"/);
+  assert.doesNotMatch(page,/Enter your Clash Royale player tag to see your cards/);
+  assert.match(page,/aria-label="Search cards"/);
+  assert.match(page,/className="ri-filter-count" aria-live="polite"/);
+  assert.match(page,/Role breakdown/);
+  assert.match(page,/How recommendations work/);
+  assert.match(css,/--ri-border:#e4e7ec/);
+  assert.match(css,/\.ri-stat-grid\{display:grid/);
+  assert.match(css,/\.ri-disclosure/);
+  assert.match(css,/\.ri-filter-count/);
+});
+
+test("required compliance, access to advanced tools and original features remain",()=>{
+  assert.match(page,/Not endorsed by Supercell/);
+  assert.match(page,/aria-label="Main navigation"/);
+  assert.match(page,/aria-label="Mobile navigation"/);
+  assert.match(page,/generateSelfMadeDecks\(/);
+  assert.match(page,/API_RESOURCES/);
+  assert.match(page,/buildDeckPlaybook\(/);
+  assert.match(page,/className="ri-battles"/);
+  assert.match(legacy,/Self-Made Deck Generator/);
 });

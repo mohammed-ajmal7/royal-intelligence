@@ -117,7 +117,7 @@ test("advanced workspace preserves the full Deck Item inspector",()=>{
   const page=readFileSync(new URL("../src/components/LegacyWorkspace.tsx",import.meta.url),"utf8");
   const home=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   assert.match(home,/const advancedPath="\/advanced"\+playerParam/);
-  assert.match(home,/href=\{advancedPath\}/);
+  assert.match(home,/href=\{labPath\}/);
   const component=readFileSync(new URL("../src/components/DeckItemView.tsx",import.meta.url),"utf8");
   assert.match(page,/\["Deck Item", ListOrdered\]/);
   assert.match(page,/page === "Deck Item"/);

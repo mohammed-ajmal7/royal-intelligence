@@ -1,18 +1,18 @@
 
 /* Advanced workspace surfaces share the dashboard's type and accent. */
 .royal-app {
-  --bg: #101827;
-  --panel: #182334;
-  --panel2: #1d2a3d;
-  --line: #35455c;
-  --text: #f3f6fc;
-  --muted: #b9c6d9;
-  --purple: #86a7ff;
-  --gold: #f6d58a;
-  --green: #72ddba;
-  --advanced-field: #111a2a;
-  --advanced-blue: #3764ce;
-  --advanced-selected: #243d68;
+  --bg: #111821;
+  --panel: #192330;
+  --panel2: #202e3d;
+  --line: #334154;
+  --text: #f3f5f8;
+  --muted: #b0bdcc;
+  --purple: #8aace8;
+  --gold: #e3c990;
+  --green: #86cfb3;
+  --advanced-field: #151e29;
+  --advanced-blue: #4168af;
+  --advanced-selected: #2b3f5b;
   color-scheme: dark;
   background: var(--bg);
   color: var(--text);
@@ -185,7 +185,7 @@
 .royal-app .toast { background: var(--panel2); border-color: var(--line); color: var(--text); box-shadow: 0 6px 24px #0005; }
 @media (max-width: 950px) {
   .royal-app .sidebar:not(.open) { visibility: hidden; pointer-events: none; }
-  .royal-app .sidebar.open { box-shadow: 12px 0 50px #0007; }
+  .royal-app .sidebar.open { box-shadow: 0 12px 30px #0005; }
   .royal-app .mobile-bottom-nav {
     background: var(--panel);
     border-top: 1px solid var(--line);
@@ -211,3 +211,19 @@
   .royal-app .card-tile .art { min-width: 0; }
   .royal-app input:not([type="checkbox"]):not([type="range"]), .royal-app select, .royal-app textarea { font-size: 1rem; }
 }
+
+/* Quiet technical workspace: advanced controls retain their functionality. */
+.royal-app :where(h1,h2,h3,h4){letter-spacing:-.025em}
+.royal-app .page-heading h1{font-size:clamp(22px,2.5vw,27px);letter-spacing:-.035em;font-weight:700}
+.royal-app .page-heading .eyebrow{display:none}
+.royal-app .page-heading p{line-height:1.45}
+.royal-app .sidebar nav button{min-height:40px;font-weight:550;border-radius:6px}
+.royal-app .sidebar nav button.active{font-weight:650}
+.royal-app .panel,.royal-app .hero,.royal-app .metric{border-radius:9px;box-shadow:none}
+.royal-app .panel-head{padding-bottom:10px}
+.royal-app .panel.promo{display:none}
+.royal-app .btn{border-radius:7px;font-weight:600}
+.royal-app .topbar,.royal-app .account-bar{box-shadow:none}
+.royal-app :where(.panel,.metric,.hero) :where(p,small){line-height:1.5}
+.royal-app :where(.smart-overview,.reasoned-hero,.self-lab-candidate,.deck-play-phase){box-shadow:none}
+@media(max-width:950px){.royal-app .mobile-bottom-nav{box-shadow:none}}

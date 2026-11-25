@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, RefreshCw, Search, Shield, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -14,12 +14,12 @@ import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
-const NAV: {name:Tab;Icon:typeof Trophy;description:string}[] = [
-  {name:"Overview",Icon:Trophy,description:"Your account at a glance"},
-  {name:"Cards",Icon:Layers3,description:"Owned cards, levels and details"},
-  {name:"Decks",Icon:Swords,description:"Build and compare your eight cards"},
-  {name:"Battles",Icon:History,description:"Understand recent matches"},
-  {name:"Explore",Icon:Search,description:"Public Clash Royale API"},
+const NAV: {name:Tab;Icon:typeof Trophy}[] = [
+  {name:"Overview",Icon:Trophy},
+  {name:"Cards",Icon:Layers3},
+  {name:"Decks",Icon:Swords},
+  {name:"Battles",Icon:History},
+  {name:"Explore",Icon:Search},
 ];
 const fmt=(v:number|null|undefined)=>v==null?"—":v.toLocaleString("en-IN");
 const text=(v:unknown)=>typeof v==="string"||typeof v==="number"?String(v):"";
@@ -108,18 +108,17 @@ function ApiExplorer({playerTag,clanTag}:{playerTag:string;clanTag:string}){
   const data=asObject(result?.data);
   const cursors=asObject(asObject(data.paging).cursors);
   return <div className="ri-stack">
-    <div className="ri-section-title"><div><h1>Explore game data</h1><p>Look up players, clans, tournaments and rankings.</p></div>
-      <a className="ri-text-link" href="https://developer.clashroyale.com/#/documentation" target="_blank" rel="noreferrer">Official docs <ExternalLink size={14}/></a></div>
+    <div className="ri-section-title ri-explore-heading"><h1>Explore</h1>
+      <a className="ri-text-link" href="https://developer.clashroyale.com/#/documentation" target="_blank" rel="noreferrer">API docs <ExternalLink size={14}/></a></div>
     <div className="ri-panel">
       <div className="ri-chip-row">{(["Player","Clan","Tournament","Rankings","Game"] as const).map(x=>
         <button type="button" key={x} className={"ri-chip "+(group===x?"is-active":"")}
           aria-pressed={group===x} disabled={busy} onClick={()=>{setGroup(x);const first=API_RESOURCES.find(y=>y.group===x)!;choose(first.id);}}>{x}</button>)}</div>
-      <label className="ri-label" htmlFor="ri-resource">What do you want to see?</label>
+      <label className="ri-label" htmlFor="ri-resource">Resource</label>
       <select id="ri-resource" disabled={busy} value={resource} onChange={e=>choose(e.target.value)}>
         {available.map(x=><option value={x.id} key={x.id}>{x.title}</option>)}
       </select>
-      <p className="ri-subtle">{selected.description}</p>
-      <form className="ri-explorer-form" onSubmit={e=>{e.preventDefault();void load();}}>
+       <form className="ri-explorer-form" onSubmit={e=>{e.preventDefault();void load();}}>
         {selected.needs.map(field=><label key={field} className="ri-field">
           <span>{field==="tag"?"Player, clan or tournament tag":field==="name"?"Search name":field==="location"?"Location ID":field==="season"?"Season (YYYY-MM)":"Leaderboard ID"}</span>
           <input required disabled={busy} value={values[field]} onChange={e=>update(field,e.target.value)}
@@ -133,8 +132,8 @@ function ApiExplorer({playerTag,clanTag}:{playerTag:string;clanTag:string}){
     </div>
     {error&&<div className="ri-alert" role="alert">{error}</div>}
     {result&&<section className="ri-panel">
-      <div className="ri-row ri-space"><div><h3>{selected.title}</h3><p className="ri-muted ri-tiny">Supercell API · fetched {new Date(result.fetchedAt).toLocaleString()}</p></div>
-        <span className="ri-status">Read only</span></div>
+      <div className="ri-row ri-space"><div><h3>{selected.title}</h3><p className="ri-muted ri-tiny">{new Date(result.fetchedAt).toLocaleString()}</p></div>
+ </div>
       <RecordList value={result.data}/>
       {selected.list&&(typeof cursors.after==="string"||cursor)&&
         <div className="ri-row ri-pagination">
@@ -149,7 +148,7 @@ function PlayGuide({deck,mechanics,focus}:{deck:Card[];mechanics:MechanicsCatalo
   const guide=buildDeckPlaybook(deck,mechanics,focus);
   if(!guide)return null;
   return <details className="ri-panel ri-guide"><summary><BookOpen size={18}/> How to play this deck <ChevronRight size={16}/></summary>
-    <p className="ri-subtle">{guide.identity}</p>
+ 
     {[guide.opening,guide.single,guide.double,guide.finishing].map(x=>
       <div className="ri-guide-step" key={x.heading}><strong>{x.heading}</strong><p>{x.objective}</p>
         <ul>{x.steps.slice(0,3).map((v,i)=><li key={i}>{v}</li>)}</ul></div>)}
@@ -157,7 +156,7 @@ function PlayGuide({deck,mechanics,focus}:{deck:Card[];mechanics:MechanicsCatalo
       {guide.matchups.map(x=><p key={x.id}><strong>{x.name}:</strong> {x.instructions.join(" ")}</p>)}
       {guide.cardJobs.map(x=><p key={x.id}><strong>{x.name}:</strong> {x.job} — {x.when}</p>)}
     </details>
-    <p className="ri-footnote">This is a role-based guide, not a guarantee of a match result.</p>
+ 
   </details>;
 }
 
@@ -285,7 +284,7 @@ export default function Home() {
         <nav className="ri-nav" aria-label="Main navigation">{NAV.map(({name})=>
           <button key={name} type="button" onClick={()=>chooseTab(name)}
             className={tab===name?"is-active":""} aria-current={tab===name?"page":undefined}>{name}</button>)}</nav>
-        <a href={labPath} className="ri-advanced"><FlaskConical size={17}/> <span>Advanced tools</span></a>
+        <a href={labPath} className="ri-advanced"><FlaskConical size={16}/> <span>Advanced</span></a>
       </div>
     </header>
     <main className="ri-main">
@@ -296,45 +295,36 @@ export default function Home() {
           <button type="submit" disabled={loading}><Search size={16}/>{loading?"Loading…":"Load player"}</button>
         </form>
         <div className="ri-row ri-statuses" aria-live="polite">
-          <span className={"ri-status "+(player?"ri-status-good":"")}>{loading?"Loading player…":player?(player.stale?"Saved profile: ":"Connected: ")+player.name:apiReady===false?"API unavailable":"No player selected"}</span>
+          {(loading||apiReady===false||player?.stale)&&<span className="ri-status">{loading?"Loading…":apiReady===false?"API unavailable":"Saved profile"}</span>}
           {player&&<button className="ri-refresh" onClick={()=>void loadPlayer(player.tag)} disabled={loading} aria-label="Refresh player data"><RefreshCw size={15}/></button>}
         </div>
       </div>
       {error&&<div className="ri-alert" role="alert">{error}</div>}
       {tab==="Explore"?<ApiExplorer playerTag={player?.tag??tagInput} clanTag={text(asObject(player?.raw).clan&&asObject(asObject(player?.raw).clan).tag)}/>:<>
-        <div className="ri-heading"><div><p className="ri-eyebrow">ROYALEON / {tab.toUpperCase()}</p>
-          <h1>{tab==="Overview"?"Player overview":tab==="Cards"?"Card collection":tab==="Decks"?"Deck builder":"Battle history"}</h1>
-          <p>{tab==="Overview"?"Trophies, your current deck and recent results.":NAV.find(x=>x.name===tab)?.description}</p>
-        </div>{player&&<span className="ri-tag">#{player.tag.replace(/^#/,"")}</span>}</div>
-        {!player?<div className="ri-panel ri-welcome" aria-busy={loading}><div className="ri-welcome-icon"><Crown size={26}/></div>
-          <h2>{loading?"Loading your profile":"Start with your player tag"}</h2><p>{loading?"Retrieving your cards, deck and recent battles.":"Enter your Clash Royale player tag to see your cards, decks and recent battles."}</p>
+        <div className="ri-heading"><h1>{tab==="Overview"?"Overview":tab==="Cards"?"Cards":tab==="Decks"?"Decks":"Battles"}</h1>
+          {player&&<span className="ri-tag">#{player.tag.replace(/^#/,"")}</span>}</div>
+        {!player?<div className="ri-welcome" aria-busy={loading}>
+          <Crown size={27} aria-hidden="true"/><h2>{loading?"Loading profile…":"Enter a player tag above"}</h2>
         </div>:<>
           {tab==="Overview"&&<div className="ri-stack">
             <div className="ri-profile"><ProfileAvatar playerTag={player.tag} playerName={player.name}/>
-              <div><p className="ri-eyebrow">PLAYER PROFILE</p><h2>{player.name}</h2>
-                <p>{player.arena} {player.clan?"· "+player.clan:""} · King Tower {player.kingLevel??"—"}</p></div>
-              <span className={"ri-status "+(!player.stale?"ri-status-good":"")}>{player.stale?"Saved profile":"Live profile"}</span></div>
+              <div><h2>{player.name}</h2>
+                <p>{player.arena} {player.clan?"· "+player.clan:""} · King {player.kingLevel??"—"}</p></div>
+              {player.stale&&<span className="ri-status">Saved</span>}</div>
             <div className="ri-stat-grid">
               <Stat label="Trophies" value={fmt(player.trophies)}/>
               <Stat label="Personal best" value={fmt(player.bestTrophies)}/>
-              <Stat label="Cards owned" value={player.cards.filter(c=>!c.tower).length} hint={"of "+player.catalog.filter(c=>!c.tower).length+" catalog entries"}/>
-              <Stat label="Recent win rate" value={battleSummary&&battleSummary.wins+battleSummary.losses?
-                Math.round(100*battleSummary.wins/(battleSummary.wins+battleSummary.losses))+"%":"—"} hint="Observed battles only"/>
+              <Stat label="Cards" value={player.cards.filter(c=>!c.tower).length} hint={"of "+player.catalog.filter(c=>!c.tower).length}/>
+              <Stat label="Win rate" value={battleSummary&&battleSummary.wins+battleSummary.losses?
+                Math.round(100*battleSummary.wins/(battleSummary.wins+battleSummary.losses))+"%":"—"}/>
             </div>
-            <section className="ri-panel"><div className="ri-section-title"><div><h2>Current deck</h2><p>{player.deck.length===8?(currentDeck?.avg?.toFixed(2)+" average elixir · "+currentWinCondition):"No complete deck found"}</p></div>
-              <button className="ri-text-button" onClick={()=>chooseTab("Decks")}>View deck</button></div>
+            <section className="ri-panel"><div className="ri-section-title"><div><h2>Current deck</h2><p>{player.deck.length===8?(currentDeck?.avg?.toFixed(2)+" elixir · "+currentWinCondition):"No deck"}</p></div>
+              <button className="ri-text-button" onClick={()=>chooseTab("Decks")}>Edit <ChevronRight size={15}/></button></div>
               <MiniDeck cards={player.deck} select={c=>{setSelectedCard(c);chooseTab("Cards")}}/>
             </section>
-            <div className="ri-shortcuts">
-              <button onClick={()=>chooseTab("Cards")}><Layers3 size={20}/><span><strong>My cards</strong><small>Levels and Evolutions</small></span><ChevronRight size={18}/></button>
-              <button onClick={()=>chooseTab("Decks")}><FlaskConical size={20}/><span><strong>Find a deck</strong><small>Owned-card numerical comparison</small></span><ChevronRight size={18}/></button>
-              <button onClick={()=>chooseTab("Battles")}><History size={20}/><span><strong>Recent battles</strong><small>Results and opponents</small></span><ChevronRight size={18}/></button>
-              <button onClick={()=>chooseTab("Explore")}><BarChart3 size={20}/><span><strong>More game data</strong><small>Clans, events and rankings</small></span><ChevronRight size={18}/></button>
-            </div>
             {player.warnings.length>0&&<details className="ri-muted ri-tiny"><summary>Data notes ({player.warnings.length})</summary><ul>{player.warnings.map((w,i)=><li key={i}>{w}</li>)}</ul></details>}
           </div>}
           {tab==="Cards"&&<div className="ri-stack">
-            <p className="ri-muted" aria-live="polite">{visible.length} cards shown. Select a card for details.</p>
             {mechanicsStatus==="loading"&&<p className="ri-muted ri-tiny">Loading optional combat reference…</p>}
             {replaceId!==null&&<div className="ri-status ri-replace-note">
               Choose a card to replace {deck.find(c=>c.id===replaceId)?.name??"the selected slot"}.
@@ -342,12 +332,13 @@ export default function Home() {
             </div>}
             <div className="ri-filterbar"><input aria-label="Search cards" placeholder="Search cards…" value={cardsQuery} onChange={e=>setCardsQuery(e.target.value)}/>
               <select aria-label="Card filter" value={cardsFilter} onChange={e=>setCardsFilter(e.target.value)}>
-                {["Owned","All","Unowned","Evolutions","Heroes"].map(x=><option key={x}>{x}</option>)}</select></div>
+                {["Owned","All","Unowned","Evolutions","Heroes"].map(x=><option key={x}>{x}</option>)}</select>
+              <span className="ri-filter-count" aria-live="polite">{visible.length}</span></div>
             {activeCard&&<dialog ref={cardDialog} className="ri-card-dialog" aria-labelledby="ri-card-name"
               onClose={()=>setSelectedCard(null)} onClick={event=>{if(event.target===event.currentTarget)event.currentTarget.close();}}>
               <section className="ri-card-detail">
               <button type="button" className="ri-close" aria-label="Close card details" onClick={()=>cardDialog.current?.close()}><X size={20}/></button>
-              <CardArt card={activeCard}/><div><p className="ri-eyebrow">CARD DETAILS</p><h2 id="ri-card-name">{activeCard.name}</h2>
+              <CardArt card={activeCard}/><div><h2 id="ri-card-name">{activeCard.name}</h2>
                 <p>{activeCard.owned?"Level "+(activeCard.level??"unknown"):"Not owned"} · {activeCard.elixir??"?"} elixir · {activeCard.rarity}</p>
                 <div className="ri-mini-metrics">
                   <span>HP <strong>{digits(cardStats?.hitpoints)}</strong></span>
@@ -362,7 +353,7 @@ export default function Home() {
                   {deck.some(c=>c.id===activeCard.id)?"Already in deck":
                     deck.length===8?(replaceId!==null?"Replace selected card":"Choose a slot to replace in Decks"):"Add to deck"}
                  </button>}
-                <small>{mechanicsStatus==="loading"?"Loading combat stats…":"Combat stats use community reference data where available."}</small>
+                {mechanicsStatus==="loading"&&<small>Loading stats…</small>}
               </div></section></dialog>}
             {!visible.length&&<div className="ri-empty">No cards match these filters.</div>}
             <div className="ri-cards">{visible.map(c=>
@@ -371,11 +362,10 @@ export default function Home() {
                 <small>{c.owned?"Lv "+(c.level??"?"):"Locked"}{c.evo===true?" · Evo":""}{c.hero===true?" · Hero":""}</small></button>)}</div>
           </div>}
           {tab==="Decks"&&<div className="ri-stack">
-            <section className="ri-panel"><div className="ri-section-title"><div><h2>Your selected deck</h2>
-              <p>{deck.length}/8 cards · {current?.avg?.toFixed(2)??"—"} average elixir · {current?.cycle??"—"} four-card cycle</p></div>
+            <section className="ri-panel"><div className="ri-section-title"><div><h2>Selected deck</h2>
+              <p>{deck.length}/8 · {current?.avg?.toFixed(2)??"—"} elixir · {current?.cycle??"—"} cycle</p></div>
               {deck.length===8&&<a href={deckLink(deck)} className="ri-button-secondary" target="_blank" rel="noreferrer">Open in game <ExternalLink size={14}/></a>}</div>
               <MiniDeck cards={deck} select={c=>setSelectedCard(c)} active={selectedCard?.id}/>
-              <p className="ri-deck-hint">{deck.length===8?"Select a card to replace or remove it.":"Add a card from your collection to fill an open slot."}</p>
               {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsFilter("Owned");chooseTab("Cards");}}>Browse owned cards</button>}
               {selectedCard&&deck.some(c=>c.id===selectedCard.id)&&<div className="ri-row ri-selection">
                 <span>{selectedCard.name} selected</span>
@@ -386,30 +376,30 @@ export default function Home() {
                 <span>Tank defense <strong>{strategy.scenarios.find(x=>x.id==="tanks")?.score??"—"}/100</strong></span>
                 <span>Swarm defense <strong>{strategy.scenarios.find(x=>x.id==="swarms")?.score??"—"}/100</strong></span></div>}
             </section>
-            <section className="ri-panel"><div className="ri-section-title"><div><h2>Build from your collection</h2><p>Compare your owned cards by role, level and combat stats.</p></div></div>
+            <section className="ri-panel"><div className="ri-section-title"><h2>Deck generator</h2></div>
               <div className="ri-generator-form">
-                <label className="ri-field"><span>What matters most?</span>
+                <label className="ri-field"><span>Playstyle</span>
                   <select value={focus} onChange={e=>{setFocus(e.target.value as StrategyFocus);setSelf(null);}}>
                     {focusChoices.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
-                <label className="ri-field ri-field-small"><span>Maximum average elixir</span>
+                <label className="ri-field ri-field-small"><span>Max elixir</span>
                   <select value={maxElixir} onChange={e=>{setMaxElixir(Number(e.target.value));setSelf(null);}}>
                     {[3,3.5,4,4.5,5,5.5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></label>
                 <button type="button" className="ri-button" disabled={mechanicsStatus==="loading"||mechanicsStatus==="idle"} onClick={()=>{
                   const res=generateSelfMadeDecks(player.cards,{...defaults,maxElixir,cap:player.cap},mechanics,focus);
                   setSelf(res);if(res.candidates[0])setDeck(res.candidates[0].cards);
-                }}>{mechanicsStatus==="loading"||mechanicsStatus==="idle"?"Loading card stats…":"Build an owned-card deck"}</button>
+                }}>{mechanicsStatus==="loading"||mechanicsStatus==="idle"?"Loading card stats…":"Generate deck"}</button>
               </div>
               {mechanicsStatus==="unavailable"&&<p className="ri-alert">The external combat reference is unavailable. Only your owned level, costs and classified roles can be compared.</p>}
-              <p className="ri-footnote">Compares suitable owned cards for win condition, mini tank, air, air+splash, tank killer, ground defense, small spell and heavy spell. Rank is a heuristic, not a win probability.</p>
+              <details className="ri-disclosure"><summary>How recommendations work</summary><p>Uses owned cards, levels, role coverage and available combat data. Scores are estimates, not win probabilities.</p></details>
               {self&&<div className="ri-generated">
                 {self.issues.map((s,i)=><div className="ri-alert" key={i}>{s}</div>)}
-                <p className="ri-muted ri-tiny">{self.eligibleCardCount} owned cards inspected · {self.candidates.length} possible complete teams</p>
+                <p className="ri-muted ri-tiny">{self.eligibleCardCount} eligible cards · {self.candidates.length} teams</p>
                 {self.candidates.map((result,i)=><div className="ri-candidate" key={i}>
                   <div className="ri-row ri-space"><strong>Team {i+1} · {result.score.toFixed(1)}/100 suitability</strong>
                     <button className="ri-text-button" onClick={()=>setDeck(result.cards)}>{result.cards.map(c=>c.id).join(",")===deck.map(c=>c.id).join(",")?"Selected":"Choose team"} <Check size={15}/></button></div>
                   <MiniDeck cards={result.cards}/>
                   {result.specialSlots.length>0&&<p className="ri-muted ri-tiny">Suggested forms: {result.specialSlots.map(x=>x.slot+" — "+x.card).join(" · ")}</p>}
-                  <details className="ri-role-details"><summary>Why these eight cards? <ChevronRight size={16}/></summary>
+                  <details className="ri-role-details"><summary>Role breakdown <ChevronRight size={16}/></summary>
                     {result.slots.map(slot=><details key={slot.id} className="ri-role-row"><summary><strong>{slot.label}</strong><span>{slot.chosen.card.name} · {slot.chosen.grade}/100</span></summary>
                       <p>Lv {slot.chosen.card.level} · HP {digits(slot.chosen.hp)} · DPS {digits(slot.chosen.dps)} · Damage {digits(slot.chosen.damage)} · Numeric coverage {Math.round(slot.chosen.numericCoverage*100)}%</p>
                       <p>{slot.chosen.evidence}</p>
@@ -419,9 +409,8 @@ export default function Home() {
                 </div>)}
               </div>}
             </section>
-            <section className="ri-panel ri-advanced-panel"><Shield size={20}/><div><h3>Build from Ranked decks</h3>
-              <p>Scan the current top 100, 200 or 300 players and adapt their decks to your collection.</p></div>
-              <a href={labPath} className="ri-button-secondary">Open Ranked Deck Lab</a></section>
+            <section className="ri-panel ri-advanced-panel"><div><h3>Ranked Deck Lab</h3></div>
+              <a href={labPath} className="ri-button-secondary">Open <ChevronRight size={15}/></a></section>
           </div>}
           {tab==="Battles"&&<div className="ri-stack">
             <div className="ri-stat-grid ri-stat-grid-small"><Stat label="Wins" value={battleSummary?.wins??0}/><Stat label="Losses" value={battleSummary?.losses??0}/>
@@ -438,12 +427,11 @@ export default function Home() {
             </details>)}</div>
             {!recent.length&&<div className="ri-empty">No battles match this filter or the game API has not returned them.</div>}
             {matches.length>recent.length&&<button className="ri-button-secondary" onClick={()=>setBattleLimit(n=>n+20)}>Show more matches ({recent.length} of {matches.length})</button>}
-            <p className="ri-footnote">The official API returns battle summaries, not move-by-move replay or troop placement data. Saved history is local to this browser.</p>
           </div>}
         </>}
       </>}
-      <footer className="ri-footer"><span>Royaleon · Unofficial Clash Royale fan tool. Not affiliated with Supercell.</span>
-        <div><a href="https://developer.clashroyale.com/#/documentation" target="_blank" rel="noreferrer">API docs</a><a href={advancedPath}>Advanced tools</a></div></footer>
+      <footer className="ri-footer"><span>Unofficial fan project · Not endorsed by Supercell</span>
+        <a href="https://developer.clashroyale.com/#/documentation" target="_blank" rel="noreferrer">Supercell API</a></footer>
     </main>
     <nav className="ri-mobile-nav" aria-label="Mobile navigation">{NAV.map(({name,Icon})=>
       <button key={name} aria-current={tab===name?"page":undefined} className={tab===name?"is-active":""}
