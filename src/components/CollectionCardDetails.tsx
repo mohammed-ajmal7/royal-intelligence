@@ -210,20 +210,44 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
         <button type="button" className="ri-close" aria-label="Close card details" onClick={() => dialog.current?.close()}><X size={21}/></button>
       </header>
       <div className="ri-inspector-body">
-        <div className="ri-inspector-controls">
-          {selectable.length > 1 && <div className="ri-inspector-forms" role="group" aria-label="Card form preview">
+        {selectable.length > 1 && <div className="ri-inspector-controls">
+          <div className="ri-inspector-forms" role="group" aria-label="Card form preview">
             {selectable.map(option => <button key={option} type="button" aria-pressed={form === option}
               onClick={() => setForm(option)}>{formLabels[option]}</button>)}
-          </div>}
-          <label className="ri-inspector-level">Card level
-            <select value={viewing} onChange={event => setLevel(Number(event.target.value))}>
-              {Array.from({ length: cap - minimum + 1 }, (_, index) => minimum + index)
-                .map(value => <option key={value} value={value}>{value}{value === card.level ? " (owned)" : ""}</option>)}
-            </select>
-          </label>
+          </div>
+        </div>}
+        <section className="ri-level-design" aria-labelledby="ri-level-design-title">
+          <h2 id="ri-level-design-title" className="ri-level-design-heading">Recommended design</h2>
+          <div className="ri-level-panel">
+            <div className="ri-level-panel-header">
+              <div>
+                <h3>Card Level</h3>
+                <p>Choose a level to view card stats</p>
+              </div>
+              <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
+                {card.owned && card.level != null ? "OWNED · " + card.level : card.owned ? "OWNED" : "NOT OWNED"}
+              </span>
+            </div>
+            <div className="ri-level-grid" role="group" aria-label="Choose card level">
+              {Array.from({ length: cap - minimum + 1 }, (_, index) => minimum + index).map(value => {
+                const isOwned = card.owned && value === card.level;
+                return <button key={value} type="button"
+                  className={"ri-level-option" + (viewing === value ? " is-selected" : "") + (isOwned ? " is-owned" : "")}
+                  aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your owned level" : "")}
+                  onClick={() => { setLevel(value); setAllLevels(false); }}>
+                  <strong>{value}</strong>
+                  <span>{isOwned ? "✓ OWNED" : "LEVEL"}</span>
+                </button>;
+              })}
+            </div>
+            <div className="ri-level-panel-footer">
+              <span>Your actual card level</span>
+              <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Owned · level unknown" : "Not owned"}</strong>
+            </div>
+          </div>
           {hasRows && <button type="button" className="ri-button-secondary ri-inspector-all-levels" aria-pressed={allLevels}
             onClick={() => setAllLevels(!allLevels)}>{allLevels ? "Selected level" : "All levels"}</button>}
-        </div>
+        </section>
 
         {referenceStatus === "loading" && <p className="ri-inspector-note" role="status">Loading the card reference…</p>}
         {referenceStatus === "unavailable" && <div className="ri-inspector-notice">
