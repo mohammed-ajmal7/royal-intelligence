@@ -115,7 +115,7 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   assert.match(page,/type={cardsFilter} status={cardsFormStatus}/);
   assert.match(page,/cardsFilter==="Heroes"\|\|cardsFilter==="Evolutions"/);
   assert.match(page,/Browse all \{label\} cards/);
-  assert.match(page,/setCardsOwnership\("All"\);setCardsFormStatus\("All"\)/);
+  assert.match(page,/onShowAll=\{\(\)=>\{setCardsOwnership\("Owned"\);setCardsFormStatus\("All"\);setSelectedCard\(null\);\}\}/);
   assert.match(page,/No cards match these filters/);
   assert.match(page,/<svg viewBox="0 0 180 150"/);
   assert.match(page,/F2EDFC|F2/);
