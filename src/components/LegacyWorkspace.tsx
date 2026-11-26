@@ -1547,7 +1547,7 @@ export default function App() {
                 </div>
                 <div className="reasoned-focus-picker">
                   <div>
-                    <label htmlFor="deck-reasoning-focus">Matchup to prioritize</label>
+                    <label htmlFor="deck-reasoning-focus">Playstyle</label>
                   </div>
                   <select id="deck-reasoning-focus" value={focus}
                     onChange={event=>{
@@ -1558,6 +1558,7 @@ export default function App() {
                     {focusChoices.map(item=><option key={item.value}
                       value={item.value}>{item.label}</option>)}
                   </select>
+                  <small>{focusChoices.find(item=>item.value===focus)?.explanation}</small>
                 </div>
                 <div className="actions">
                   <button className="btn smart-find" disabled={busy || loading || s.mode !== "live" || s.cards.length < 8}
