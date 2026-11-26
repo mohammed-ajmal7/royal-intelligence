@@ -50,15 +50,15 @@ test("the deck generator exposes the six defined playstyles and matching playboo
   ]);
   for(const choice of focusChoices){
     assert.equal(assessStrategy(collection,null,{focus:choice.value}).focus,choice.value);
-    const guide=buildDeckPlaybook(collection,null,choice.value);
+    const guide=buildDeckPlaybook(collection.slice(0,8),null,choice.value);
     assert.ok(guide,choice.label+" should produce a playbook");
     assert.ok(guide.identity.includes("Playstyle:"),choice.label+" should inform playbook guidance");
   }
-  assert.match(buildDeckPlaybook(collection,null,"fast-attack")!.identity,/quick, low-commitment attacks/);
-  assert.match(buildDeckPlaybook(collection,null,"heavy-push")!.identity,/Build one supported push/);
-  assert.match(buildDeckPlaybook(collection,null,"spell-bait")!.identity,/key spell/);
-  assert.match(buildDeckPlaybook(collection,null,"bridge-pressure")!.identity,/bridge pressure/);
-  assert.match(buildDeckPlaybook(collection,null,"defend-counterattack")!.identity,/Defend with the most efficient answer/);
+  assert.match(buildDeckPlaybook(collection.slice(0,8),null,"fast-attack")!.identity,/quick, low-commitment attacks/);
+  assert.match(buildDeckPlaybook(collection.slice(0,8),null,"heavy-push")!.identity,/Build one supported push/);
+  assert.match(buildDeckPlaybook(collection.slice(0,8),null,"spell-bait")!.identity,/key spell/);
+  assert.match(buildDeckPlaybook(collection.slice(0,8),null,"bridge-pressure")!.identity,/bridge pressure/);
+  assert.match(buildDeckPlaybook(collection.slice(0,8),null,"defend-counterattack")!.identity,/Defend with the most efficient answer/);
 });
 
 test("self-made eight roles are distinct, owned, and do not borrow global usage", () => {
