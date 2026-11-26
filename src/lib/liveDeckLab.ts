@@ -195,7 +195,7 @@ export async function recommendFromTop100(collection:Card[], q:Constraints, meta
   for(const {cards,source,method,assignments} of seeds.values()) {
     if(rows.length%20===0)await yieldToUI();
     const strategy=assessStrategy(cards,mechanics,{...reasoning,
-      focus:q.mode==="Fast cycle"&&reasoning.focus==="balanced"?"cycle":reasoning.focus});
+      focus:q.mode==="Fast cycle"&&reasoning.focus==="balanced"?"fast-attack":reasoning.focus});
     const targeted=strategy.scenarios.filter(s=>q.mode==="Maximum defense"?
       ["air","tanks","ground","swarms"].includes(s.id):q.mode==="Maximum offense"?s.id==="pressure":false);
     const tactical=targeted.length?strategy.score*0.5+
