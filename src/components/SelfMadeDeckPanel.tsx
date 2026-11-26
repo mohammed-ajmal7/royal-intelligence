@@ -2,7 +2,7 @@ import type { Card } from "../lib/model";
 import type { MechanicsCatalog } from "../lib/mechanics";
 import { key } from "../lib/engine";
 import { buildDeckPlaybook } from "../lib/deckPlaybook";
-import type { StrategyFocus } from "../lib/deckStrategy";
+import { focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import {
   type SelfMadeCandidate,
   type SelfMadeResult,
@@ -29,12 +29,13 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
   onChoose: (cards: Card[]) => void;
 }) {
   const chosen = key(item.cards) === key(selected);
+  const styleLabel=focusChoices.find(choice=>choice.value===focus)?.label??"Balanced";
   return (
     <article className="self-lab-candidate">
       <header className="self-lab-candidate-head">
         <div>
           <span className="self-lab-kicker">OWNED-COLLECTION TEAM {index + 1}</span>
-          <h4>{item.cards.find(c => c.roles.includes("Win condition"))?.name ?? "Custom"} balanced control</h4>
+          <h4>{item.cards.find(c => c.roles.includes("Win condition"))?.name ?? "Custom"} · {styleLabel}</h4>
           <p>{item.evaluation.avg?.toFixed(2) ?? "—"} average elixir · {item.evaluation.air} air defenders</p>
         </div>
         <div className="self-lab-score">
