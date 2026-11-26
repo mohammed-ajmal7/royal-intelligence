@@ -8,6 +8,8 @@ import {
   qualifiesForSelfSlot,
   generateSelfMadeDecks,
 } from "../src/lib/selfMadeDeckLab";
+import { assessStrategy, focusChoices } from "../src/lib/deckStrategy";
+import { buildDeckPlaybook } from "../src/lib/deckPlaybook";
 
 function own(name: string, id: number, level: number, elixir: number,
   evo = false): Card {
@@ -29,6 +31,36 @@ const collection: Card[] = [
   own("Bomber", 10, 16, 2, true),
   own("Cannon", 11, 10, 3),
 ];
+test("the deck generator exposes the six defined playstyles and matching playbook guidance",()=>{
+  assert.deepEqual(focusChoices.map(({value,label})=>[value,label]),[
+    ["balanced","Balanced"],
+    ["fast-attack","Fast Attack"],
+    ["heavy-push","Heavy Push"],
+    ["spell-bait","Spell Bait"],
+    ["bridge-pressure","Bridge Pressure"],
+    ["defend-counterattack","Defend & Counterattack"],
+  ]);
+  assert.deepEqual(focusChoices.map(({explanation})=>explanation),[
+    "Equal focus on attack and defense.",
+    "Quick attacks and fast card rotation.",
+    "Build powerful, overwhelming pushes.",
+    "Force opponents to waste their spells.",
+    "Constant pressure at the bridge.",
+    "Defend efficiently and punish opponents.",
+  ]);
+  for(const choice of focusChoices){
+    assert.equal(assessStrategy(collection,null,{focus:choice.value}).focus,choice.value);
+    const guide=buildDeckPlaybook(collection,null,choice.value);
+    assert.ok(guide,choice.label+" should produce a playbook");
+    assert.ok(guide.identity.includes("Playstyle:"),choice.label+" should inform playbook guidance");
+  }
+  assert.match(buildDeckPlaybook(collection,null,"fast-attack")!.identity,/quick, low-commitment attacks/);
+  assert.match(buildDeckPlaybook(collection,null,"heavy-push")!.identity,/Build one supported push/);
+  assert.match(buildDeckPlaybook(collection,null,"spell-bait")!.identity,/key spell/);
+  assert.match(buildDeckPlaybook(collection,null,"bridge-pressure")!.identity,/bridge pressure/);
+  assert.match(buildDeckPlaybook(collection,null,"defend-counterattack")!.identity,/Defend with the most efficient answer/);
+});
+
 test("self-made eight roles are distinct, owned, and do not borrow global usage", () => {
   const result = generateSelfMadeDecks(collection, defaults);
   assert.equal(result.issues.length, 0);
