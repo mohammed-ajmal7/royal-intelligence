@@ -7,7 +7,7 @@ on:
       - "package*.json"
       - ".github/workflows/deck-lab-ci.yml"
   push:
-    branches: ["feature/self-made-deck-lab"]
+    branches: ["main", "feature/self-made-deck-lab"]
 permissions:
   contents: read
 jobs:
