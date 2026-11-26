@@ -121,8 +121,22 @@ export function buildDeckPlaybook(
     deck.reduce((sum,c)=>sum+(c.elixir??0),0)/8:null;
   const mainName=main?.name??"the chosen win condition";
   const highCommit=!!(main && (heavy.has(main.name)||main.elixir!==null&&main.elixir>=6));
-  const cycleStyle=focus==="cycle" || (avg!==null&&avg<=3);
-  const defensive=focus==="air"||focus==="tank"||focus==="swarm";
+  const fastAttack=focus==="fast-attack";
+  const heavyPush=focus==="heavy-push";
+  const spellBait=focus==="spell-bait";
+  const bridgePressure=focus==="bridge-pressure";
+  const defensive=focus==="defend-counterattack";
+  const styleGuidance=fastAttack
+    ? "Use quick, low-commitment attacks and rotate efficiently without spending your last defensive answer."
+    : heavyPush
+      ? "Build one supported push around your main win condition; commit heavily only when your counters and elixir are ready."
+      : spellBait
+        ? "Make the opponent reveal or spend their key spell, then punish the gap with the cards that spell normally controls."
+        : bridgePressure
+          ? "Apply repeatable bridge pressure when the opponent overcommits, while keeping enough elixir to defend the other lane."
+          : defensive
+            ? "Defend with the most efficient answer, preserve key counters, and turn surviving defenders into a counterattack."
+            : "Balance safe tower pressure with reliable answers to the opponent's main threats.";
   let title=main?"Play "+main.name+" with controlled defense":"Defend, then create a tower win condition";
   let identity=main?
     "Your primary tower-pressure plan is "+names(win).join(" + ")+
@@ -144,11 +158,22 @@ export function buildDeckPlaybook(
     title=main.name+" counterspell tracking";
     identity="Identify the opponent's anti-"+main.name+" response and pressure when that counter is unavailable.";
   }
+  identity += " Playstyle: "+styleGuidance;
   const openingMoves=cheap.length>=2?cheap.slice(0,2):
     cheap.length===1?cheap:[];
   const opening:PlaybookSection={
     heading:"Opening hand · 1× elixir",
-    objective:"Discover their win condition without losing your defensive counter.",
+    objective:fastAttack
+      ? "Start with safe pressure and learn their answers while keeping your rotation cheap."
+      : heavyPush
+        ? "Identify their counters before investing in a large push."
+        : spellBait
+          ? "Discover the opponent's key spell and avoid revealing every bait card at once."
+          : bridgePressure
+            ? "Look for safe bridge-pressure windows without leaving the opposite lane open."
+            : defensive
+              ? "Discover their win condition and preserve the most efficient defensive answer."
+              : "Discover their win condition without losing your defensive counter.",
     steps:[
       openingMoves.length?
         "Possible low-commitment openings, if safe: "+
@@ -164,6 +189,17 @@ export function buildDeckPlaybook(
     ],
     warning:"Your starting hand is random; never assume that any named opening card is immediately available.",
   };
+  const styleResponse=fastAttack
+    ? "Use a quick attack with "+mainName+" when their main counter is out of cycle, then defend for a low-cost rotation."
+    : heavyPush
+      ? "Build around "+mainName+" with surviving support; avoid splitting elixir across two incomplete pushes."
+      : spellBait
+        ? "Show a lower-risk bait threat first, track the spell they spend, then pressure with the card that spell would counter."
+        : bridgePressure
+          ? "Pressure the bridge with "+mainName+" after an opponent overcommit, and keep a defensive reserve."
+          : defensive
+            ? "Defend with the available building and tank-killing answers, then counterpush with surviving troops."
+            : null;
   const firstResponse=main?.name==="Royal Giant"?
     "After an efficient defense, deploy Royal Giant at a favorable bridge opportunity and keep elixir for its support.":
     main&&siege.has(main.name)?
@@ -174,10 +210,20 @@ export function buildDeckPlaybook(
     "Attack with "+mainName+" when the main building or hard counter is out of rotation.":
     main?.name==="Miner"?
     "Chip with Miner and support survivors without committing your entire defense.":
-    "Turn surviving defenders into a counterpush led by "+mainName+" only when you can still cover the next threat.";
+    styleResponse??"Turn surviving defenders into a counterpush led by "+mainName+" only when you can still cover the next threat.";
   const single:PlaybookSection={
     heading:"Single elixir · protect your counters",
-    objective:"Trade efficiently; don't force a tower push into a full opponent defense.",
+    objective:fastAttack
+      ? "Create quick pressure windows and return to your win condition before their hard counter."
+      : heavyPush
+        ? "Defend cheaply until you can support a major push without exposing your opposite lane."
+        : spellBait
+          ? "Track their spell rotation and force a meaningful spell before committing the card it counters."
+          : bridgePressure
+            ? "Keep a steady threat at the bridge when they overspend, but never sacrifice core defense."
+            : defensive
+              ? "Trade efficiently, preserve counters, and convert surviving defenders into pressure."
+              : "Trade efficiently; don't force a tower push into a full opponent defense.",
     steps:[
       "Identify which cards defend the opposing win condition before investing: "+
         (buildings.length?natural(buildings):natural(ground))+".",
@@ -194,9 +240,19 @@ export function buildDeckPlaybook(
   };
   const double:PlaybookSection={
     heading:"Double elixir · execute the win condition",
-    objective:highCommit?
-      "Use faster elixir regeneration to build one protected major push.":
-      "Outrotate or outvalue the opponent's proven counters.",
+    objective:heavyPush
+      ? "Use double elixir to assemble one powerful, fully supported push."
+      : spellBait
+        ? "Create repeated bait sequences until their key spell is out of rotation."
+        : bridgePressure
+          ? "Maintain bridge pressure in controlled waves and punish expensive commitments."
+          : fastAttack
+            ? "Increase attack tempo and rotate quickly back to your win condition."
+            : defensive
+              ? "Hold the strongest defensive answer, then counterattack with surviving troops."
+              : highCommit
+                ? "Use faster elixir regeneration to build one protected major push."
+                : "Outrotate or outvalue the opponent's proven counters.",
     steps:[
       highCommit?
         "Commit "+mainName+" when you can afford its support and keep an answer for the opposite lane.":
@@ -209,8 +265,9 @@ export function buildDeckPlaybook(
         small.length?
           "Use "+natural(small)+" to clear vulnerable swarms only when it enables defense or tower pressure.":
           "No spell-based swarm answer is established; do not overcommit into a prepared swarm.",
+      "Playstyle priority: "+styleGuidance,
       defensive?
-        "Your chosen focus is "+focus+". Hold the relevant counter before expanding the attack.":
+        "Hold the relevant defensive counter before expanding the attack.":
         "When a defender survives, spend additional elixir only if the opponent's next counter is covered.",
     ],
     warning:"Double elixir does not justify ignoring lane pressure or replacing a necessary air/tank counter with extra damage.",

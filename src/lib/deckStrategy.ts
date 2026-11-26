@@ -6,14 +6,17 @@ import { resolveMechanics, type MechanicsCatalog } from "./mechanics";
  * a battle simulator, training data, actual win probability or real LLM.
  * Missing combat values never count as a measured zero.
  */
-export type StrategyFocus = "balanced" | "air" | "tank" | "swarm" | "cycle" | "royal-giant";
+export type StrategyFocus =
+  | "balanced" | "fast-attack" | "heavy-push" | "spell-bait"
+  | "bridge-pressure" | "defend-counterattack"
+  | "royal-giant";
 export const focusChoices: { value:StrategyFocus; label:string; explanation:string }[] = [
-  {value:"balanced",label:"Balanced: defend + attack",explanation:"Cover all major threats"},
-  {value:"air",label:"Counter heavy air",explanation:"Prioritize air pressure and flying tanks"},
-  {value:"tank",label:"Stop giant tanks",explanation:"Prioritize tank killers and supporting defense"},
-  {value:"swarm",label:"Punish swarms and bait",explanation:"Prioritize splash and spell answers"},
-  {value:"cycle",label:"Defend with low elixir",explanation:"Faster rotations without losing core counters"},
-  {value:"royal-giant",label:"Build around Royal Giant",explanation:"Preserve RG pressure and reliable defense"},
+  {value:"balanced",label:"Balanced",explanation:"Equal focus on attack and defense."},
+  {value:"fast-attack",label:"Fast Attack",explanation:"Quick attacks and fast card rotation."},
+  {value:"heavy-push",label:"Heavy Push",explanation:"Build powerful, overwhelming pushes."},
+  {value:"spell-bait",label:"Spell Bait",explanation:"Force opponents to waste their spells."},
+  {value:"bridge-pressure",label:"Bridge Pressure",explanation:"Constant pressure at the bridge."},
+  {value:"defend-counterattack",label:"Defend & Counterattack",explanation:"Defend efficiently and punish opponents."},
 ];
 export type ThreatId = "air" | "tanks" | "swarms" | "ground" | "pressure" | "rotation";
 export type Scenario = {
@@ -173,10 +176,11 @@ export function assessStrategy(
   if(!wins.length)warnings.push("No recognized repeatable tower-damage win condition.");
   const weightByFocus:Record<StrategyFocus,Record<ThreatId,number>>={
     balanced:{air:24,tanks:20,swarms:17,ground:15,pressure:14,rotation:10},
-    air:{air:44,tanks:17,swarms:11,ground:11,pressure:10,rotation:7},
-    tank:{air:16,tanks:44,swarms:10,ground:15,pressure:9,rotation:6},
-    swarm:{air:16,tanks:14,swarms:43,ground:11,pressure:9,rotation:7},
-    cycle:{air:16,tanks:14,swarms:13,ground:11,pressure:11,rotation:35},
+    "fast-attack":{air:15,tanks:11,swarms:10,ground:8,pressure:29,rotation:27},
+    "heavy-push":{air:15,tanks:20,swarms:12,ground:17,pressure:29,rotation:7},
+    "spell-bait":{air:13,tanks:9,swarms:37,ground:9,pressure:25,rotation:7},
+    "bridge-pressure":{air:12,tanks:8,swarms:9,ground:9,pressure:42,rotation:20},
+    "defend-counterattack":{air:23,tanks:22,swarms:14,ground:22,pressure:14,rotation:5},
     "royal-giant":{air:23,tanks:21,swarms:14,ground:13,pressure:22,rotation:7},
   };
   const weights=weightByFocus[focus];

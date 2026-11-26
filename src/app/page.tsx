@@ -459,7 +459,8 @@ export default function Home() {
               <div className="ri-generator-form">
                 <label className="ri-field"><span>Playstyle</span>
                   <select value={focus} onChange={e=>{setFocus(e.target.value as StrategyFocus);setSelf(null);}}>
-                    {focusChoices.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+                    {focusChoices.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
+                  <small className="ri-muted ri-tiny">{focusChoices.find(o=>o.value===focus)?.explanation}</small></label>
                 <label className="ri-field ri-field-small"><span>Max elixir</span>
                   <select value={maxElixir} onChange={e=>{setMaxElixir(Number(e.target.value));setSelf(null);}}>
                     {[3,3.5,4,4.5,5,5.5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></label>
