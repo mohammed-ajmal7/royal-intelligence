@@ -234,30 +234,293 @@
 @media(prefers-reduced-motion:reduce){.ri-level-option{transition:none}}
 
 
-/* Contextual empty state for a collection with no unlocked Hero forms. */
+/* Cards: ownership and type are two independent filters. */
+.ri-filterbar input{min-width:0}
+.ri-ownership-toggle{display:inline-flex;flex:none;align-items:center;gap:2px;border:1px solid var(--ri-border);background:#fff;padding:3px;border-radius:8px}
+.ri-ownership-toggle button{min-height:34px;padding:7px 12px;border:0;border-radius:5px;background:transparent;color:var(--ri-sub);font-size:12px;font-weight:600;white-space:nowrap}
+.ri-ownership-toggle button:hover{background:var(--ri-soft);color:var(--ri-text)}
+.ri-ownership-toggle button.is-active{background:var(--ri-accent);color:#fff}
+.ri-ownership-toggle button:focus-visible{outline:2px solid var(--ri-accent);outline-offset:2px}
+.ri-filterbar>select{flex:none;min-width:140px;width:150px}
+@media(max-width:760px){
+ .ri-filterbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+ .ri-filterbar>input{grid-column:1/-1;width:100%}
+ .ri-ownership-toggle{width:100%;justify-content:center}
+ .ri-ownership-toggle button{flex:1;padding-left:6px;padding-right:6px}
+ .ri-filterbar>select{width:100%;min-width:0}
+ .ri-filter-count{display:none}
+}
+
+
+
+/* All ownership includes both unlocked and locked cards. */
+.ri-ownership-toggle button{min-width:0}
+@media(max-width:760px){
+  .ri-filterbar>select{max-width:100%}
+}
+@media(max-width:480px){
+  .ri-filterbar{grid-template-columns:minmax(0,1fr)}
+  .ri-filterbar>input{grid-column:1}
+  .ri-ownership-toggle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ri-ownership-toggle button{width:100%}
+  .ri-filterbar>select{max-width:100%;width:100%}
+}
+
+
+/* Cards filter toolbar — one compact, clearly grouped control surface. */
+.ri-cards-toolbar{min-width:0;margin-bottom:17px}
+.ri-cards-toolbar .ri-filterbar{
+  display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(190px,200px) auto;align-items:center;
+  gap:10px;padding:8px;border:1px solid var(--ri-border);border-radius:12px;
+  background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.035);
+}
+.ri-card-search{
+  display:flex;align-items:center;gap:10px;min-width:0;min-height:42px;
+  padding:0 12px;border:1px solid #e5eaf1;border-radius:8px;
+  background:#f8fafc;color:#8190a2;
+}
+.ri-card-search:focus-within{border-color:var(--ri-accent);background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--ri-accent) 12%,transparent)}
+.ri-card-search input{
+  min-width:0;width:100%;min-height:40px;padding:0;border:0;outline:0;
+  background:transparent;color:var(--ri-text);font:inherit;font-size:.875rem;
+}
+.ri-card-search input::placeholder{color:#8995a5}
+.ri-card-search input:focus{outline:0}
+.ri-cards-toolbar .ri-ownership-toggle{
+  min-width:0;justify-content:center;gap:3px;padding:3px;border:1px solid #e5eaf1;
+  border-radius:9px;background:#f8fafc;
+}
+.ri-cards-toolbar .ri-ownership-toggle button{
+  min-height:36px;padding:7px 13px;border-radius:6px;font-size:.8125rem;font-weight:650;
+}
+.ri-cards-toolbar .ri-ownership-toggle button.is-active{
+  background:var(--ri-accent);color:#fff;box-shadow:0 1px 2px rgba(16,24,40,.12);
+}
+.ri-card-type{display:block;min-width:0}
+.ri-cards-toolbar .ri-card-type select{
+  width:100%;min-width:0;height:42px;min-height:42px;padding:0 38px 0 12px;
+  border:1px solid #e5eaf1;border-radius:8px;background-color:#fff;
+  color:var(--ri-text);font:inherit;font-size:.875rem;
+}
+.ri-filter-count{
+  display:flex;align-items:baseline;justify-content:flex-end;gap:5px;min-width:54px;
+  color:var(--ri-sub);font-size:.75rem;white-space:nowrap;
+}
+.ri-filter-count strong{color:var(--ri-text);font-size:1rem;font-weight:750;font-variant-numeric:tabular-nums}
+.ri-sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+@media(max-width:760px){
+  .ri-cards-toolbar{margin-bottom:14px}
+  .ri-cards-toolbar .ri-filterbar{
+    grid-template-columns:minmax(0,1fr) minmax(180px,1fr);gap:8px;padding:8px;
+  }
+  .ri-card-search{grid-column:1/-1}
+  .ri-cards-toolbar .ri-ownership-toggle{width:100%;justify-content:stretch}
+  .ri-cards-toolbar .ri-ownership-toggle button{flex:1;padding-inline:6px}
+  .ri-card-type{width:100%}
+  .ri-cards-toolbar .ri-card-type select{width:100%;max-width:none}
+  .ri-cards-toolbar .ri-filter-count{display:none}
+}
+@media(max-width:480px){
+  .ri-cards-toolbar .ri-filterbar{grid-template-columns:minmax(0,1fr)}
+  .ri-card-search{grid-column:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .ri-card-search{transition:none}
+}
+
+
+/* Keep the filtered card count compact and visually distinct. */
+.ri-cards-toolbar .ri-filter-count{
+  justify-self:end;
+  display:inline-flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:5px;
+  min-width:0;
+  min-height:34px;
+  padding:6px 12px;
+  border:1px solid #e5eaf1;
+  border-radius:999px;
+  background:#f8fafc;
+  color:var(--ri-sub);
+}
+.ri-cards-toolbar .ri-filter-count strong{
+  color:var(--ri-text);
+  font-size:.875rem;
+  line-height:1;
+}
+.ri-cards-toolbar .ri-filter-count span{
+  font-size:.75rem;
+  line-height:1;
+}
+
+
+
+/* Contextual empty state for empty Evolution and Hero collection filters. */
 .ri-empty-state{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   min-width:0;min-height:330px;padding:30px 22px;text-align:center;
   border:1px solid var(--ri-border);border-radius:12px;background:var(--ri-paper);
 }
-.ri-hero-empty-art{display:grid;place-items:center;width:154px;height:132px;margin-bottom:8px}
-.ri-hero-empty-art svg{display:block;width:100%;height:100%;overflow:visible}
-.ri-hero-empty-eyebrow{
+.ri-special-empty-art{display:grid;place-items:center;width:154px;height:132px;margin-bottom:8px}
+.ri-special-empty-art svg{display:block;width:100%;height:100%;overflow:visible}
+.ri-special-empty-eyebrow{
   margin:5px 0 8px;color:#64799f;font-size:.6875rem;font-weight:800;
   letter-spacing:1.1px;text-transform:uppercase;
 }
-.ri-hero-empty h2{
+.ri-special-empty h2{
   max-width:440px;color:var(--ri-text);font-size:1.125rem;font-weight:750;
   letter-spacing:-.35px;line-height:1.35;
 }
-.ri-hero-empty p{
+.ri-special-empty p{
   max-width:430px;margin-top:8px;color:var(--ri-sub);
   font-size:.875rem;line-height:1.65;
 }
-.ri-hero-empty-action{margin-top:18px;min-height:42px;padding:9px 15px}
+.ri-special-empty-action{margin-top:18px;min-height:42px;padding:9px 15px}
 @media(max-width:760px){
   .ri-empty-state{min-height:290px;padding:24px 17px}
-  .ri-hero-empty-art{width:138px;height:118px}
-  .ri-hero-empty h2{font-size:1rem}
-  .ri-hero-empty p{font-size:.8125rem}
+  .ri-special-empty-art{width:138px;height:118px}
+  .ri-special-empty h2{font-size:1rem}
+  .ri-special-empty p{font-size:.8125rem}
 }
+
+
+/* Cards collection filters: collection state, form type and owned unlock state. */
+.ri-cards-toolbar .ri-filterbar{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:13px;
+  padding:12px;
+  border:1px solid var(--ri-border);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(16,24,40,.035);
+}
+.ri-card-toolbar-search-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.ri-card-toolbar-search-row .ri-card-search{flex:1}
+.ri-card-filter-groups{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:13px 22px;
+}
+.ri-filter-group{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  min-width:0;
+}
+.ri-filter-group-label{
+  color:var(--ri-sub);
+  font-size:.6875rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  line-height:1.2;
+  text-transform:uppercase;
+}
+.ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{
+  display:inline-flex;
+  width:auto;
+  max-width:100%;
+  justify-content:center;
+  gap:3px;
+}
+.ri-cards-toolbar .ri-filter-group .ri-ownership-toggle button{
+  flex:0 0 auto;
+  min-width:72px;
+}
+.ri-cards-toolbar .ri-card-type-toggle button{min-width:96px}
+.ri-cards-toolbar .ri-form-status-toggle button{min-width:82px}
+@media(max-width:760px){
+  .ri-cards-toolbar .ri-filterbar{display:flex;flex-direction:column;align-items:stretch}
+  .ri-card-filter-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+  .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{display:flex;width:100%}
+  .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle button{flex:1;min-width:0;padding-inline:7px}
+  .ri-form-status-group{grid-column:1/-1}
+  .ri-cards-toolbar .ri-filter-count{display:none}
+}
+@media(max-width:480px){
+  .ri-card-filter-groups{grid-template-columns:minmax(0,1fr)}
+  .ri-form-status-group{grid-column:auto}
+  .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{justify-content:stretch}
+}
+
+
+/* Keep collection scope first, with card-type choices beneath it. */
+.ri-card-filter-groups{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+}
+.ri-filter-group{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:12px;
+}
+.ri-filter-group-label{
+  flex:0 0 104px;
+}
+@media(max-width:760px){
+  .ri-card-filter-groups{display:flex;flex-direction:column;align-items:stretch}
+  .ri-filter-group{display:flex;flex-direction:row;align-items:center}
+}
+@media(max-width:480px){
+  .ri-filter-group{flex-direction:column;align-items:stretch;gap:7px}
+  .ri-filter-group-label{flex:auto}
+  .ri-cards-toolbar .ri-filter-group .ri-ownership-toggle{width:100%}
+}
+
+
+/* Card level picker: closed select control with an anchored level-grid popover. */
+.ri-level-picker{position:relative;z-index:4;min-width:0}
+.ri-level-trigger{
+  display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:58px;
+  padding:9px 12px;border:1px solid var(--ri-border);border-radius:10px;
+  background:var(--ri-paper);color:var(--ri-text);text-align:left;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.ri-level-trigger:hover,.ri-level-trigger[aria-expanded="true"]{
+  border-color:var(--ri-accent);background:var(--ri-paper);
+}
+.ri-level-trigger:focus-visible{
+  outline:2px solid var(--ri-accent);outline-offset:2px;
+}
+.ri-level-trigger-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.ri-level-trigger-copy>span{color:var(--ri-sub);font-size:11px;font-weight:650}
+.ri-level-trigger-copy strong{color:var(--ri-text);font-size:15px;font-weight:750;line-height:1.2}
+.ri-level-trigger-chevron{flex:0 0 auto;color:var(--ri-sub);transition:transform .15s}
+.ri-level-trigger[aria-expanded="true"] .ri-level-trigger-chevron{transform:rotate(180deg)}
+.ri-level-popover{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:25;
+  max-height:min(72dvh,560px);overflow:auto;overscroll-behavior:contain;
+  border:1px solid var(--ri-border);border-radius:16px;
+  background:var(--ri-paper);box-shadow:0 18px 48px rgba(16,24,40,.2);
+}
+.ri-level-popover[hidden]{display:none}
+.ri-level-popover .ri-level-panel{
+  border:0;border-radius:inherit;box-shadow:none;
+}
+@media(max-width:560px){
+  .ri-level-trigger{min-height:54px;padding:8px 10px;gap:8px}
+  .ri-level-popover{top:calc(100% + 6px);max-height:68dvh}
+}
+@media(max-width:360px){
+  .ri-level-popover .ri-level-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  .ri-level-trigger,.ri-level-trigger-chevron{transition:none}
+}
+
+.ri-special-empty-art.is-evolution svg{filter:drop-shadow(0 5px 9px rgba(117,83,189,.13))}
