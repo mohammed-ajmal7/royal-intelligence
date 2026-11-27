@@ -2,12 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-test("Overview uses compact metric cards with clear visual hierarchy",()=>{
+test("Profile uses compact metric cards with clear visual hierarchy",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const header=readFileSync(new URL("../src/components/PlayerProfileHeader.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/player-profile.css",import.meta.url),"utf8");
 
   assert.match(page,/import "\.\/overview-dashboard\.css"/);
+  assert.match(page,/type Tab = "Profile" \| "Cards" \| "Decks" \| "Battles" \| "Explore"/);
+  assert.match(page,/\{name:"Profile",Icon:Trophy\}/);
+  assert.match(page,/tab==="Profile"\?"Profile"/);
+  assert.doesNotMatch(page,/\{name:"Overview",Icon:Trophy\}/);
   assert.match(page,/import \{ PlayerProfileHeader \} from "\.\.\/components\/PlayerProfileHeader"/);
   assert.match(page,/<PlayerProfileHeader player=\{player\} metrics=\{\{/);
   assert.match(page,/trophies:fmt\(player\.trophies\)/);
