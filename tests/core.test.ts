@@ -7,6 +7,16 @@ test('ownership and active forms remain separate',()=>{const c=card(raw,true);as
 test('snapshot keeps tower troops separate and ignores deprecated progression',()=>{const t={...raw,id:159000000,name:'Tower Princess'};const x=normalize({tag:'#VUYRP9GQL',name:'Test',expLevel:60,cards:[raw],supportCards:[t],currentDeck:[{...raw,evolutionLevel:0}]},{items:[raw],supportItems:[t]},[],{});assert.equal(x.kingLevel,null);assert.equal(x.cards.length,1);assert.equal(x.towers.length,1);assert.equal(x.deck[0].hero,true);assert.equal(x.deck[0].active,'base');});
 const p=(t:string,c:number)=>({tag:t,name:t,crowns:c,cards:[raw]});const b={battleTime:'20261115T120000.000Z',gameMode:{name:'2v2'},type:'2v2',team:[p('#VUYRP9GQL',3),p('#PYLQGR',3)],opponent:[p('#YQLGRJ',1),p('#GQLPRJ',1)]};
 test('2v2 retains all participants and shared crowns',()=>{const x=parseBattle(b,'#VUYRP9GQL');assert.equal(x.team.length,2);assert.equal(x.opponent.length,2);assert.equal(x.outcome,'win');assert.equal(x.time,'2026-11-15T12:00:00Z');});
+test('2v2 battle parsing preserves four named players and four complete decks',()=>{
+  const cards=Array.from({length:8},(_,i)=>({...raw,id:26000000+i,name:'Battle card '+(i+1)}));
+  const full={...b,team:b.team.map(person=>({...person,cards})),opponent:b.opponent.map(person=>({...person,cards}))};
+  const parsed=parseBattle(full,'#VUYRP9GQL');
+  const players=[...parsed.team,...parsed.opponent];
+  assert.equal(players.length,4);
+  assert.deepEqual(players.map(person=>person.name),['#VUYRP9GQL','#PYLQGR','#YQLGRJ','#GQLPRJ']);
+  assert.deepEqual(players.map(person=>person.cards.length),[8,8,8,8]);
+  assert.equal(players.reduce((sum,person)=>sum+person.cards.length,0),32);
+});
 test('orientation is player-relative with stable identity',()=>{assert.equal(parseBattle(b,'#YQLGRJ').outcome,'loss');assert.equal(parseBattle(b,'#YQLGRJ').id,parseBattle({...b,team:[...b.team].reverse()},'#VUYRP9GQL').id);});
 test('equal or inconsistent crowns remain unknown',()=>{assert.equal(parseBattle({...b,opponent:[p('#YQLGRJ',3)]},'#VUYRP9GQL').outcome,'unknown');assert.equal(parseBattle({...b,team:[p('#VUYRP9GQL',3),p('#PYLQGR',1)]},'#VUYRP9GQL').outcome,'unknown');});
 test('normalization deduplicates battle observations',()=>{assert.equal(normalize({tag:'#VUYRP9GQL',name:'Test',cards:[raw]},{items:[raw]},[b,b],{}).battles.length,1);});
