@@ -5,9 +5,10 @@ import "./card-sorting.css";
 import "./card-form-badges.css";
 import "./battles.css";
 import "./api-explorer.css";
+import "./deck-generator.css";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Flame, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -498,17 +499,21 @@ export default function Home() {
             </section>
             <section className="ri-panel"><div className="ri-section-title"><h2>Deck generator</h2></div>
               <div className="ri-generator-form">
-                <label className="ri-field"><span>Playstyle</span>
-                  <select value={focus} onChange={e=>{setFocus(e.target.value as StrategyFocus);setSelf(null);}}>
-                    {focusChoices.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
-                  <small className="ri-muted ri-tiny">{focusChoices.find(o=>o.value===focus)?.explanation}</small></label>
-                <label className="ri-field ri-field-small"><span>Max elixir</span>
-                  <select value={maxElixir} onChange={e=>{setMaxElixir(Number(e.target.value));setSelf(null);}}>
-                    {[3,3.5,4,4.5,5,5.5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></label>
-                <button type="button" className="ri-button" disabled={mechanicsStatus==="loading"||mechanicsStatus==="idle"} onClick={()=>{
-                  const res=generateSelfMadeDecks(player.cards,{...defaults,maxElixir,cap:player.cap},mechanics,focus);
-                  setSelf(res);if(res.candidates[0])setDeck(res.candidates[0].cards);
-                }}>{mechanicsStatus==="loading"||mechanicsStatus==="idle"?"Loading card stats…":"Generate deck"}</button>
+                <p className="ri-generator-hint">Scores every eligible card you own, then ranks complete decks for the selected archetype.</p>
+                <div className="ri-generator-controls">
+                  <label className="ri-field ri-generator-control"><span><Swords size={15} aria-hidden="true"/> Playstyle</span>
+                    <select value={focus} onChange={e=>{setFocus(e.target.value as StrategyFocus);setSelf(null);}}>
+                      {focusChoices.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
+                  </label>
+                  <label className="ri-field ri-field-small ri-generator-control"><span><Flame size={15} aria-hidden="true"/> Max elixir</span>
+                    <select value={maxElixir} onChange={e=>{setMaxElixir(Number(e.target.value));setSelf(null);}}>
+                      {[3,3.5,4,4.5,5,5.5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select>
+                  </label>
+                  <button type="button" className="ri-button ri-generator-submit" disabled={mechanicsStatus==="loading"||mechanicsStatus==="idle"} onClick={()=>{
+                    const res=generateSelfMadeDecks(player.cards,{...defaults,maxElixir,cap:player.cap},mechanics,focus,localBattles);
+                    setSelf(res);if(res.candidates[0])setDeck(res.candidates[0].cards);
+                  }}>{mechanicsStatus==="loading"||mechanicsStatus==="idle"?"Loading card stats…":"Generate best deck"}</button>
+                </div>
               </div>
               {mechanicsStatus==="unavailable"&&<p className="ri-alert">The external combat reference is unavailable. Only your owned level, costs and classified roles can be compared.</p>}
               <details className="ri-disclosure"><summary>How recommendations work</summary><p>Uses owned cards, levels, role coverage and available combat data. Scores are estimates, not win probabilities.</p></details>
@@ -516,9 +521,19 @@ export default function Home() {
                 {self.issues.map((s,i)=><div className="ri-alert" key={i}>{s}</div>)}
                 <p className="ri-muted ri-tiny">{self.eligibleCardCount} eligible cards · {self.candidates.length} teams</p>
                 {self.candidates.map((result,i)=><div className="ri-candidate" key={i}>
-                  <div className="ri-row ri-space"><strong>Team {i+1} · {result.score.toFixed(1)}/100 suitability</strong>
+                  <div className="ri-row ri-space"><div className="ri-candidate-title"><strong>Team {i+1} · {result.score.toFixed(1)}/100 suitability</strong>
+                    <small>{result.playstyle.archetype} · {result.playstyle.score.toFixed(1)}/100 playstyle fit</small></div>
                     <button className="ri-text-button" onClick={()=>setDeck(result.cards)}>{result.cards.map(c=>c.id).join(",")===deck.map(c=>c.id).join(",")?"Selected":"Choose team"} <Check size={15}/></button></div>
                   <MiniDeck cards={result.cards}/>
+                  <details className="ri-playstyle-analysis"><summary>Why this deck fits {focusChoices.find(o=>o.value===focus)?.label} <ChevronRight size={15}/></summary>
+                    <p>{result.playstyle.summary}</p>
+                    <div className="ri-playstyle-factors">{result.playstyle.factors.map(factor=><div key={factor.id}>
+                      <span><strong>{factor.label}</strong><small>{factor.evidence}</small></span>
+                      <b>{factor.score.toFixed(0)}</b>
+                    </div>)}</div>
+                    {result.playstyle.tradeoffs.length>0&&<p className="ri-playstyle-tradeoffs"><strong>Trade-offs:</strong> {result.playstyle.tradeoffs.join(" ")}</p>}
+                    {result.playstyle.personalThreats.length>0&&<p className="ri-playstyle-personal"><strong>From your battle history:</strong> {result.playstyle.personalThreats.map(item=>item.name+" — "+item.losses+"/"+item.seen+" losses. "+item.response).join(" ")}</p>}
+                  </details>
                   {result.specialSlots.length>0&&<p className="ri-muted ri-tiny">Suggested forms: {result.specialSlots.map(x=>x.slot+" — "+x.card).join(" · ")}</p>}
                   <details className="ri-role-details"><summary>Role breakdown <ChevronRight size={16}/></summary>
                     {result.slots.map(slot=><details key={slot.id} className="ri-role-row"><summary><strong>{slot.label}</strong><span>{slot.chosen.card.name} · {slot.chosen.grade}/100</span></summary>
