@@ -507,6 +507,12 @@ export default function Home() {
                   <span className="ri-card-sort-status" role="status">Loading card stats…</span>}
                 {cardsSort!=="none"&&mechanicsStatus==="unavailable"&&
                   <span className="ri-card-sort-status" role="status">Stat data unavailable</span>}
+                {cardsSort!=="none"&&mechanicsStatus==="ready"&&
+                  <span className="ri-card-sort-status">
+                    {cardsSortMode==="current"
+                      ? "Uses each card’s owned level; cards without a current level sort last."
+                      : "Uses the highest published level for each card."}
+                  </span>}
               </div>
             </div>
             {activeCard&&<CollectionCardDetails key={activeCard.id+"-"+selectedCardForm} card={activeCard} initialForm={selectedCardForm} cap={player.cap}
