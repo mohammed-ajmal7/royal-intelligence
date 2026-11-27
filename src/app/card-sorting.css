@@ -1,0 +1,85 @@
+/* Card collection statistic sorting controls. */
+.ri-card-sort-controls{
+  display:flex;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:12px;
+  padding-top:10px;
+  border-top:1px solid #edf0f4;
+}
+.ri-card-sort-select,
+.ri-card-sort-level{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:5px;
+}
+.ri-card-sort-select>span,
+.ri-card-sort-level-label{
+  color:var(--ri-sub);
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.035em;
+}
+.ri-card-sort-select select{
+  min-width:190px;
+  min-height:34px;
+  border:1px solid #dce3ed;
+  border-radius:8px;
+  background:#fff;
+  color:var(--ri-text);
+  padding:6px 30px 6px 10px;
+  font-size:11px;
+  font-weight:650;
+  outline:0;
+}
+.ri-card-sort-select select:focus-visible{
+  border-color:#6c90da;
+  outline:2px solid #9bb7eb;
+  outline-offset:2px;
+}
+.ri-card-sort-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px;
+  border:1px solid #dfe5ed;
+  border-radius:9px;
+  background:#f4f6f9;
+}
+.ri-card-sort-toggle button{
+  min-width:65px;
+  min-height:27px;
+  padding:4px 10px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#66758d;
+  font-size:10px;
+  font-weight:750;
+  transition:background .15s,color .15s,box-shadow .15s;
+}
+.ri-card-sort-toggle button.is-active{
+  background:#2855a6;
+  color:#fff;
+  box-shadow:0 1px 3px rgba(18,40,80,.18);
+}
+.ri-card-sort-status{
+  padding-bottom:7px;
+  color:var(--ri-sub);
+  font-size:10px;
+}
+@media(max-width:560px){
+  .ri-card-sort-controls{
+    align-items:stretch;
+    gap:9px;
+    padding-top:8px;
+  }
+  .ri-card-sort-select{flex:1 1 100%}
+  .ri-card-sort-select select{width:100%;min-width:0}
+  .ri-card-sort-level{flex:0 0 auto}
+  .ri-card-sort-status{align-self:center;padding:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .ri-card-sort-toggle button{transition:none}
+}
