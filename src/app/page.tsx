@@ -601,10 +601,6 @@ export default function Home() {
                 <div className="ri-battle-detail">
                   {isTwoVTwo
                     ? <>
-                        <div className="ri-battle-match-context" aria-label="2v2 match details">
-                          <div><small>Opponent</small><strong>{opponentNames||"Unknown opponents"}</strong></div>
-                          <div><small>Mode</small><strong>{formatBattleMode(b.mode,true)}</strong></div>
-                        </div>
                         <div className="ri-battle-2v2-teams">
                           <section className="ri-battle-team">
                             <header><strong>Your team</strong><small>2 players</small></header>
