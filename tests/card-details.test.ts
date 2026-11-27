@@ -4,6 +4,7 @@ import { projectMechanics, resolveMechanics } from "../src/lib/mechanics";
 import { comparisonDelta, detailStats } from "../src/lib/cardDetails";
 import { demo } from "../src/lib/demo";
 import { readFileSync } from "node:fs";
+import { heroAbilityIconUrl } from "../src/components/CardAbilityIcon";
 
 test("comparison preserves signed differences and reverses lower-is-better metrics", () => {
   assert.deepEqual(comparisonDelta(1000, 800, "higher"), {delta:200,tone:"better"});
@@ -203,7 +204,9 @@ test("Hero ability details render the card-specific in-game ability icon",()=>{
   assert.match(icon,/wizard: "Wizard"/);
   assert.match(icon,/Ability-" \+ stem \+ "-Heroic\.png"/);
   assert.match(icon,/https:\/\/clashroyale\.fandom\.com\/wiki\/Special:FilePath/);
-  assert.match(icon,/Ability-Wizard-Heroic\.png/);
+  assert.equal(heroAbilityIconUrl("Wizard"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Wizard-Heroic.png");
+  assert.equal(heroAbilityIconUrl("Knight"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Knight-Heroic.png");
+  assert.equal(heroAbilityIconUrl("Ice Golem"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Ice-Golem-Heroic.png");
   assert.match(icon,/onError=\{\(\) => setFailed\(true\)\}/);
   assert.match(css,/\.ri-ability-icon/);
   assert.match(css,/\.ri-inspector-ability-heading/);
