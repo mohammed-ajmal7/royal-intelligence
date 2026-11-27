@@ -24,6 +24,22 @@ test("2v2 battle history renders all four players and all four decks", () => {
   assert.match(styles, /@media\(max-width: 820px\)/);
 });
 
+test("dashboard Battles summaries use concise team names and compact SVG result badges",()=>{
+  const dashboard=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+
+  assert.match(dashboard,/"You"\s*:\s*person\.name/);
+  assert.doesNotMatch(dashboard,/"You \(" \+ person\.name/);
+  assert.match(dashboard,/<Smile size=\{14\}/);
+  assert.match(dashboard,/<Frown size=\{14\}/);
+  assert.match(dashboard,/ri-battle-result "\+\(b\.outcome/);
+  assert.match(dashboard,/ri-battle-trophy-change/);
+  assert.match(css,/\.ri-battle>summary\{[\s\S]*min-height:68px[\s\S]*padding:10px 13px/);
+  assert.match(css,/\.ri-battle-result\.is-win\{/);
+  assert.match(css,/\.ri-battle-result\.is-loss\{/);
+  assert.match(css,/@media\(max-width:390px\)/);
+});
+
 test("dashboard Battles tab shows four distinct 2v2 player decks with readable matchup details",()=>{
   const dashboard=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
