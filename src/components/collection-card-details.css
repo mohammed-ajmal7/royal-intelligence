@@ -1264,3 +1264,80 @@
 @media(prefers-reduced-motion:reduce){
   .ri-inspector-table tbody tr{transition:none}
 }
+
+/* Unified Base / Evolution / Hero stat comparison. */
+.ri-inspector-forms button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.ri-inspector-form-tab-icon{
+  display:block;
+  flex:0 0 18px;
+  width:18px;
+  height:18px;
+  overflow:hidden;
+}
+.ri-inspector-unified-section{
+  gap:9px;
+}
+.ri-inspector-unified-facts{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.ri-inspector-stat-delta,
+.ri-level-table-delta{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  margin-top:3px;
+  padding:2px 5px;
+  border:1px solid #dce5f4;
+  border-radius:5px;
+  background:#f1f5fc;
+  color:#3157a5;
+  font-size:9px;
+  font-weight:750;
+  line-height:1.2;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.ri-inspector-stat-delta{
+  margin-left:6px;
+  vertical-align:2px;
+}
+.ri-level-table-delta{
+  margin-top:1px;
+  font-size:8px;
+}
+.ri-unified-level-table{
+  min-width:0;
+}
+.ri-unified-level-table .ri-inspector-table{
+  max-width:100%;
+}
+.ri-unified-level-table .ri-level-table-column-label{
+  max-width:150px;
+}
+.ri-inspector-ability-description+.ri-inspector-ability-description{
+  margin-top:9px;
+  padding-top:9px;
+  border-top:1px solid var(--ri-border);
+}
+.ri-inspector-ability-description>strong{
+  display:block;
+  padding-top:7px;
+  color:var(--ri-text);
+  font-size:11px;
+}
+.ri-inspector-ability-description>p{
+  margin:0;
+}
+@media(max-width:560px){
+  .ri-inspector-form-tab-icon{width:16px;height:16px;flex-basis:16px}
+  .ri-inspector-unified-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ri-inspector-stat-delta{font-size:8px;padding:1px 4px}
+  .ri-unified-level-table .ri-level-table-column-label{max-width:112px}
+}
+
