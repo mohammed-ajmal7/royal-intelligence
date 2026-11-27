@@ -516,7 +516,10 @@ export default function Home() {
                 </div>
               </div>
               {mechanicsStatus==="unavailable"&&<p className="ri-alert">The external combat reference is unavailable. Only your owned level, costs and classified roles can be compared.</p>}
-              <details className="ri-disclosure"><summary>How recommendations work</summary><p>Uses owned cards, levels, role coverage and available combat data. Scores are estimates, not win probabilities.</p></details>
+              <details className="ri-disclosure"><summary>How recommendations work</summary>
+                <p>Every eligible card you own is compared at its current owned level. Role rankings use available HP, damage, DPS, attack interval, range, splash, targeting and elixir efficiency. The selected playstyle changes candidate roles, search ranking and full-deck scoring. Recent battle logs influence personal threat checks only when at least five relevant 1v1 results exist. Scores are evidence-based suitability estimates, not win probabilities or a battle simulator.</p>
+                {mechanics&&<p className="ri-muted ri-tiny">Combat reference: {mechanics.source} · reference updated {mechanics.sourceUpdatedAt??mechanics.fetchedAt}. The reference may lag a live balance patch.</p>}
+              </details>
               {self&&<div className="ri-generated">
                 {self.issues.map((s,i)=><div className="ri-alert" key={i}>{s}</div>)}
                 <p className="ri-muted ri-tiny">{self.eligibleCardCount} eligible cards · {self.candidates.length} teams</p>
@@ -535,11 +538,24 @@ export default function Home() {
                     {result.playstyle.personalThreats.length>0&&<p className="ri-playstyle-personal"><strong>From your battle history:</strong> {result.playstyle.personalThreats.map(item=>item.name+" — "+item.losses+"/"+item.seen+" losses. "+item.response).join(" ")}</p>}
                   </details>
                   {result.specialSlots.length>0&&<p className="ri-muted ri-tiny">Suggested forms: {result.specialSlots.map(x=>x.slot+" — "+x.card).join(" · ")}</p>}
-                  <details className="ri-role-details"><summary>Role breakdown <ChevronRight size={16}/></summary>
-                    {result.slots.map(slot=><details key={slot.id} className="ri-role-row"><summary><strong>{slot.label}</strong><span>{slot.chosen.card.name} · {slot.chosen.grade}/100</span></summary>
-                      <p>Lv {slot.chosen.card.level} · HP {digits(slot.chosen.hp)} · DPS {digits(slot.chosen.dps)} · Damage {digits(slot.chosen.damage)} · Numeric coverage {Math.round(slot.chosen.numericCoverage*100)}%</p>
+                  <details className="ri-role-details"><summary>Role breakdown · all owned alternatives ranked <ChevronRight size={16}/></summary>
+                    {result.slots.map(slot=><details key={slot.id} className="ri-role-row"><summary><strong>{slot.label}</strong><span>{slot.chosen.card.name} · {slot.chosen.grade}/100 · {slot.considered} checked</span></summary>
+                      <p>Lv {slot.chosen.card.level} · HP {digits(slot.chosen.hp)} · DPS {digits(slot.chosen.dps)} · Damage {digits(slot.chosen.damage)} · Range {digits(slot.chosen.range)} tiles · Splash {digits(slot.chosen.splash)} tiles · Evidence coverage {Math.round(slot.chosen.confidence*100)}%</p>
                       <p>{slot.chosen.evidence}</p>
-                      {slot.alternatives.length>0&&<p className="ri-muted">Other owned choices: {slot.alternatives.slice(0,12).map(c=>c.card.name+" ("+c.grade+")").join(" · ")}</p>}
+                      {slot.chosen.measured.length>0&&<p className="ri-muted">Role metrics: {slot.chosen.measured.map(m=>m.label+" "+m.value+" "+m.unit+" · "+m.relative+"% of your role benchmark").join(" · ")}</p>}
+                      {slot.chosen.evolved&&<p className="ri-muted">Published {slot.chosen.evolved.form} at Lv {slot.chosen.card.level}: HP {digits(slot.chosen.evolved.hp)} · Damage {digits(slot.chosen.evolved.damage)} · DPS {digits(slot.chosen.evolved.dps)}. Only source-published values are shown.</p>}
+                      {slot.alternatives.length>0&&<details className="ri-role-ranking"><summary>Full ranking · {slot.considered} owned candidates checked</summary>
+                        <div className="ri-role-ranking-scroll"><table><thead><tr><th>Card</th><th>Level</th><th>Elixir</th><th>HP</th><th>Damage</th><th>DPS</th><th>Hit interval</th><th>Range</th><th>Splash</th><th>Evo / Hero</th><th>Evidence</th><th>Role score</th></tr></thead>
+                          <tbody>{[slot.chosen,...slot.alternatives].map((entry,index)=><tr key={entry.card.id}>
+                            <td>{index===0?"★ ":""}{entry.card.name}</td><td>{entry.card.level??"—"}</td><td>{entry.card.elixir??"—"}</td>
+                            <td>{digits(entry.hp)}</td><td>{digits(entry.damage)}</td><td>{digits(entry.dps)}</td>
+                            <td>{entry.hitSpeed===null?"—":entry.hitSpeed+"s"}</td><td>{entry.range===null?"—":entry.range+" tiles"}</td>
+                            <td>{entry.splash===null?"—":entry.splash+" tiles"}</td>
+                            <td>{[entry.card.evo===true?"Evo":"",entry.card.hero===true?"Hero":"",entry.card.rarity.toLowerCase()==="champion"?"Champion":""].filter(Boolean).join(" / ")||"—"}</td>
+                            <td>{Math.round(entry.confidence*100)}%</td><td>{entry.grade.toFixed(1)}</td>
+                          </tr>)}</tbody>
+                        </table></div>
+                      </details>}
                     </details>)}</details>
                   <PlayGuide deck={result.cards} mechanics={mechanics} focus={focus}/>
                 </div>)}
