@@ -7,6 +7,7 @@ import type { CardReferenceSection, CurrentReference } from "../lib/liveCardRefe
 import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../lib/mechanics";
 import { statIconPath, statValueWithUnit, elixirAsset } from "../lib/statAssets";
 import { CardFormIcon } from "./CardFormIcon";
+import { buildUnifiedLevelTable, buildUnifiedStatEntries } from "../lib/cardFormStats";
 import "./collection-card-details.css";
 
 type Form = "base" | "evolution" | "hero";
@@ -19,128 +20,41 @@ type Props = {
   onClose: () => void;
 };
 
-const priority = (label:string) =>
-  /hit ?points|health/i.test(label) ? 0 :
-  /\bdamage\b/i.test(label) ? 1 :
-  /hit speed|attack speed/i.test(label) ? 2 :
-  /target/i.test(label) ? 3 :
-  /^speed|movement speed/i.test(label) ? 4 :
-  /range/i.test(label) ? 5 :
-  /count/i.test(label) ? 6 : 7;
-
 type FormMarkers = Record<string, Exclude<Form, "base">>;
-
-function formStatMarkers(
-  section: CardReferenceSection,
-  baseSections: CardReferenceSection[],
-  formSections: CardReferenceSection[],
-  form: Form,
-): FormMarkers {
-  if (form === "base") return {};
-  const base = baseSections.find(item => item.name === section.name);
-  const source = formSections.find(item => item.name === section.name);
-  if (!source) return {};
-  const markers: FormMarkers = {};
-  for (const [label, value] of Object.entries(source.facts)) {
-    if (base?.facts[label] !== value) markers[label] = form;
-  }
-  for (const [level, fields] of Object.entries(source.levels)) {
-    for (const [label, value] of Object.entries(fields)) {
-      if (base?.levels[Number(level)]?.[label] !== value) markers[label] = form;
-    }
-  }
-  return markers;
-}
 
 function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
   return <CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>;
 }
 
-function FactGrid({ facts, combat = false, unavailableFacts = [], formMarkers = {} }: {
+function FactGrid({ facts, unavailableFacts = [] }: {
   facts: Record<string,string>;
-  combat?: boolean;
   unavailableFacts?: readonly string[];
-  formMarkers?: FormMarkers;
 }) {
   const entries=Object.entries(facts);
   if (!entries.length) return null;
-  if (combat) entries.sort(([a],[b]) => priority(a)-priority(b));
-  return <dl className={"ri-inspector-facts "+(combat?"ri-inspector-combat-facts":"ri-inspector-information-facts")}>
+  return <dl className="ri-inspector-facts ri-inspector-information-facts">
     {entries.map(([label,value])=><div key={label} className={"ri-inspector-fact" + (unavailableFacts.includes(label) ? " is-unavailable" : "")}>
       {statIconPath(label)&&<img className="ri-inspector-stat-icon" src={statIconPath(label)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
-        <dt>{label}{formMarkers[label] && <FormMarker form={formMarkers[label]}/>}</dt><dd>{statValueWithUnit(value,label)}</dd>
+        <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
       </div>
     </div>)}
   </dl>;
 }
 
-function joinSections(base: CardReferenceSection[], changes: CardReferenceSection[]) {
-  const merged = new Map(base.map(section => [section.name, section]));
-  for (const section of changes) {
-    const previous = merged.get(section.name);
-    if (!previous) {
-      merged.set(section.name, section);
-      continue;
-    }
-    const levels = { ...previous.levels };
-    for (const [level, fields] of Object.entries(section.levels)) {
-      levels[Number(level)] = { ...levels[Number(level)], ...fields };
-    }
-    merged.set(section.name, { ...previous, ...section, facts: { ...previous.facts, ...section.facts }, levels });
-  }
-  return [...merged.values()];
-}
-
-function historicalSections(record: ReturnType<typeof getMechanicsRecord>): CardReferenceSection[] {
-  if (!record) return [];
-  function build(
-    name: string,
-    facts: Record<string, string | number | null | undefined>,
-    columns: Record<string, number[] | null | undefined>,
-  ): CardReferenceSection {
-    const levels: CardReferenceSection["levels"] = {};
-    for (const [label, series] of Object.entries(columns)) {
-      series?.forEach((value, index) => {
-        if (Number.isFinite(value) && value > 0) (levels[index + 1] ??= {})[label] = String(value);
-      });
-    }
-    return { name, facts: Object.fromEntries(Object.entries(facts)
-      .filter(([, value]) => value != null).map(([label, value]) => [label, String(value)])), levels };
-  }
-  const targets = (air: boolean | null | undefined, ground: boolean | null | undefined) =>
-    air && ground ? "Air & Ground" : air ? "Air" : ground ? "Ground" : null;
-  const seconds = (value: number | null) => value == null ? null : value + " s";
-  const common = {
-    Count: record.unitCount,
-    Radius: record.areaRadiusTiles,
-    "Deploy time": seconds(record.deploySeconds),
-  };
-  if (record.groupUnits?.length && (record.groupUnits.length > 1 || record.statSubject === "spawned-unit")) {
-    return [
-      build("Card stats", common, {}),
-      ...record.groupUnits.map(unit => build(unit.name, {
-        Count: unit.count,
-        Targets: targets(unit.targetsAir, unit.targetsGround),
-        Range: unit.rangeLabel ?? unit.rangeTiles,
-        Speed: unit.moveSpeedLabel,
-        "Hit speed": seconds(unit.hitSpeedSeconds),
-      }, {
-        Hitpoints: unit.hpByLevel, Damage: unit.damageByLevel, "Damage/sec": unit.dpsByLevel,
-        "Shield hitpoints": unit.shieldHpByLevel,
-      })),
-    ];
-  }
-  return [build(record.statSubject === "spawned-unit" ? record.statSubjectLabel ?? "Spawned unit" : "Card stats", {
-    ...common,
-    Targets: record.buildingsOnly ? "Buildings" : targets(record.targetsAir, record.targetsGround),
-    Range: record.rangeLabel ?? record.rangeTiles,
-    Speed: record.moveSpeedLabel ?? (record.moveSpeedRaw == null ? null : `${record.moveSpeedRaw} (source units)`),
-    "Hit speed": seconds(record.hitSpeedSeconds),
-    "First hit": seconds(record.firstHitSeconds),
-  }, record.extraStatsByLevel && Object.keys(record.extraStatsByLevel).length ? record.extraStatsByLevel : {
-    Hitpoints: record.hpByLevel, Damage: record.damageByLevel, "Damage/sec": record.dpsByLevel,
-  })];
+function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedStatEntries> }) {
+  if (!entries.length) return <p className="ri-inspector-note">No combat statistics are available for this form at the selected level.</p>;
+  return <dl className="ri-inspector-facts ri-inspector-combat-facts ri-inspector-unified-facts">
+    {entries.map(entry=><div key={entry.id} className="ri-inspector-fact">
+      {statIconPath(entry.sourceLabel)&&<img className="ri-inspector-stat-icon" src={statIconPath(entry.sourceLabel)!} alt="" loading="lazy" aria-hidden="true"/>}
+      <div className="ri-inspector-fact-body">
+        <dt>{entry.label}{entry.marker && <FormMarker form={entry.marker}/>}</dt>
+        <dd>{statValueWithUnit(entry.value,entry.sourceLabel)}
+          {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
+        </dd>
+      </div>
+    </div>)}
+  </dl>;
 }
 
 function LevelMetricIcon({ label }: { label: string }) {
@@ -174,97 +88,96 @@ function LevelMetricIcon({ label }: { label: string }) {
   );
 }
 
-function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
-  section: CardReferenceSection; level: number; cap: number; allLevels: boolean; formMarkers?: FormMarkers;
+function LevelStats({ baseSections, formSections, form, minimum, cap, viewing }: {
+  baseSections: CardReferenceSection[];
+  formSections: CardReferenceSection[];
+  form: Form;
+  minimum: number;
+  cap: number;
+  viewing: number;
 }) {
-  const entries = Object.entries(section.levels).filter(([value]) => Number(value) <= cap);
-  const current = section.levels[level];
-  if (!entries.length) return null;
-  const columns = [...new Set(entries.flatMap(([, row]) => Object.keys(row)))];
-  const maxByColumn = Object.fromEntries(columns.map(label => {
-    const values = entries.map(([, row]) => {
-      const value = row[label];
-      if (typeof value === "number") return Number.isFinite(value) ? value : null;
-      if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
-      return null;
-    }).filter((value): value is number => value !== null);
-    return [label, Math.max(0, ...values)];
-  }));
-  if (allLevels) {
-    return (
-      <section className="ri-level-table-section" aria-label={section.name + " level progression"}>
-        <div className="ri-level-table-heading">
-          <div className="ri-level-table-heading-copy">
-            <span className="ri-level-table-eyebrow">LEVEL PROGRESSION</span>
-            <strong>{section.name}</strong>
-          </div>
-          <span className="ri-level-table-count">{entries.length} levels</span>
+  const table = buildUnifiedLevelTable(baseSections, formSections, form, minimum, cap);
+  if (!table.columns.length || !table.rows.length) return null;
+
+  const numeric = (value: string | null) => {
+    if (value == null) return null;
+    const match = value.replace(/,/g, "").match(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)/);
+    if (!match) return null;
+    const result = Number(match[0]);
+    return Number.isFinite(result) ? result : null;
+  };
+  const maxima = table.columns.map((_column, index) =>
+    Math.max(0, ...table.rows.map(row => numeric(row.cells[index]?.value)).filter((value): value is number => value !== null))
+  );
+
+  return (
+    <section className="ri-level-table-section ri-unified-level-table" aria-label="Combined card stats by level">
+      <div className="ri-level-table-heading">
+        <div className="ri-level-table-heading-copy">
+          <span className="ri-level-table-eyebrow">LEVEL PROGRESSION</span>
+          <strong>{form === "base" ? "Card stats by level" : formLabels[form] + " vs Base"}</strong>
         </div>
-        <p className="ri-level-table-caption">Compare how each stat grows by level. Bars show the relative value within each stat.</p>
-        <div className="ri-inspector-table" tabIndex={0} role="region" aria-label={section.name + " stats by level"}>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">
-                  <span className="ri-level-table-column is-level">
-                    <LevelMetricIcon label="level"/>
-                    <span>Level</span>
+        <span className="ri-level-table-count">{table.rows.length} levels</span>
+      </div>
+      <p className="ri-level-table-caption">
+        {form === "base" ? "All available stats in one table." : "Each level is compared with Base at the same level. Changes show the exact difference."}
+      </p>
+      <div className="ri-inspector-table" tabIndex={0} role="region" aria-label="Combined stats by level">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className="ri-level-table-column is-level">
+                  <LevelMetricIcon label="level"/>
+                  <span>Level</span>
+                </span>
+              </th>
+              {table.columns.map(column => (
+                <th key={column.id} scope="col">
+                  <span className={"ri-level-table-column is-" + (/hit ?points|health/i.test(column.sourceLabel) ? "health" : /damage\s*\/\s*sec|dps/i.test(column.sourceLabel) ? "dps" : /damage/i.test(column.sourceLabel) ? "damage" : "other")}>
+                    <LevelMetricIcon label={column.sourceLabel}/>
+                    <span className="ri-level-table-column-label">{column.label}</span>
+                    {column.marker && <FormMarker form={column.marker}/>}
                   </span>
                 </th>
-                {columns.map(label => (
-                  <th key={label} scope="col">
-                    <span className={"ri-level-table-column is-" + (/hit ?points|health/i.test(label) ? "health" : /damage\s*\/\s*sec|dps/i.test(label) ? "dps" : /damage/i.test(label) ? "damage" : "other")}>
-                      <LevelMetricIcon label={label}/>
-                      <span className="ri-level-table-column-label">{label}</span>
-                      {formMarkers[label] && <FormMarker form={formMarkers[label]}/>}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map(([value, row]) => {
-                const isViewing = Number(value) === level;
-                return (
-                  <tr key={value} className={isViewing ? "is-viewing" : undefined} aria-current={isViewing ? "true" : undefined}>
-                    <th scope="row">
-                      <span className="ri-level-row-level">{value}</span>
-                      {isViewing && <span className="ri-level-row-current">Viewing</span>}
-                    </th>
-                    {columns.map(label => {
-                      const cell = row[label] ?? "—";
-                      const numericValue = typeof cell === "number"
-                        ? (Number.isFinite(cell) ? cell : null)
-                        : typeof cell === "string" && cell.trim() !== "" && Number.isFinite(Number(cell))
-                          ? Number(cell)
-                          : null;
-                      const maximum = maxByColumn[label] ?? 0;
-                      const ratio = numericValue !== null && maximum > 0
-                        ? Math.max(0, Math.min(100, numericValue / maximum * 100))
-                        : null;
-                      return (
-                        <td key={label} className={ratio === null ? undefined : "has-level-bar"}>
-                          <span className="ri-level-table-cell">
-                            <span className="ri-level-table-value">{cell}</span>
-                            {ratio !== null && (
-                              <span className="ri-level-table-track" aria-hidden="true">
-                                <span style={{ width: ratio + "%" }}/>
-                              </span>
-                            )}
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map(row => (
+              <tr key={row.level} className={row.level === viewing ? "is-viewing" : undefined}
+                aria-current={row.level === viewing ? "true" : undefined}>
+                <th scope="row">
+                  <span className="ri-level-row-level">{row.level}</span>
+                  {row.level === viewing && <span className="ri-level-row-current">Viewing</span>}
+                </th>
+                {row.cells.map((cell,index) => {
+                  const value = cell.value;
+                  const numericValue = numeric(value);
+                  const maximum = maxima[index] ?? 0;
+                  const ratio = numericValue !== null && maximum > 0
+                    ? Math.max(0,Math.min(100,numericValue/maximum*100)) : null;
+                  return (
+                    <td key={table.columns[index].id} className={ratio === null ? undefined : "has-level-bar"}>
+                      <span className="ri-level-table-cell">
+                        <span className="ri-level-table-value">{value == null ? "—" : statValueWithUnit(value,table.columns[index].sourceLabel)}</span>
+                        {cell.delta && <small className="ri-level-table-delta">{cell.delta}</small>}
+                        {ratio !== null && (
+                          <span className="ri-level-table-track" aria-hidden="true">
+                            <span style={{width:ratio+"%"}}/>
                           </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    );
-  }
-  return current ? null : <p className="ri-inspector-note">No values are published for level {level}.</p>;
+                        )}
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 const formLabels: Record<Form, string> = { base: "Base", evolution: "Evolution", hero: "Hero" };
