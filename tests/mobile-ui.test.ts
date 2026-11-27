@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+const deckAnalysis=readFileSync(new URL("../src/components/DeckCandidateAnalysis.tsx",import.meta.url),"utf8");
 const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
 const layout=readFileSync(new URL("../src/app/layout.tsx",import.meta.url),"utf8");
 const legacy=readFileSync(new URL("../src/components/LegacyWorkspace.tsx",import.meta.url),"utf8");
@@ -47,7 +48,7 @@ test("enterprise layout avoids repeated explanatory copy and duplicate shortcut 
   assert.doesNotMatch(page,/Enter your Clash Royale player tag to see your cards/);
   assert.match(page,/aria-label="Search cards"/);
   assert.match(page,/className="ri-filter-count" aria-live="polite"/);
-  assert.match(page,/Role breakdown/);
+  assert.match(deckAnalysis,/Role breakdown/);
   assert.match(page,/How recommendations work/);
   assert.match(css,/--ri-border:#e4e7ec/);
   assert.match(css,/\.ri-stat-grid\{display:grid/);
