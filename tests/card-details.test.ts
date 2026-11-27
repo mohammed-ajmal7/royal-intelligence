@@ -83,4 +83,10 @@ test("card inspector uses compact spacing without removing card information",()=
   assert.match(css,/\.ri-inspector-information-facts \.ri-inspector-fact\{[\s\S]*min-height:43px/);
   assert.match(css,/\.ri-level-option\{[\s\S]*min-height:48px/);
   assert.match(css,/@media\(max-width:560px\)/);
+  assert.doesNotMatch(component,/Recommended design/);
+  assert.match(component,/<section className="ri-level-design" aria-label="Card level">/);
+  assert.match(css,/\/\* Extra-compact level selector/);
+  assert.match(css,/\.ri-level-trigger\{[\s\S]*min-height:39px/);
+  assert.match(css,/\.ri-level-option\{[\s\S]*min-height:39px/);
+  assert.match(css,/\.ri-level-panel-footer\{[\s\S]*margin-top:7px/);
 });
