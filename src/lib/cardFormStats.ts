@@ -46,6 +46,16 @@ function sectionLabel(section: string, label: string): string {
   return /^(card stats|combat stats)$/i.test(section) ? label : section + " · " + label;
 }
 
+function valuesDiffer(baseValue: string | null, formValue: string): boolean {
+  if (baseValue == null) return true;
+  const base = numericParts(baseValue);
+  const form = numericParts(formValue);
+  if (base && form && base.unit.toLowerCase() === form.unit.toLowerCase()) {
+    return Math.abs(base.number - form.number) >= 0.000001;
+  }
+  return baseValue.trim() !== formValue.trim();
+}
+
 function numericParts(value: string): { number: number; unit: string } | null {
   const match = value.trim().replace(/,/g, "").match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(.*?)$/);
   if (!match) return null;
@@ -116,9 +126,7 @@ function comparison(
   const value = form === "base" ? baseValue : formValue ?? baseValue;
   if (value == null) return null;
 
-  const different = form !== "base" && formValue != null &&
-    (signedStatDelta(baseValue, formValue) != null ||
-      (signedStatDelta(baseValue, formValue) == null && baseValue?.trim() !== formValue.trim()));
+  const different = form !== "base" && formValue != null && valuesDiffer(baseValue, formValue);
   return {
     value,
     baseValue,
@@ -175,10 +183,7 @@ export function buildUnifiedLevelTable(
         .some(level => {
           const baseValue = valueAt(baseSection, label, level);
           const formValue = valueAt(formSection, label, level);
-          return formValue != null && (
-            signedStatDelta(baseValue, formValue) != null ||
-            (signedStatDelta(baseValue, formValue) == null && baseValue?.trim() !== formValue.trim())
-          );
+          return formValue != null && valuesDiffer(baseValue, formValue);
         }) ? form as Exclude<StatForm, "base"> : null;
 
       columns.push({
