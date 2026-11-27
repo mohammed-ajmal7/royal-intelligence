@@ -893,3 +893,71 @@
   .ri-profile{flex-wrap:wrap}
   .ri-profile .ri-status{margin-left:0}
 }
+
+
+/* Extra-compact level selector: no decorative section heading, less vertical bulk. */
+.ri-level-design{
+  gap:4px;
+  padding-top:0;
+}
+.ri-level-trigger{
+  min-height:39px;
+  gap:7px;
+  padding:5px 8px;
+  border-radius:8px;
+}
+.ri-level-trigger-copy{gap:1px}
+.ri-level-trigger-copy>span{font-size:8px}
+.ri-level-trigger-copy strong{font-size:12px}
+.ri-level-owned-badge{
+  padding:3px 6px;
+  font-size:8px;
+  line-height:1.2;
+}
+.ri-level-trigger-chevron{width:14px;height:14px}
+.ri-level-popover{
+  top:calc(100% + 4px);
+  max-height:min(58dvh,390px);
+  border-radius:9px;
+  box-shadow:0 12px 30px rgba(16,24,40,.16);
+}
+.ri-level-popover .ri-level-panel{padding:8px}
+.ri-level-panel-header{
+  gap:6px;
+  margin-bottom:7px;
+}
+.ri-level-panel-header h3{font-size:12px}
+.ri-level-panel-header p{font-size:9px;line-height:1.25}
+.ri-level-grid{gap:4px}
+.ri-level-option{
+  min-height:39px;
+  gap:2px;
+  padding:4px 3px;
+  border-radius:7px;
+}
+.ri-level-option strong{font-size:14px}
+.ri-level-option span{font-size:7px;letter-spacing:.1px}
+.ri-level-option.is-selected{padding:3px 2px}
+.ri-level-option.is-selected:focus-visible{outline-offset:1px}
+.ri-level-panel-footer{
+  gap:6px;
+  margin-top:7px;
+  padding-top:6px;
+}
+.ri-level-panel-footer span{font-size:9px}
+.ri-level-panel-footer strong{font-size:11px}
+.ri-level-design>.ri-inspector-all-levels{
+  min-height:26px;
+  padding:4px 7px;
+  font-size:9px;
+}
+@media(max-width:560px){
+  .ri-level-trigger{min-height:38px;padding:5px 7px}
+  .ri-level-popover{max-height:min(64dvh,420px)}
+  .ri-level-popover .ri-level-panel{padding:7px}
+  .ri-level-panel-header h3{font-size:11px}
+  .ri-level-grid{gap:4px}
+  .ri-level-option{min-height:37px;padding:4px 2px}
+  .ri-level-option strong{font-size:13px}
+  .ri-level-panel-footer{margin-top:6px;padding-top:5px}
+}
