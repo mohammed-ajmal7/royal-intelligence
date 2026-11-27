@@ -1,4 +1,5 @@
 import { elixirAsset } from "../lib/statAssets";
+import "./elixir-icon.css";
 
 type Props = {
   cost: number | null | undefined;
