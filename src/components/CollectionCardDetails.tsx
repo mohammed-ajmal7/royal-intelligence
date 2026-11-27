@@ -422,7 +422,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                   })}
                 </div>
                 <div className="ri-level-panel-footer">
-                  <span>Your owned card level</span>
+                  <span>Your actual card level</span>
                   <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Current level unknown" : "Not owned"}</strong>
                 </div>
               </div>
