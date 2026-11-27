@@ -14,7 +14,6 @@ import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
 import { type MechanicsCatalog } from "../lib/mechanics";
 import { generateSelfMadeDecks, type SelfMadeResult } from "../lib/selfMadeDeckLab";
-import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
@@ -22,6 +21,7 @@ import { CardSortControls } from "../components/CardSortControls";
 import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
 import { sortCardsByStat, type CardStatSortMetric, type CardStatSortMode } from "../lib/cardCollectionSort";
 import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
+import { DeckCandidateAnalysis } from "../components/DeckCandidateAnalysis";
 import { ApiResponseView } from "../components/ApiResponseView";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { ElixirIcon } from "../components/ElixirIcon";
@@ -225,21 +225,6 @@ function ApiExplorer({playerTag,clanTag}:{playerTag:string;clanTag:string}){
     </section>}
 
   </div>;
-}
-function PlayGuide({deck,mechanics,focus}:{deck:Card[];mechanics:MechanicsCatalog|null;focus:StrategyFocus}){
-  const guide=buildDeckPlaybook(deck,mechanics,focus);
-  if(!guide)return null;
-  return <details className="ri-panel ri-guide"><summary><BookOpen size={18}/> How to play this deck <ChevronRight size={16}/></summary>
- 
-    {[guide.opening,guide.single,guide.double,guide.finishing].map(x=>
-      <div className="ri-guide-step" key={x.heading}><strong>{x.heading}</strong><p>{x.objective}</p>
-        <ul>{x.steps.slice(0,3).map((v,i)=><li key={i}>{v}</li>)}</ul></div>)}
-    <details><summary>Threat counters and individual card roles</summary>
-      {guide.matchups.map(x=><p key={x.id}><strong>{x.name}:</strong> {x.instructions.join(" ")}</p>)}
-      {guide.cardJobs.map(x=><p key={x.id}><strong>{x.name}:</strong> {x.job} — {x.when}</p>)}
-    </details>
- 
-  </details>;
 }
 
 export default function Home() {
@@ -528,36 +513,7 @@ export default function Home() {
                     <small>{result.playstyle.archetype} · {result.playstyle.score.toFixed(1)}/100 playstyle fit</small></div>
                     <button className="ri-text-button" onClick={()=>setDeck(result.cards)}>{result.cards.map(c=>c.id).join(",")===deck.map(c=>c.id).join(",")?"Selected":"Choose team"} <Check size={15}/></button></div>
                   <MiniDeck cards={result.cards}/>
-                  <details className="ri-playstyle-analysis"><summary>Why this deck fits {focusChoices.find(o=>o.value===focus)?.label} <ChevronRight size={15}/></summary>
-                    <p>{result.playstyle.summary}</p>
-                    <div className="ri-playstyle-factors">{result.playstyle.factors.map(factor=><div key={factor.id}>
-                      <span><strong>{factor.label}</strong><small>{factor.evidence}</small></span>
-                      <b>{factor.score.toFixed(0)}</b>
-                    </div>)}</div>
-                    {result.playstyle.tradeoffs.length>0&&<p className="ri-playstyle-tradeoffs"><strong>Trade-offs:</strong> {result.playstyle.tradeoffs.join(" ")}</p>}
-                    {result.playstyle.personalThreats.length>0&&<p className="ri-playstyle-personal"><strong>From your battle history:</strong> {result.playstyle.personalThreats.map(item=>item.name+" — "+item.losses+"/"+item.seen+" losses. "+item.response).join(" ")}</p>}
-                  </details>
-                  {result.specialSlots.length>0&&<p className="ri-muted ri-tiny">Suggested forms: {result.specialSlots.map(x=>x.slot+" — "+x.card).join(" · ")}</p>}
-                  <details className="ri-role-details"><summary>Role breakdown · all owned alternatives ranked <ChevronRight size={16}/></summary>
-                    {result.slots.map(slot=><details key={slot.id} className="ri-role-row"><summary><strong>{slot.label}</strong><span>{slot.chosen.card.name} · {slot.chosen.grade}/100 · {slot.considered} checked</span></summary>
-                      <p>Lv {slot.chosen.card.level} · HP {digits(slot.chosen.hp)} · DPS {digits(slot.chosen.dps)} · Damage {digits(slot.chosen.damage)} · Range {digits(slot.chosen.range)} tiles · Splash {digits(slot.chosen.splash)} tiles · Evidence coverage {Math.round(slot.chosen.confidence*100)}%</p>
-                      <p>{slot.chosen.evidence}</p>
-                      {slot.chosen.measured.length>0&&<p className="ri-muted">Role metrics: {slot.chosen.measured.map(m=>m.label+" "+m.value+" "+m.unit+" · "+m.relative+"% of your role benchmark").join(" · ")}</p>}
-                      {slot.chosen.evolved&&<p className="ri-muted">Published {slot.chosen.evolved.form} at Lv {slot.chosen.card.level}: HP {digits(slot.chosen.evolved.hp)} · Damage {digits(slot.chosen.evolved.damage)} · DPS {digits(slot.chosen.evolved.dps)}. Only source-published values are shown.</p>}
-                      {slot.alternatives.length>0&&<details className="ri-role-ranking"><summary>Full ranking · {slot.considered} owned candidates checked</summary>
-                        <div className="ri-role-ranking-scroll"><table><thead><tr><th>Card</th><th>Level</th><th>Elixir</th><th>HP</th><th>Damage</th><th>DPS</th><th>Hit interval</th><th>Range</th><th>Splash</th><th>Evo / Hero</th><th>Evidence</th><th>Role score</th></tr></thead>
-                          <tbody>{[slot.chosen,...slot.alternatives].map((entry,index)=><tr key={entry.card.id}>
-                            <td>{index===0?"★ ":""}{entry.card.name}</td><td>{entry.card.level??"—"}</td><td>{entry.card.elixir??"—"}</td>
-                            <td>{digits(entry.hp)}</td><td>{digits(entry.damage)}</td><td>{digits(entry.dps)}</td>
-                            <td>{entry.hitSpeed===null?"—":entry.hitSpeed+"s"}</td><td>{entry.range===null?"—":entry.range+" tiles"}</td>
-                            <td>{entry.splash===null?"—":entry.splash+" tiles"}</td>
-                            <td>{[entry.card.evo===true?"Evo":"",entry.card.hero===true?"Hero":"",entry.card.rarity.toLowerCase()==="champion"?"Champion":""].filter(Boolean).join(" / ")||"—"}</td>
-                            <td>{Math.round(entry.confidence*100)}%</td><td>{entry.grade.toFixed(1)}</td>
-                          </tr>)}</tbody>
-                        </table></div>
-                      </details>}
-                    </details>)}</details>
-                  <PlayGuide deck={result.cards} mechanics={mechanics} focus={focus}/>
+                  <DeckCandidateAnalysis candidate={result} focus={focus} mechanics={mechanics}/>
                 </div>)}
               </div>}
             </section>
