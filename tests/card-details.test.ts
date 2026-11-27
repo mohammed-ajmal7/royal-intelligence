@@ -72,7 +72,7 @@ test("card inspector uses compact spacing without removing card information",()=
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
 
   // Keep every data section and the original fields visible in the component.
-  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
+  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/);
   assert.match(component,/buildUnifiedLevelTable/);
   assert.match(component,/ri-inspector-unified-section/);
   assert.match(component,/<h3>Card information<\/h3>/);
@@ -110,7 +110,7 @@ test("selected form uses one unified stat grid and official form icons",()=>{
   assert.ok(component.includes("function FormMarker"));
   assert.ok(component.includes('<CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>'));
   assert.ok(component.includes("ri-inspector-unified-section"));
-  assert.ok(component.includes("<UnifiedStatGrid entries={statEntries}/>"));
+  assert.ok(/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/.test(component));
   assert.ok(component.includes('option !== "base" && <CardFormIcon'));
   assert.ok(component.includes('className="ri-inspector-form-tab-icon"'));
   assert.ok(!component.includes("sections.map(section =>"));
