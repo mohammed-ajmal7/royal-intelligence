@@ -121,8 +121,9 @@ function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedS
         <dd className={entry.ownedProgression ? "has-owned-progression" : undefined}>
           {entry.ownedProgression ? (
             <div className="ri-inspector-owned-equation" role="group"
-              aria-label={"Level " + entry.ownedProgression.level + ": " + entry.ownedProgression.equation}>
-              <span className="ri-inspector-equation-from-level">LV {entry.ownedProgression.level}</span>
+              aria-label={"Stat change: " + entry.ownedProgression.fromValue + " " +
+                entry.ownedProgression.operator + " " + entry.ownedProgression.changeValue + " = " +
+                entry.ownedProgression.toValue}>
               <span className="ri-inspector-equation-value">{entry.ownedProgression.fromValue}</span>
               <span className={"ri-inspector-equation-operator " + (entry.ownedProgression.operator === "+" ? "is-increase" : "is-decrease")}>
                 {entry.ownedProgression.operator}
@@ -130,7 +131,6 @@ function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedS
               <span className="ri-inspector-equation-change">{entry.ownedProgression.changeValue}</span>
               <span className="ri-inspector-equation-equals">=</span>
               <strong className="ri-inspector-equation-result">{entry.ownedProgression.toValue}</strong>
-              <span className="ri-inspector-equation-target-level">LV {entry.ownedProgression.targetLevel}</span>
             </div>
           ) : <span className="ri-inspector-stat-value">{statValueWithUnit(entry.value,entry.sourceLabel)}</span>}
           {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
