@@ -3,6 +3,7 @@
 import "./overview-dashboard.css";
 import "./card-sorting.css";
 import "./card-form-badges.css";
+import "./battles.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
