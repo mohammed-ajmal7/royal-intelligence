@@ -242,7 +242,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
         </div>}
         <section className="ri-level-design" aria-label="Card level">
           <div className="ri-level-picker" ref={levelPickerRef}>
-            <button type="button" className="ri-level-trigger" aria-expanded={levelPickerOpen}
+            {!levelPickerOpen && <button type="button" className="ri-level-trigger" aria-expanded={levelPickerOpen}
               aria-controls={levelPickerId} onClick={() => setLevelPickerOpen(open => !open)}>
               <span className="ri-level-trigger-copy">
                 <span>Card level</span>
@@ -252,7 +252,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                 {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
               </span>
               <ChevronDown className="ri-level-trigger-chevron" size={18} aria-hidden="true"/>
-            </button>
+            </button>}
             <div className="ri-level-popover" id={levelPickerId} hidden={!levelPickerOpen}>
               <div className="ri-level-panel">
                 <div className="ri-level-panel-header">
@@ -260,9 +260,13 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                     <h3>Card Level</h3>
                     <p>Choose a level to view card stats</p>
                   </div>
-                  <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
-                    {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
-                  </span>
+                  <div className="ri-level-panel-actions">
+                    <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
+                      {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
+                    </span>
+                    <button type="button" className="ri-level-panel-close" aria-label="Close card level selector"
+                      onClick={() => setLevelPickerOpen(false)}><X size={16}/></button>
+                  </div>
                 </div>
                 <div className="ri-level-grid" role="group" aria-label="Choose card level">
                   {Array.from({ length: cap - minimum + 1 }, (_, index) => minimum + index).map(value => {
