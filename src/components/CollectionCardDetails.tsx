@@ -182,9 +182,12 @@ function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
   if (!entries.length) return null;
   const columns = [...new Set(entries.flatMap(([, row]) => Object.keys(row)))];
   const maxByColumn = Object.fromEntries(columns.map(label => {
-    const values = entries.map(([, row]) => row[label]).filter(
-      (value): value is number => typeof value === "number" && Number.isFinite(value),
-    );
+    const values = entries.map(([, row]) => {
+      const value = row[label];
+      if (typeof value === "number") return Number.isFinite(value) ? value : null;
+      if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+      return null;
+    }).filter((value): value is number => value !== null);
     return [label, Math.max(0, ...values)];
   }));
   if (allLevels) {
@@ -230,7 +233,11 @@ function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
                     </th>
                     {columns.map(label => {
                       const cell = row[label] ?? "—";
-                      const numericValue = typeof cell === "number" && Number.isFinite(cell) ? cell : null;
+                      const numericValue = typeof cell === "number"
+                        ? (Number.isFinite(cell) ? cell : null)
+                        : typeof cell === "string" && cell.trim() !== "" && Number.isFinite(Number(cell))
+                          ? Number(cell)
+                          : null;
                       const maximum = maxByColumn[label] ?? 0;
                       const ratio = numericValue !== null && maximum > 0
                         ? Math.max(0, Math.min(100, numericValue / maximum * 100))
