@@ -46,17 +46,19 @@ export function CardAbilityIcon({
   cardName,
   form,
   abilityName,
+  size = "normal",
 }: {
   cardName: string;
   form: Form;
   abilityName: string;
+  size?: "normal" | "small";
 }) {
   const [failed, setFailed] = useState(false);
   const src = form === "hero" ? heroAbilityIconUrl(cardName) : null;
 
   if (!src || failed) {
     return (
-      <span className="ri-ability-icon ri-ability-icon-fallback" aria-hidden="true">
+      <span className={"ri-ability-icon ri-ability-icon-fallback" + (size === "small" ? " is-small" : "")} aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none">
           <path d="m16 2.5 3.1 7.1 7.6-2-2 7.5 5.2 3.2-7.2 3.4.4 7.8-7.1-3.3-6.3 4.5.2-8-7.1-3.3 6-4.9-2.1-7.5 7.5 2.1L16 2.5Z"
             fill="currentColor" opacity=".92"/>
@@ -68,7 +70,7 @@ export function CardAbilityIcon({
   }
 
   return (
-    <span className="ri-ability-icon">
+    <span className={"ri-ability-icon" + (size === "small" ? " is-small" : "")}>
       <img
         src={src}
         alt={abilityName + " in-game ability icon"}
