@@ -503,7 +503,7 @@ export default function Home() {
                 person.tag===player?.tag?"You ("+person.name+")":(index===1?"Teammate ("+person.name+")":person.name)
               ).join(" + ");
               const opponentNames=b.opponent.map(person=>person.name).join(" + ");
-              const playerDeck=(person:typeof b.team[number],index:number,side:"team"|"opponent")=>
+              const playerDeck=(person:Snapshot["battles"][number]["team"][number],index:number,side:"team"|"opponent")=>
                 <article className="ri-battle-player" key={(person.tag||person.name)+"-"+index}>
                   <header className="ri-battle-player-heading">
                     <strong>{side==="team"
