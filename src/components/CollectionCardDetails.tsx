@@ -117,6 +117,11 @@ function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedS
       <div className="ri-inspector-fact-body">
         <dt>{entry.label}{entry.marker && <FormMarker form={entry.marker}/>}</dt>
         <dd>{statValueWithUnit(entry.value,entry.sourceLabel)}
+          {entry.ownedProgression && (
+            <small className="ri-inspector-owned-equation" aria-label={"Owned level progression: " + entry.ownedProgression.equation}>
+              {entry.ownedProgression.equation}
+            </small>
+          )}
           {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
         </dd>
       </div>
@@ -329,7 +334,8 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
     }
   }
   const comparisonBase = form !== "base" && !chosen ? [] : baseSections;
-  const statEntries = buildUnifiedStatEntries(comparisonBase, activeSections, form, viewing);
+  const ownedLevel = card.owned && card.level != null ? card.level : null;
+  const statEntries = buildUnifiedStatEntries(comparisonBase, activeSections, form, viewing, ownedLevel);
   const hasRows = buildUnifiedLevelTable(comparisonBase, activeSections, form, minimum, cap).rows.length > 0;
   const abilityDescriptions = activeSections.filter(section => section.name !== "Card stats" && section.description);
   const description = chosen?.description ?? (form === "base" && !profile ? prior?.description : null);
@@ -384,7 +390,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                 <strong>Level {viewing}</strong>
               </span>
               <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
-                {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
+                {card.owned && card.level != null ? "OWNED · LV " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
               </span>
               <ChevronDown className="ri-level-trigger-chevron" size={18} aria-hidden="true"/>
             </button>}
@@ -397,7 +403,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                   </div>
                   <div className="ri-level-panel-actions">
                     <span className={"ri-level-owned-badge" + (card.owned && card.level != null ? "" : " is-unowned")}>
-                      {card.owned && card.level != null ? "CURRENT · " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
+                      {card.owned && card.level != null ? "OWNED · LV " + card.level : card.owned ? "CURRENT" : "NOT OWNED"}
                     </span>
                     <button type="button" className="ri-level-panel-close" aria-label="Close card level selector"
                       onClick={() => setLevelPickerOpen(false)}><X size={16}/></button>
@@ -411,12 +417,12 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
                       aria-pressed={viewing === value} aria-label={"Level " + value + (isOwned ? ", your current level" : "")}
                       onClick={() => { setLevel(value); setAllLevels(false); setLevelPickerOpen(false); }}>
                       <strong>{value}</strong>
-                      <span>{isOwned ? "✓ CURRENT" : "LEVEL"}</span>
+                      <span>{isOwned ? "✓ OWNED" : "LEVEL"}</span>
                     </button>;
                   })}
                 </div>
                 <div className="ri-level-panel-footer">
-                  <span>Your actual card level</span>
+                  <span>Your owned card level</span>
                   <strong>{card.owned && card.level != null ? "Level " + card.level : card.owned ? "Current level unknown" : "Not owned"}</strong>
                 </div>
               </div>
