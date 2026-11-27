@@ -994,3 +994,26 @@
   .ri-level-panel-close{transition:none}
 }
 
+/* Form provenance markers: identify stats introduced or changed by Evolution/Hero. */
+.ri-inspector-form-marker{
+  display:inline-block;
+  width:15px;
+  height:15px;
+  margin-left:5px;
+  vertical-align:-3px;
+  border-radius:4px;
+  object-fit:contain;
+}
+.ri-inspector-form-marker.is-evolution{
+  box-shadow:0 0 0 1px rgba(166,121,238,.28);
+}
+.ri-inspector-form-marker.is-hero{
+  box-shadow:0 0 0 1px rgba(237,182,88,.3);
+}
+.ri-inspector-table th .ri-inspector-form-marker{
+  width:13px;
+  height:13px;
+  margin-left:4px;
+  vertical-align:-2px;
+}
+
