@@ -4,6 +4,13 @@ export type CardOwnership = "Owned" | "Locked" | "All";
 export type FormStatusFilter = "All" | "Unlocked" | "Locked";
 export type CardTypeFilter = "" | "Evolutions" | "Heroes";
 
+function supportsSpecialForm(card: Card, type: Exclude<CardTypeFilter, "">): boolean {
+  if (type === "Evolutions") {
+    return card.hasEvolution === true || card.evo === true || Boolean(card.evolutionImage);
+  }
+  return card.hasHero === true || card.hero === true || Boolean(card.heroImage);
+}
+
 /**
  * Collection scope uses "Locked" for cards the player does not own.
  * Inside an Owned special-form view, formStatus distinguishes unlocked and
@@ -18,9 +25,7 @@ export function filterCollection(
   return cards.filter(card => {
     if (card.tower || !card.name.toLocaleLowerCase().includes(search)) return false;
 
-    const supportsType = options.type === "" ||
-      (options.type === "Evolutions" && (card.hasEvolution === true || card.evo === true)) ||
-      (options.type === "Heroes" && (card.hasHero === true || card.hero === true));
+    const supportsType = options.type === "" || supportsSpecialForm(card, options.type);
     if (!supportsType) return false;
     if (options.ownership !== "All" && card.owned !== (options.ownership === "Owned")) return false;
 
