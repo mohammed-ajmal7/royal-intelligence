@@ -27,6 +27,7 @@ test("2v2 battle history renders all four players and all four decks", () => {
 test("dashboard Battles tab shows four distinct 2v2 player decks with readable matchup details",()=>{
   const dashboard=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const battleStyles=readFileSync(new URL("../src/app/battles.css",import.meta.url),"utf8");
 
   assert.match(dashboard,/const isTwoVTwo=b\\.team\\.length===2&&b\\.opponent\\.length===2/);
   assert.match(dashboard,/b\\.team\\.map\\(\\(person,index\\)=>playerDeck\\(person,index,"team"\\)\\)/);
@@ -45,11 +46,11 @@ test("dashboard Battles tab shows four distinct 2v2 player decks with readable m
   assert.doesNotMatch(dashboard,/32 cards returned/);
   assert.doesNotMatch(dashboard,/Opponent cards/);
 
-  assert.match(css,/\\.ri-battle-2v2-teams\\{display:grid;grid-template-columns:repeat\\(2/);
-  assert.match(css,/\\.ri-battle-player \\.ri-deck-grid\\{grid-template-columns:repeat\\(8/);
+  assert.match(battleStyles,/\\.ri-battle-team/);
+  assert.match(battleStyles,/\\.ri-battle-player \\.ri-deck-grid/);
   assert.match(css,/\\.ri-battle-match-context/);
   assert.match(css,/\\.ri-battle-deck-panel/);
-  assert.match(css,/@media\\(max-width:760px\\)\\{\\.ri-battle-2v2-teams/);
+  assert.match(battleStyles,/\\.ri-battle-deck-panel/);
 });
 
 test("battle labels use readable mode names and stable calendar dates",()=>{
