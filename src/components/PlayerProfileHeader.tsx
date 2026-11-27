@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { MapPin, Shield } from "lucide-react";
+import { Layers3, MapPin, Medal, Percent, Shield, Trophy } from "lucide-react";
 import type { Snapshot } from "../lib/model";
 import { ProfileAvatar } from "./ProfileAvatar";
 
@@ -93,7 +93,44 @@ function MetaItem({
   );
 }
 
-export function PlayerProfileHeader({ player }: { player: Snapshot }) {
+type ProfileMetrics = {
+  trophies: string;
+  personalBest: string;
+  cardsOwned: number;
+  cardsTotal: number;
+  winRate: string;
+};
+
+function ProfileStat({
+  Icon,
+  label,
+  value,
+  hint,
+}: {
+  Icon: typeof Trophy;
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
+  return (
+    <div className="ri-profile-stat">
+      <div className="ri-profile-stat-head">
+        <span className="ri-profile-stat-icon"><Icon size={19} strokeWidth={2.2}/></span>
+        <span>{label}</span>
+      </div>
+      <strong>{value}</strong>
+      {hint && <small>{hint}</small>}
+    </div>
+  );
+}
+
+export function PlayerProfileHeader({
+  player,
+  metrics,
+}: {
+  player: Snapshot;
+  metrics: ProfileMetrics;
+}) {
   const raw = (player.raw && typeof player.raw === "object" ? player.raw : {}) as RawProfile;
   const arenaId = numeric(raw.arena?.id);
   const directArenaNumber = numeric(raw.arena?.arenaId ?? raw.arena?.arenaID ?? raw.arena?.arena_id);
@@ -179,6 +216,13 @@ export function PlayerProfileHeader({ player }: { player: Snapshot }) {
         >
           {hasClan ? player.clan : "No clan"}
         </MetaItem>
+      </div>
+
+      <div className="ri-profile-stats" aria-label="Player statistics">
+        <ProfileStat Icon={Trophy} label="Trophies" value={metrics.trophies}/>
+        <ProfileStat Icon={Medal} label="Personal best" value={metrics.personalBest}/>
+        <ProfileStat Icon={Layers3} label="Cards" value={metrics.cardsOwned} hint={"of " + metrics.cardsTotal}/>
+        <ProfileStat Icon={Percent} label="Win rate" value={metrics.winRate}/>
       </div>
     </section>
   );
