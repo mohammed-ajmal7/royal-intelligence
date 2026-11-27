@@ -961,3 +961,36 @@
   .ri-level-option strong{font-size:13px}
   .ri-level-panel-footer{margin-top:6px;padding-top:5px}
 }
+
+/* The open level panel replaces the duplicate trigger with an in-panel close control. */
+.ri-level-panel-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+}
+.ri-level-panel-close{
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  flex:0 0 auto;
+  border:1px solid var(--ri-border);
+  border-radius:8px;
+  background:var(--ri-paper);
+  color:var(--ri-sub);
+  transition:background .15s,border-color .15s,color .15s;
+}
+.ri-level-panel-close:hover{
+  border-color:var(--ri-accent);
+  background:var(--ri-soft);
+  color:var(--ri-text);
+}
+.ri-level-panel-close:focus-visible{
+  outline:2px solid var(--ri-accent);
+  outline-offset:2px;
+}
+@media(prefers-reduced-motion:reduce){
+  .ri-level-panel-close{transition:none}
+}
+
