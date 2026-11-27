@@ -10,6 +10,7 @@ export type UnifiedStatEntry = {
   value: string;
   baseValue: string | null;
   delta: string | null;
+  ownedProgression: { level: number; equation: string } | null;
   marker: Exclude<StatForm, "base"> | null;
 };
 
@@ -113,6 +114,30 @@ function labelsForLevel(
   ])];
 }
 
+function formatStatNumber(value: number): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+}
+
+export function ownedLevelStatEquation(
+  ownedValue: string | null,
+  targetValue: string | null,
+  ownedLevel: number,
+  targetLevel: number,
+): string | null {
+  if (ownedValue == null || targetValue == null || ownedLevel === targetLevel) return null;
+  const owned = numericParts(ownedValue);
+  const target = numericParts(targetValue);
+  if (!owned || !target || owned.unit.toLowerCase() !== target.unit.toLowerCase()) return null;
+
+  const difference = Math.round((target.number - owned.number) * 100) / 100;
+  if (Math.abs(difference) < 0.000001) return null;
+  const operator = difference < 0 ? "−" : "+";
+  const unit = target.unit ? " " + target.unit : "";
+  return "Lv " + ownedLevel + ": " + formatStatNumber(owned.number) + " " +
+    operator + " " + formatStatNumber(Math.abs(difference)) + " = " +
+    formatStatNumber(target.number) + unit + " (Lv " + targetLevel + ")";
+}
+
 function comparison(
   section: string,
   label: string,
@@ -120,6 +145,7 @@ function comparison(
   formSection: CardReferenceSection | undefined,
   form: StatForm,
   level: number,
+  ownedLevel: number | null,
 ) {
   const baseValue = valueAt(baseSection, label, level);
   const formValue = form === "base" ? null : valueAt(formSection, label, level);
@@ -127,10 +153,17 @@ function comparison(
   if (value == null) return null;
 
   const different = form !== "base" && formValue != null && valuesDiffer(baseValue, formValue);
+  const ownedBaseValue = ownedLevel == null ? null : valueAt(baseSection, label, ownedLevel);
+  const ownedFormValue = ownedLevel == null ? null : valueAt(formSection, label, ownedLevel);
+  const ownedValue = form === "base" ? ownedBaseValue : ownedFormValue ?? ownedBaseValue;
+  const ownedEquation = ownedLevel != null
+    ? ownedLevelStatEquation(ownedValue, value, ownedLevel, level)
+    : null;
   return {
     value,
     baseValue,
     delta: different ? signedStatDelta(baseValue, formValue) : null,
+    ownedProgression: ownedEquation && ownedLevel != null ? { level: ownedLevel, equation: ownedEquation } : null,
     marker: different ? form as Exclude<StatForm, "base"> : null,
     id: section + "::" + label,
     section,
@@ -144,13 +177,14 @@ export function buildUnifiedStatEntries(
   formSections: CardReferenceSection[],
   form: StatForm,
   level: number,
+  ownedLevel: number | null = null,
 ): UnifiedStatEntry[] {
   const entries: UnifiedStatEntry[] = [];
   for (const section of sectionNames(baseSections, formSections)) {
     const baseSection = findSection(baseSections, section);
     const formSection = findSection(formSections, section);
     for (const label of labelsForLevel(baseSection, formSection, level)) {
-      const item = comparison(section, label, baseSection, formSection, form, level);
+      const item = comparison(section, label, baseSection, formSection, form, level, ownedLevel);
       if (item) entries.push(item);
     }
   }
@@ -208,7 +242,7 @@ export function buildUnifiedLevelTable(
     cells: columns.map(column => {
       const baseSection = findSection(baseSections, column.section);
       const formSection = findSection(formSections, column.section);
-      const item = comparison(column.section, column.sourceLabel, baseSection, formSection, form, level);
+      const item = comparison(column.section, column.sourceLabel, baseSection, formSection, form, level, null);
       return { value: item?.value ?? null, delta: item?.delta ?? null };
     }),
   })).filter(row => row.cells.some(cell => cell.value != null));
