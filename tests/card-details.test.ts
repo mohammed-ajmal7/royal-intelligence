@@ -106,7 +106,9 @@ test("card stats identify Evolution and Hero-only values with their form icons",
   assert.match(component,/function formStatMarkers\(/);
   assert.match(component,/base\?\.facts\[label\] !== value/);
   assert.match(component,/base\?\.levels\[Number\(level\)\]\?\.\[label\] !== value/);
-  assert.match(component,/src=\{form === "evolution" \? "\/game-icons\/stats\/evolution\.svg" : "\/game-icons\/stats\/hero\.svg"\}/);
+  assert.match(component,/import \{ CardFormIcon \} from "\.\/CardFormIcon"/);
+  assert.match(component,/function FormMarker\(\{ form \}: \{ form: Exclude<Form, "base"> \}\)/);
+  assert.match(component,/CardFormIcon className=\{"ri-inspector-form-marker is-" \+ form\} form=\{form\}\/?>/);
   assert.match(component,/<FormMarker form=\{formMarkers\[label\]\}\/?>/);
   assert.match(component,/formMarkers=\{formMarkers\}/);
   assert.match(css,/\.ri-inspector-form-marker/);
