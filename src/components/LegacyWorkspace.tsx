@@ -29,6 +29,7 @@ import {
   Info,
   ChevronRight,
 } from "lucide-react";
+import { ElixirIcon } from "./ElixirIcon";
 import { Card, Snapshot, Battle, roleGroups } from "../lib/model";
 import { demo } from "../lib/demo";
 import {
@@ -186,7 +187,7 @@ function Tile({
         ) : (
           <Crown />
         )}
-        <span className="elixir">{c.elixir ?? "?"}</span>
+        <span className="elixir" aria-label={c.elixir == null ? "Elixir cost unknown" : c.elixir + " elixir"}><ElixirIcon cost={c.elixir} size={27} decorative/></span>
         {selected && <Check className="selected-check" size={18} />}
       </div>
       <strong>{c.name}</strong>
