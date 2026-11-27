@@ -1353,3 +1353,12 @@
   opacity:.48;
 }
 
+
+/* Owned-level arithmetic: exact change from the player's owned level to the preview. */
+.ri-inspector-owned-equation{
+  display:block;width:max-content;max-width:100%;margin-top:3px;padding:3px 6px;
+  border:1px solid #dce7f7;border-radius:6px;background:#f2f6fd;color:#31558f;
+  font-size:9px;font-weight:750;line-height:1.35;white-space:normal;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
+@media(max-width:560px){.ri-inspector-owned-equation{padding:2px 5px;font-size:8px}}
