@@ -16,7 +16,11 @@ test("each numbered elixir asset 1–10 exists as valid scalable SVG",()=>{
     const svg=readFileSync(fromPublic(path!),"utf8");
     assert.match(svg,/xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
     assert.match(svg,new RegExp("<title>"+n+" Elixir</title>"));
-    assert.match(svg,/viewBox="0 0 48 48"/);
+    assert.match(svg,/viewBox="0 0 64 64"/);
+    assert.match(svg,/linearGradient id="drop"/);
+    assert.match(svg,/clipPath id="dropClip"/);
+    assert.match(svg,/filter id="shadow"/);
+    assert.match(svg,new RegExp(">"+n+"</text>"));
   }
   for(const value of [null,undefined,0,-1,2.5,11])assert.equal(elixirAsset(value),null);
 });
@@ -57,12 +61,12 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(ui,/className="ri-inspector-about"/);
   assert.match(ui,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
   assert.match(ui,/buildUnifiedStatEntries/);
-  assert.match(ui,/elixirAsset\(card\.elixir\)/);
+  assert.match(ui,/<ElixirIcon cost=\{card\.elixir\} size=\{24\} decorative\/>/);
   assert.match(css,/width:min\(628px,calc\(100% - 24px\)\)/);
   assert.match(css,/\.ri-inspector-facts\{\s*display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/\.ri-inspector-stat-icon/);
   assert.match(css,/@media\(max-width:560px\)/);
-  assert.match(home,/elixirAsset\(card\.elixir\)/);
+  assert.match(home,/<ElixirIcon cost=\{card\.elixir\} size=\{28\} decorative\/>/);
   assert.match(home,/className="ri-cost"/);
   assert.ok(ui.includes('unavailableLabel = "No form listed"'));
   assert.ok(ui.includes('card.owned && unlocked === false ? "Locked" : "Available"'));
@@ -98,4 +102,30 @@ test("all Damage labels use the shared blast SVG everywhere",()=>{
   assert.match(svg,/stroke-linejoin="round"/);
   assert.match(ui,/10 1\.2 12\.1 5\.3 16\.5 3\.8/);
   assert.match(css,/\.ri-level-metric-icon\.is-damage\{\s*background:#fff0e5;\s*color:#e46e2f/);
+});
+
+
+test("all card-cost surfaces share the polished numbered ElixirIcon",()=>{
+  const shared=readFileSync(new URL("../src/components/ElixirIcon.tsx",import.meta.url),"utf8");
+  const page=home;
+  const cardDetails=readFileSync(new URL("../src/components/CardDetails.tsx",import.meta.url),"utf8");
+  const deckItem=readFileSync(new URL("../src/components/DeckItemView.tsx",import.meta.url),"utf8");
+  const playbook=readFileSync(new URL("../src/components/DeckPlaybookPanel.tsx",import.meta.url),"utf8");
+  const selfMade=readFileSync(new URL("../src/components/SelfMadeDeckPanel.tsx",import.meta.url),"utf8");
+  const legacy=readFileSync(new URL("../src/components/LegacyWorkspace.tsx",import.meta.url),"utf8");
+  const liveMeta=readFileSync(new URL("../src/components/LiveMetaPanel.tsx",import.meta.url),"utf8");
+  const iconCss=readFileSync(new URL("../src/components/elixir-icon.css",import.meta.url),"utf8");
+  const advancedCss=readFileSync(new URL("../src/app/advanced/legacy.css",import.meta.url),"utf8");
+
+  assert.match(shared,/elixirAsset\(cost\)/);
+  assert.match(shared,/className=\{classes\}/);
+  for(const source of [page,cardDetails,deckItem,playbook,selfMade,legacy,liveMeta,ui])
+    assert.match(source,/ElixirIcon/, "every individual card-cost surface uses the shared icon");
+  assert.match(deckItem,/className="deck-item-elixir"/);
+  assert.match(legacy,/className="elixir"/);
+  assert.match(selfMade,/other\.card\.elixir/);
+  assert.match(liveMeta,/sourceElixir/);
+  assert.match(iconCss,/\.ri-elixir-icon/);
+  assert.match(advancedCss,/\.deck-item-elixir \.ri-elixir-icon/);
+  assert.match(advancedCss,/\.elixir \.ri-elixir-icon/);
 });
