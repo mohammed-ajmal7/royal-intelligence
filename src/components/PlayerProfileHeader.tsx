@@ -58,7 +58,7 @@ function numeric(value: unknown): number | null {
 
 function KingTowerIcon() {
   return (
-    <svg className="ri-king-tower-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <svg className="ri-profile-king-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <path d="M7 27V13.5L10.5 10 13 13.5 16 8l3 5.5 2.5-3L25 13.5V27H7Z"
         fill="#3157A5" stroke="#23447F" strokeWidth="1.4" strokeLinejoin="round"/>
       <path d="M5 27h22v2H5z" fill="#D5A84A"/>
@@ -66,6 +66,30 @@ function KingTowerIcon() {
       <path d="m16 2 1.7 3.1 3.4.5-2.5 2.4.6 3.4L16 9.8l-3.2 1.6.6-3.4-2.5-2.4 3.4-.5L16 2Z"
         fill="#E7B94F" stroke="#C18E2E" strokeWidth=".8" strokeLinejoin="round"/>
     </svg>
+  );
+}
+
+function MetaItem({
+  className,
+  label,
+  title,
+  icon,
+  children,
+}: {
+  className: string;
+  label: string;
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={"ri-profile-meta-item " + className} title={title}>
+      <span className="ri-profile-meta-icon" aria-hidden="true">{icon}</span>
+      <span className="ri-profile-meta-copy">
+        <small>{label}</small>
+        <strong>{children}</strong>
+      </span>
+    </div>
   );
 }
 
@@ -118,35 +142,44 @@ export function PlayerProfileHeader({ player }: { player: Snapshot }) {
   return (
     <section className="ri-profile" aria-label={player.name + " player profile"}>
       <ProfileAvatar playerTag={player.tag} playerName={player.name}/>
-      <div className="ri-profile-main">
+
+      <div className="ri-profile-title-row">
         <h2>{player.name}</h2>
-        <div className="ri-profile-meta">
-          <span className="ri-profile-meta-item ri-profile-king" title="King Tower level">
-            <KingTowerIcon/>
-            <span><small>King Tower</small><strong>{player.kingLevel ?? "—"}</strong></span>
-          </span>
-          <span className="ri-profile-meta-item ri-profile-arena" title="Current arena">
-            {arenaImage
-              ? <img src={arenaImage} alt="" width={28} height={28} loading="lazy"/>
-              : <MapPin size={21} aria-hidden="true"/>}
-            <strong>{player.arena || "Arena unavailable"}</strong>
-          </span>
-          {hasClan ? (
-            <span className="ri-profile-meta-item ri-profile-clan" title={clanTag ? "Clan " + clanTag : "Clan"}>
-              {clanImage
-                ? <img src={clanImage} alt="" width={28} height={28} loading="lazy"/>
-                : <Shield size={20} aria-hidden="true"/>}
-              <strong>{player.clan}</strong>
-            </span>
-          ) : (
-            <span className="ri-profile-meta-item ri-profile-clan is-no-clan">
-              <Shield size={20} aria-hidden="true"/>
-              <strong>No clan</strong>
-            </span>
-          )}
-        </div>
+        {player.stale && <span className="ri-profile-saved">Saved profile</span>}
       </div>
-      {player.stale && <span className="ri-status">Saved</span>}
+
+      <div className="ri-profile-meta" aria-label="Player details">
+        <MetaItem
+          className="ri-profile-king"
+          label="King Tower"
+          title="King Tower level " + (player.kingLevel ?? "unavailable")
+          icon={<KingTowerIcon/>}
+        >
+          {player.kingLevel ?? "—"}
+        </MetaItem>
+
+        <MetaItem
+          className="ri-profile-arena"
+          label="Arena"
+          title={player.arena || "Arena unavailable"}
+          icon={arenaImage
+            ? <img src={arenaImage} alt="" width={34} height={34} loading="lazy"/>
+            : <MapPin size={25}/>}
+        >
+          {player.arena || "Arena unavailable"}
+        </MetaItem>
+
+        <MetaItem
+          className={"ri-profile-clan" + (hasClan ? "" : " is-no-clan")}
+          label="Clan"
+          title={clanTag ? "Clan " + clanTag : "Clan"}
+          icon={hasClan && clanImage
+            ? <img src={clanImage} alt="" width={34} height={34} loading="lazy"/>
+            : <Shield size={24}/>}
+        >
+          {hasClan ? player.clan : "No clan"}
+        </MetaItem>
+      </div>
     </section>
   );
 }
