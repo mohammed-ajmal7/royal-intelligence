@@ -88,7 +88,7 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
 });
 test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty states",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
-  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/card-form-badges.css",import.meta.url),"utf8");
   const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   const overviewCss=readFileSync(new URL("../src/app/overview-dashboard.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
