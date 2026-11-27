@@ -86,17 +86,19 @@ test("highest published valid stat level is used; values are never extrapolated"
 
 test("Default order preserves the input order and Cards UI exposes all three sorts plus Current/Max",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+  const controls=readFileSync(new URL("../src/components/CardSortControls.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/card-sorting.css",import.meta.url),"utf8");
   assert.deepEqual(sortCardsByStat([b,a],"none","max",catalog).map(c=>c.name),
     ["Sort Fixture B","Sort Fixture A"]);
   assert.match(page,/useState<CardStatSortMetric>\("none"\)/);
   assert.match(page,/useState<CardStatSortMode>\("current"\)/);
-  assert.match(page,/option value="hitpoints">Highest Hitpoints/);
-  assert.match(page,/option value="damage">Highest Damage/);
-  assert.match(page,/option value="dps">Highest Damage\/Sec/);
-  assert.match(page,/aria-label="Card stat level"/);
-  assert.match(page,/mode==="current"\?"Current":"Max"/);
+  assert.match(controls,/<option value="hitpoints">Highest Hitpoints<\/option>/);
+  assert.match(controls,/<option value="damage">Highest Damage<\/option>/);
+  assert.match(controls,/<option value="dps">Highest Damage\/Sec<\/option>/);
+  assert.match(controls,/aria-label="Card stat level"/);
+  assert.match(controls,/value === "current" \? "Current" : "Max"/);
   assert.match(page,/sortCardsByStat\(visible,cardsSort,cardsSortMode,mechanics\)/);
+  assert.match(page,/<CardSortControls sort=\{cardsSort\} mode=\{cardsSortMode\} status=\{mechanicsStatus\}/);
   assert.match(page,/\{sortedVisible\.map\(c=>/);
   assert.match(css,/\.ri-card-sort-toggle/);
   assert.match(css,/\.ri-card-sort-toggle button\.is-active/);
