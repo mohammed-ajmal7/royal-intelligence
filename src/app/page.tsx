@@ -18,6 +18,7 @@ import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { elixirAsset } from "../lib/statAssets";
 import { formatBattleDate, formatBattleMode } from "../lib/battlePresentation";
+import { CardFormIcon } from "../components/CardFormIcon";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy}[] = [
@@ -425,7 +426,10 @@ export default function Home() {
                     <div className="ri-ownership-toggle ri-card-type-toggle" role="group" aria-label="Card type">
                       {([{value:"",label:"All cards"},{value:"Evolutions",label:"Evolution"},{value:"Heroes",label:"Hero"}] as const).map(option=><button key={option.value||"all"} type="button"
                         aria-pressed={cardsFilter===option.value} className={cardsFilter===option.value?"is-active":""}
-                        onClick={()=>{setCardsFilter(option.value);setCardsFormStatus("All");setSelectedCard(null);}}>{option.label}</button>)}
+                        onClick={()=>{setCardsFilter(option.value);setCardsFormStatus("All");setSelectedCard(null);}}>
+                        {option.value && <CardFormIcon form={option.value==="Evolutions"?"evolution":"hero"} className="ri-card-type-icon" decorative/>}
+                        <span>{option.label}</span>
+                      </button>)}
                     </div>
                   </div>
 
