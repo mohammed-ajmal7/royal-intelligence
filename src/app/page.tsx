@@ -1,7 +1,9 @@
 "use client";
 
+import "./overview-dashboard.css";
+
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -94,9 +96,14 @@ function SpecialFormEmptyState({
     </button>
   </section>;
 }
-function Stat({label,value,hint}:{label:string;value:string|number;hint?:string}){
-  return <div className="ri-stat"><div className="ri-muted ri-tiny">{label}</div>
-    <strong>{value}</strong>{hint&&<small>{hint}</small>}</div>;
+function Stat({label,value,hint,Icon}:{label:string;value:string|number;hint?:string;Icon?:typeof Trophy}){
+  return <div className="ri-stat">
+    <div className="ri-stat-head">
+      {Icon&&<span className="ri-stat-icon"><Icon size={15} strokeWidth={2.2}/></span>}
+      <div className="ri-muted ri-tiny">{label}</div>
+    </div>
+    <strong>{value}</strong>{hint&&<small>{hint}</small>}
+  </div>;
 }
 function MiniDeck({cards,select,active}:{cards:Card[];select?:(card:Card)=>void;active?:number}){
   return <div className="ri-deck-grid">{cards.map(c=>
@@ -359,17 +366,30 @@ export default function Home() {
         {!player?<div className="ri-welcome" aria-busy={loading}>
           <Crown size={27} aria-hidden="true"/><h2>{loading?"Loading profile…":"Enter a player tag above"}</h2>
         </div>:<>
-          {tab==="Overview"&&<div className="ri-stack">
+          {tab==="Overview"&&<div className="ri-stack ri-overview-stack">
             <PlayerProfileHeader player={player}/>
-            <div className="ri-stat-grid">
-              <Stat label="Trophies" value={fmt(player.trophies)}/>
-              <Stat label="Personal best" value={fmt(player.bestTrophies)}/>
-              <Stat label="Cards" value={player.cards.filter(c=>!c.tower).length} hint={"of "+player.catalog.filter(c=>!c.tower).length}/>
-              <Stat label="Win rate" value={battleSummary&&battleSummary.wins+battleSummary.losses?
+            <div className="ri-stat-grid ri-overview-stats">
+              <Stat Icon={Trophy} label="Trophies" value={fmt(player.trophies)}/>
+              <Stat Icon={Medal} label="Personal best" value={fmt(player.bestTrophies)}/>
+              <Stat Icon={Layers3} label="Cards" value={player.cards.filter(c=>!c.tower).length} hint={"of "+player.catalog.filter(c=>!c.tower).length}/>
+              <Stat Icon={Percent} label="Win rate" value={battleSummary&&battleSummary.wins+battleSummary.losses?
                 Math.round(100*battleSummary.wins/(battleSummary.wins+battleSummary.losses))+"%":"—"}/>
             </div>
-            <section className="ri-panel"><div className="ri-section-title"><div><h2>Current deck</h2><p>{player.deck.length===8?(currentDeck?.avg?.toFixed(2)+" elixir · "+currentWinCondition):"No deck"}</p></div>
-              <button className="ri-text-button" onClick={()=>chooseTab("Decks")}>Edit <ChevronRight size={15}/></button></div>
+            <section className="ri-panel ri-overview-deck">
+              <div className="ri-section-title ri-overview-deck-heading">
+                <div className="ri-overview-deck-title">
+                  <div className="ri-overview-deck-title-line">
+                    <h2>Current deck</h2>
+                    <span className="ri-overview-deck-count">{player.deck.length}/8 CARDS</span>
+                  </div>
+                  <div className="ri-overview-deck-meta">
+                    {player.deck.length===8&&<span className="ri-overview-deck-chip is-elixir">{currentDeck?.avg?.toFixed(2)??"—"} average elixir</span>}
+                    {player.deck.length===8&&<span className="ri-overview-deck-chip">{currentWinCondition}</span>}
+                    {player.deck.length!==8&&<span className="ri-overview-deck-empty">A complete deck has 8 cards</span>}
+                  </div>
+                </div>
+                <button className="ri-text-button ri-overview-edit" onClick={()=>chooseTab("Decks")}>Edit deck <ChevronRight size={15}/></button>
+              </div>
               <MiniDeck cards={player.deck} select={c=>{setSelectedCard(c);chooseTab("Cards")}}/>
             </section>
             {player.warnings.length>0&&<details className="ri-muted ri-tiny"><summary>Data notes ({player.warnings.length})</summary><ul>{player.warnings.map((w,i)=><li key={i}>{w}</li>)}</ul></details>}
