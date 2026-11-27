@@ -8,6 +8,7 @@ import {
   type SelfMadeResult,
 } from "../lib/selfMadeDeckLab";
 import { DeckPlaybookPanel } from "./DeckPlaybookPanel";
+import { ElixirIcon } from "./ElixirIcon";
 
 type Props = {
   result: SelfMadeResult | null;
@@ -50,7 +51,7 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
             {slot.chosen.card.image && <img src={slot.chosen.card.image}
               alt="" loading="lazy"/>}
             <strong>{slot.chosen.card.name}</strong>
-            <span>Lv {slot.chosen.card.level ?? "?"} · {slot.chosen.card.elixir ?? "?"} elixir</span>
+            <span className="self-lab-card-cost">Lv {slot.chosen.card.level ?? "?"} · <ElixirIcon cost={slot.chosen.card.elixir} size={17} decorative/> elixir</span>
             {slot.chosen.card.evo === true &&
               <em>Evolution unlocked</em>}
             {slot.chosen.card.rarity.toLowerCase() === "champion" &&
@@ -139,7 +140,7 @@ function Candidate({ item, index, selected, focus, mechanics, onChoose }: {
                       <tr key={other.card.id}>
                         <td>{other.card.name}{other.card.evo === true ? " ◈" : ""}</td>
                         <td>{other.card.level ?? "?"}</td>
-                        <td>{other.card.elixir ?? "?"}</td>
+                        <td><ElixirIcon cost={other.card.elixir} size={18} decorative/></td>
                         <td>{stat(other.hp)}</td>
                         <td>{stat(other.dps)}</td>
                         <td>{stat(other.damage)}</td>
