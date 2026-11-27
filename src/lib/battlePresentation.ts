@@ -6,7 +6,7 @@ export function formatBattleMode(mode: string, isTwoVTwo = false): string {
 
   const readable = value
     .replace(/_/g, " ")
-    .replace(/(\\d+)x(?=[A-Z])/g, "$1× ")
+    .replace(/([0-9]+)x(?=[A-Z])/g, "$1× ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\\s+/g, " ")
     .trim();
