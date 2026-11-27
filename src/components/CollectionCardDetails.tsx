@@ -20,8 +20,6 @@ type Props = {
   onClose: () => void;
 };
 
-type FormMarkers = Record<string, Exclude<Form, "base">>;
-
 function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
   return <CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>;
 }
@@ -247,15 +245,29 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const selectable: Form[] = ["base", ...(hasEvolution ? ["evolution" as const] : []), ...(hasHero ? ["hero" as const] : [])];
   const baseSections = profile?.forms.base?.sections ?? (referenceStatus === "unavailable" ? historicalSections(prior) : []);
   const chosen = profile?.forms[form];
-  const sections = form === "base" ? baseSections : chosen ? joinSections(baseSections, chosen.sections) : [];
   const minimum = Math.min(cap, Math.max(1, card.minimumLevel ?? 1));
   const viewing = Math.min(cap, Math.max(minimum, level));
+  const activeSections = form === "base" ? baseSections : [...(chosen?.sections ?? [])];
+  if (form !== "base" && chosen?.cycles != null) {
+    const cardStatsIndex = activeSections.findIndex(section => section.name === "Card stats");
+    if (cardStatsIndex >= 0) {
+      activeSections[cardStatsIndex] = {
+        ...activeSections[cardStatsIndex],
+        facts: { ...activeSections[cardStatsIndex].facts, "Evolution cycles": String(chosen.cycles) },
+      };
+    } else {
+      activeSections.push({ name: "Card stats", facts: { "Evolution cycles": String(chosen.cycles) }, levels: {} });
+    }
+  }
+  const comparisonBase = form !== "base" && !chosen ? [] : baseSections;
+  const statEntries = buildUnifiedStatEntries(comparisonBase, activeSections, form, viewing);
+  const hasRows = buildUnifiedLevelTable(comparisonBase, activeSections, form, minimum, cap).rows.length > 0;
+  const abilityDescriptions = activeSections.filter(section => section.name !== "Card stats" && section.description);
   const description = chosen?.description ?? (form === "base" && !profile ? prior?.description : null);
   const image = (form === "evolution" ? card.evolutionImage : form === "hero" ? card.heroImage : card.image) ?? card.image;
   const fallbackUrl = referenceStatus === "unavailable" && prior ? prior.sourceUrl ?? MECHANICS_SOURCE : null;
   const sourceUrl = reference?.card.sourceUrl ?? fallbackUrl;
   const sourceDate = reference?.updatedAt ?? prior?.sourceUpdatedAt ?? mechanics?.sourceUpdatedAt;
-  const hasRows = sections.some(section => Object.keys(section.levels).some(value => Number(value) <= cap));
   const starLevel = card.starLevel == null ? "Not reported" : card.starLevel === 0 ? "None" : String(card.starLevel);
   const costIcon=elixirAsset(card.elixir);
   const formStatus = (available: boolean | null, unlocked: boolean | null, unavailableLabel = "No form listed") =>
@@ -288,7 +300,10 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
         {selectable.length > 1 && <div className="ri-inspector-controls">
           <div className="ri-inspector-forms" role="group" aria-label="Card form preview">
             {selectable.map(option => <button key={option} type="button" aria-pressed={form === option}
-              onClick={() => setForm(option)}>{formLabels[option]}</button>)}
+              onClick={() => setForm(option)}>
+              {option !== "base" && <CardFormIcon form={option} className="ri-inspector-form-tab-icon" decorative/>}
+              <span>{formLabels[option]}</span>
+            </button>)}
           </div>
         </div>}
         <section className="ri-level-design" aria-label="Card level">
@@ -351,17 +366,18 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
 
         {form !== "base" && !chosen && referenceStatus !== "loading" &&
           <p className="ri-inspector-note">Stats for this form are unavailable.</p>}
-        {chosen?.cycles != null && <FactGrid facts={{ "Evolution cycles": String(chosen.cycles) }}/>}
-        {sections.map(section => {
-          const formMarkers = formStatMarkers(section, baseSections, chosen?.sections ?? [], form);
-          return <section key={section.name} className="ri-inspector-section">
-            <h3>{section.name === "Card stats" ? "Combat stats" : section.name}
-              {!allLevels && <span className="ri-inspector-section-level"> · Lv {viewing}</span>}</h3>
-            <FactGrid combat facts={{...section.facts,...(allLevels?{}:(section.levels[viewing]??{}))}} formMarkers={formMarkers}/>
-            <LevelStats section={section} level={viewing} cap={cap} allLevels={allLevels} formMarkers={formMarkers}/>
-            {section.description && <details className="ri-inspector-about"><summary>Ability details</summary><p>{section.description}</p></details>}
-          </section>;
-        })}
+        <section className="ri-inspector-section ri-inspector-unified-section">
+          <h3>Combat stats <span className="ri-inspector-section-level"> · Lv {viewing}</span></h3>
+          <UnifiedStatGrid entries={statEntries}/>
+          {allLevels && <LevelStats baseSections={comparisonBase} formSections={activeSections}
+            form={form} minimum={minimum} cap={cap} viewing={viewing}/>}
+          {abilityDescriptions.length > 0 && <details className="ri-inspector-about">
+            <summary>Ability details</summary>
+            {abilityDescriptions.map(section => <div key={section.name} className="ri-inspector-ability-description">
+              <strong>{section.name}</strong><p>{section.description}</p>
+            </div>)}
+          </details>}
+        </section>
 
         {description && <details className="ri-inspector-about"><summary>About {card.name}</summary><p>{description}</p></details>}
         <section className="ri-inspector-section">
