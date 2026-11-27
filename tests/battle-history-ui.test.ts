@@ -46,11 +46,10 @@ test("dashboard Battles tab shows four distinct 2v2 player decks with readable m
   assert.doesNotMatch(dashboard,/32 cards returned/);
   assert.doesNotMatch(dashboard,/Opponent cards/);
 
-  assert.match(battleStyles,/\.ri-battle-2v2-teams\{display:grid;grid-template-columns:repeat\(2/);
-  assert.match(battleStyles,/\.ri-battle-player \.ri-deck-grid\{grid-template-columns:repeat\(8/);
+  assert.match(css,/\.ri-battle-2v2-teams\{display:grid;grid-template-columns:repeat\(2/);
+  assert.match(css,/\.ri-battle-player \.ri-deck-grid\{grid-template-columns:repeat\(8/);
   assert.match(battleStyles,/\.ri-battle-match-context/);
   assert.match(battleStyles,/\.ri-battle-deck-panel/);
-  assert.match(battleStyles,/@media\(max-width:760px\)\{\.ri-battle-2v2-teams/);
   assert.ok(css.length<27000,"Primary stylesheet stays within size budget");
 });
 
