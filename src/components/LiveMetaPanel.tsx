@@ -2,6 +2,7 @@
 
 import type { GlobalRankedLimit, LabProgress, LiveMeta } from "../lib/liveMeta";
 import type { LiveCandidate } from "../lib/liveDeckLab";
+import { ElixirIcon } from "./ElixirIcon";
 
 export function LiveMetaPanel({meta,progress,busy,error,failed,cancel,retry,target}:{
   meta:LiveMeta|null;progress:LabProgress|null;busy:boolean;error:string;
@@ -105,9 +106,10 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
       {" "}#{e.sourceRank} {e.sourceName} ({e.sourceTag}); retains {e.sharedCards}/8 base cards.
       {" "}This exact base-card combination appeared in {e.exactBaseDeckAccounts}/{e.observedCount} verified source decks
       (from a requested global top {e.requestedCount}).</p>
-    <p className="micro">Observed source: {e.sourceCards.map(c=>
-      c.name+" [Lv "+(c.level??"unknown")+", "+(c.elixir??"?")+
-      " elixir, "+c.active+"]").join(" · ")}</p>
+    <p className="micro live-meta-source-cards">Observed source: {e.sourceCards.map((c,index)=>
+      <span className="live-meta-source-card" key={c.name+":"+index}>
+        {c.name} [Lv {c.level??"unknown"} · <ElixirIcon cost={c.elixir} size={15} decorative/> elixir, {c.active}]
+      </span>)}</p>
     <div className="live-meta-replacement-heading">
       <strong>Actual owned levels and replacement rules</strong>
       <p>Level benchmark: <b>Lv {e.ownedLevelBenchmark}</b> (upper-quartile of
@@ -139,7 +141,7 @@ export function LiveCandidateEvidence({candidate}:{candidate:LiveCandidate}) {
             <span>Your {c.out}: <b>{c.originalOwnedLevel===null
               ?"Not owned / unknown":"Lv "+c.originalOwnedLevel}</b></span>
             <span>Your {c.in}: <b>Lv {c.ownedLevel??"unknown"}</b></span>
-            <span>Elixir: <b>{c.sourceElixir??"?"} → {c.ownedElixir??"?"}</b></span>
+            <span className="live-meta-cost-change">Elixir: <b><ElixirIcon cost={c.sourceElixir} size={16} decorative/> → <ElixirIcon cost={c.ownedElixir} size={16} decorative/></b></span>
           </div>
           <p>{c.reason}</p>
           <p className="live-meta-replacement-combat">
