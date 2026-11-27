@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Layers3, MapPin, Medal, Percent, Shield, Trophy } from "lucide-react";
+import { MapPin, Shield } from "lucide-react";
 import type { Snapshot } from "../lib/model";
 import { ProfileAvatar } from "./ProfileAvatar";
 
@@ -102,26 +102,16 @@ type ProfileMetrics = {
 };
 
 function ProfileStat({
-  Icon,
   label,
   value,
-  hint,
 }: {
-  Icon: typeof Trophy;
   label: string;
   value: string | number;
-  hint?: string;
 }) {
   return (
     <div className="ri-profile-stat">
-      <span className="ri-profile-stat-icon" aria-hidden="true">
-        <Icon size={18} strokeWidth={2.2}/>
-      </span>
-      <span className="ri-profile-stat-copy">
-        <small>{label}</small>
-        <strong>{value}</strong>
-        {hint && <span className="ri-profile-stat-hint">{hint}</span>}
-      </span>
+      <span className="ri-profile-stat-label">{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -182,9 +172,18 @@ export function PlayerProfileHeader({
     <section className="ri-profile" aria-label={player.name + " player profile"}>
       <ProfileAvatar playerTag={player.tag} playerName={player.name}/>
 
-      <div className="ri-profile-title-row">
-        <h2>{player.name}</h2>
-        {player.stale && <span className="ri-profile-saved">Saved profile</span>}
+      <div className="ri-profile-heading">
+        <div className="ri-profile-title-row">
+          <h2>{player.name}</h2>
+          {player.stale && <span className="ri-profile-saved">Saved profile</span>}
+        </div>
+
+        <div className="ri-profile-stats" aria-label="Player statistics">
+          <ProfileStat label="Trophies" value={metrics.trophies}/>
+          <ProfileStat label="Personal best" value={metrics.personalBest}/>
+          <ProfileStat label="Cards" value={metrics.cardsOwned + " / " + metrics.cardsTotal}/>
+          <ProfileStat label="Win rate" value={metrics.winRate}/>
+        </div>
       </div>
 
       <div className="ri-profile-meta" aria-label="Player details">
@@ -220,12 +219,6 @@ export function PlayerProfileHeader({
         </MetaItem>
       </div>
 
-      <div className="ri-profile-stats" aria-label="Player statistics">
-        <ProfileStat Icon={Trophy} label="Trophies" value={metrics.trophies}/>
-        <ProfileStat Icon={Medal} label="Personal best" value={metrics.personalBest}/>
-        <ProfileStat Icon={Layers3} label="Cards" value={metrics.cardsOwned} hint={"of " + metrics.cardsTotal}/>
-        <ProfileStat Icon={Percent} label="Win rate" value={metrics.winRate}/>
-      </div>
     </section>
   );
 }
