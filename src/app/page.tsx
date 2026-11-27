@@ -5,7 +5,7 @@ import "./card-sorting.css";
 import "./card-form-badges.css";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, Search, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -568,7 +568,7 @@ export default function Home() {
               const ownTeamIndex=b.team.findIndex(person=>person.tag===player?.tag);
               const yourTeamNames=b.team.map((person,index)=>
                 index===(ownTeamIndex>=0?ownTeamIndex:0)
-                  ?"You ("+person.name+")"
+                  ?"You"
                   :person.name
               ).join(" + ");
               const opponentNames=b.opponent.map(person=>person.name).join(" + ");
@@ -586,11 +586,17 @@ export default function Home() {
                     : <p className="ri-battle-no-deck">No deck cards were returned for this player.</p>}
                 </article>;
               return <details className={"ri-battle"+(isTwoVTwo?" ri-battle-2v2":"")} key={b.id}>
-                <summary><span className={"ri-result-dot "+(b.outcome==="win"?"is-win":b.outcome==="loss"?"is-loss":"")}></span>
+                <summary>
                   <span className="ri-battle-name"><strong>{isTwoVTwo
                     ? yourTeamNames+" vs "+opponentNames
                     : singleOpponentName}</strong><small>{formatBattleMode(b.mode,isTwoVTwo)} · {formatBattleDate(b.time)}</small></span>
-                  <span className="ri-battle-result">{b.outcome.toUpperCase()}{b.trophyChange!=null?" · "+(b.trophyChange>0?"+":"")+b.trophyChange:""}</span><ChevronRight size={16}/></summary>
+                  <span className={"ri-battle-result "+(b.outcome==="win"?"is-win":b.outcome==="loss"?"is-loss":"is-unknown")}>
+                    {b.outcome==="win" ? <Smile size={14} strokeWidth={2.2} aria-hidden="true"/> :
+                      b.outcome==="loss" ? <Frown size={14} strokeWidth={2.2} aria-hidden="true"/> :
+                        <Swords size={13} strokeWidth={2.2} aria-hidden="true"/>}
+                    <span>{b.outcome.toUpperCase()}</span>
+                    {b.trophyChange!=null&&<small className="ri-battle-trophy-change">{(b.trophyChange>0?"+":"")+b.trophyChange}</small>}
+                  </span><ChevronRight size={16}/></summary>
                 <div className="ri-battle-detail">
                   {isTwoVTwo
                     ? <>
