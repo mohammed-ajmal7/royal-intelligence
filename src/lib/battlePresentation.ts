@@ -1,17 +1,17 @@
 export function formatBattleMode(mode: string, isTwoVTwo = false): string {
   const value = mode.trim();
-  if (isTwoVTwo || /^(teamvsteam|2v2(?:\\s+match)?)$/i.test(value)) {
+  if (isTwoVTwo || /^(teamvsteam|2v2(?:\s+match)?)$/i.test(value)) {
     return "2v2 Match";
   }
 
   const readable = value
     .replace(/_/g, " ")
-    .replace(/(\\d+)x(?=[A-Z])/g, "$1× ")
+    .replace(/(\d+)x(?=[A-Z])/g, "$1× ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 
-  return readable.replace(/(^|\\s)([a-z])/g, (_match, space: string, letter: string) =>
+  return readable.replace(/(^|\s)([a-z])/g, (_match, space: string, letter: string) =>
     space + letter.toUpperCase()
   );
 }
