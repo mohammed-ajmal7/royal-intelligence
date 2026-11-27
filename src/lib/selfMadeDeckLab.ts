@@ -1,4 +1,4 @@
-import type { Card } from "./model";
+import type { Battle, Card } from "./model";
 import type { Constraints } from "./engine";
 import { evaluate, key, legal } from "./engine";
 import { assessStrategy, type StrategyFocus } from "./deckStrategy";
@@ -10,6 +10,7 @@ import {
 } from "./mechanics";
 import { mechanicsOf } from "./mechanicsScoring";
 import { ownedLevelBenchmark } from "./slotReplacements";
+import { analyseDeckPlaystyle, playstyleCardAffinity, type DeckPlaystyleAnalysis } from "./deckArchetypeScoring";
 
 /**
  * Independent OWNED-COLLECTION generator. No top-player sample, external
@@ -63,6 +64,7 @@ export type SelfMadeCandidate = {
   score: number;
   evaluation: ReturnType<typeof evaluate>;
   strategy: ReturnType<typeof assessStrategy>;
+  playstyle: DeckPlaystyleAnalysis;
   slots: SelfSlotComparison[];
   averageRolePower: number;
   ownedEvolutionCount: number;
@@ -353,7 +355,7 @@ function planSpecialSlots(cards:Card[], assignments:Assignment[]):{
 }
 
 type Assignment = { id: SelfSlotId; card: Card; grade: number };
-type Beam = { chosen: Assignment[]; ids: Set<number>; spent: number; value: number };
+type Beam = { chosen: Assignment[]; ids: Set<number>; spent: number; value: number; roleValue: number };
 
 /**
  * Bounded beam search compares EVERY eligible owned card for EVERY role.
@@ -364,6 +366,7 @@ export function generateSelfMadeDecks(
   constraints: Constraints,
   mechanics: MechanicsCatalog | null = null,
   focus: StrategyFocus = "balanced",
+  battles: Battle[] = [],
 ): SelfMadeResult {
   const issues: string[] = [];
   const slotCounts = Object.fromEntries(
@@ -425,7 +428,7 @@ export function generateSelfMadeDecks(
   const order = [...SELF_SLOTS].sort((a, b) =>
     options.get(a.id)!.length - options.get(b.id)!.length);
   const maxSpent = q.maxElixir * 8 + 1e-7;
-  let beam: Beam[] = [{ chosen: [], ids: new Set(), spent: 0, value: 0 }];
+  let beam: Beam[] = [{ chosen: [], ids: new Set(), spent: 0, value: 0, roleValue: 0 }];
   for (let index = 0; index < order.length; index++) {
     const slot = order[index];
     const remaining = order.slice(index + 1).map(s => s.id);
@@ -445,11 +448,14 @@ export function generateSelfMadeDecks(
         if ([...forced].some(id => !ids.has(id) &&
           !remaining.some(r => options.get(r)!.some(x => x.card.id === id))))
           continue;
-        // Small reward for high role strength, before whole-deck scoring.
+        // Rank partial decks by measured role power plus a small,
+        // playstyle-specific affinity so archetype-fit candidates survive pruning.
+        const affinity=playstyleCardAffinity(slot.id,card,focus);
         next.push({
           chosen: [...state.chosen, { id: slot.id, card, grade: candidate.grade }],
           ids, spent: state.spent + (card.elixir ?? 0),
-          value: state.value + candidate.grade,
+          value: state.value + candidate.grade + affinity * .75,
+          roleValue: state.roleValue + candidate.grade,
         });
       }
     }
@@ -478,8 +484,9 @@ export function generateSelfMadeDecks(
     seen.add(key(cards));
     const evaluation = evaluate(cards, q, mechanics);
     if (evaluation.avg === null || evaluation.avg > q.maxElixir + 1e-7) continue;
-    const strategy = assessStrategy(cards, mechanics, { focus });
-    const averageRolePower = round(state.value / 8);
+    const strategy = assessStrategy(cards, mechanics, { focus, battles });
+    const playstyle = analyseDeckPlaystyle(cards, focus, mechanics, battles);
+    const averageRolePower = round(state.roleValue / 8);
     const evolutionReady = cards.filter(c => c.evo === true);
     const specialSlots = planSpecialSlots(cards, state.chosen);
     const suggestedEvolutions = specialSlots.filter(x => x.form === "evolution")
@@ -489,8 +496,9 @@ export function generateSelfMadeDecks(
     const evolutionBonus = Math.min(3.75, specialSlots.length * 1.25);
     const extraWins = Math.max(0, cards.filter(c => role(c,"Win condition")).length - 1);
     const score = round(clamp(
-      averageRolePower * .85 + evaluation.score * .08 +
-      strategy.score * .07 + evolutionBonus - extraWins * 2.5,
+      averageRolePower * .42 + playstyle.score * .35 +
+      evaluation.score * .10 + strategy.score * .13 +
+      evolutionBonus - extraWins * 2.5,
     ));
     const slots: SelfSlotComparison[] = SELF_SLOTS.map(slot => {
       const chosen = options.get(slot.id)!.find(x =>
@@ -511,14 +519,17 @@ export function generateSelfMadeDecks(
     ];
     if (slots.some(s => s.chosen.confidence < .4))
       warnings.push("Incomplete HP, damage or targeting values: low-confidence comparisons are clearly marked.");
+    if (playstyle.score < 55)
+      warnings.push("This is the strongest legal deck found in your owned pool, but your collection cannot fully satisfy the selected playstyle.");
     full.push({
-      cards, score, evaluation, strategy, slots, averageRolePower,
+      cards, score, evaluation, strategy, playstyle, slots, averageRolePower,
       ownedEvolutionCount:evolutionReady.length, suggestedEvolutions, specialSlots,
       warnings,
     });
   }
-  full.sort((a,b) => b.averageRolePower - a.averageRolePower ||
-    b.score - a.score ||
+  full.sort((a,b) => b.score - a.score ||
+    b.playstyle.score - a.playstyle.score ||
+    b.averageRolePower - a.averageRolePower ||
     key(a.cards).localeCompare(key(b.cards)));
   const selected: SelfMadeCandidate[] = [];
   for (const candidate of full) {
