@@ -16,11 +16,14 @@ test("each numbered elixir asset 1–10 exists as valid scalable SVG",()=>{
     const svg=readFileSync(fromPublic(path!),"utf8");
     assert.match(svg,/xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
     assert.match(svg,new RegExp("<title>"+n+" Elixir</title>"));
-    assert.match(svg,/viewBox="0 0 64 64"/);
-    assert.match(svg,/linearGradient id="drop"/);
+    assert.match(svg,/viewBox="0 0 128 144"/);
+    assert.match(svg,/radialGradient id="magenta"/);
     assert.match(svg,/clipPath id="dropClip"/);
-    assert.match(svg,/filter id="shadow"/);
+    assert.match(svg,/filter id="outerShadow"/);
     assert.match(svg,new RegExp(">"+n+"</text>"));
+    assert.match(svg,/stop-color="#ed00c8"/);
+    assert.match(svg,/stroke="#fff"/);
+    assert.match(svg,/font-style="italic"/);
   }
   for(const value of [null,undefined,0,-1,2.5,11])assert.equal(elixirAsset(value),null);
 });
