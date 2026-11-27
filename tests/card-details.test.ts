@@ -97,20 +97,22 @@ test("card inspector uses compact spacing without removing card information",()=
   assert.match(css,/\.ri-level-panel-footer\{[\s\S]*margin-top:7px/);
 });
 
-test("card stats identify Evolution and Hero-only values with their form icons",()=>{
+test("card stats use the official Evolution and Hero game badges",()=>{
   const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const icon=readFileSync(new URL("../src/components/CardFormIcon.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
-  const evolutionIcon=readFileSync(new URL("../public/game-icons/stats/evolution.svg",import.meta.url),"utf8");
-  const heroIcon=readFileSync(new URL("../public/game-icons/stats/hero.svg",import.meta.url),"utf8");
+  const overviewCss=readFileSync(new URL("../src/app/overview-dashboard.css",import.meta.url),"utf8");
 
   assert.match(component,/function formStatMarkers\(/);
   assert.match(component,/base\?\.facts\[label\] !== value/);
   assert.match(component,/base\?\.levels\[Number\(level\)\]\?\.\[label\] !== value/);
-  assert.match(component,/src=\{form === "evolution" \? "\/game-icons\/stats\/evolution\.svg" : "\/game-icons\/stats\/hero\.svg"\}/);
-  assert.match(component,/<FormMarker form=\{formMarkers\[label\]\}\/?>/);
+  assert.match(component,/import \{ CardFormIcon \} from "\.\/CardFormIcon"/);
+  assert.match(component,/<CardFormIcon className=\{["']ri-inspector-form-marker/);
   assert.match(component,/formMarkers=\{formMarkers\}/);
+  assert.match(icon,/api-assets\.clashroyale\.com\/cardevolutions/);
+  assert.match(icon,/api-assets\.clashroyale\.com\/cardheroes/);
+  assert.match(icon,/<image/);
+  assert.match(icon,/clipPath=/);
   assert.match(css,/\.ri-inspector-form-marker/);
-  assert.match(evolutionIcon,/<svg/);
-  assert.match(heroIcon,/<svg/);
+  assert.match(overviewCss,/\.ri-card-type-icon/);
 });
-
