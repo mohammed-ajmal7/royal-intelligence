@@ -2,6 +2,7 @@
 
 import { AlertTriangle, BookOpen, Crosshair, Shield, Swords, Timer, Zap } from "lucide-react";
 import type { DeckPlaybook, PlaybookSection } from "../lib/deckPlaybook";
+import { ElixirIcon } from "./ElixirIcon";
 
 function Phase({value,index}:{value:PlaybookSection;index:number}){
   return <article className="deck-play-phase">
@@ -52,7 +53,7 @@ export function DeckPlaybookPanel({guide}:{guide:DeckPlaybook|null}){
         {guide.cardJobs.map(card=><article key={card.id}>
           <div className="deck-play-card-head">
             <strong>{card.name}</strong>
-            <span>Lv {card.level??"?"} · {card.elixir??"?"} elixir</span>
+            <span className="deck-play-card-cost">Lv {card.level??"?"} · <ElixirIcon cost={card.elixir} size={17} decorative/> elixir</span>
           </div>
           <p className="deck-play-card-job">{card.job}</p>
           <p><b>Use:</b> {card.when}</p>
