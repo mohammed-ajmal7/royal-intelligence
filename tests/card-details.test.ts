@@ -163,7 +163,9 @@ test("combat stat grid shows owned-level arithmetic and keeps the owned level fi
   assert.match(component,/entry\.ownedProgression\.fromValue/);
   assert.match(component,/entry\.ownedProgression\.changeValue/);
   assert.match(component,/entry\.ownedProgression\.toValue/);
-  assert.match(component,/entry\.ownedProgression\.targetLevel/);
+  assert.match(component,/Stat change: "\s*\+ entry\.ownedProgression\.fromValue/);
+  assert.doesNotMatch(component,/ri-inspector-equation-from-level/);
+  assert.doesNotMatch(component,/ri-inspector-equation-target-level/);
   assert.match(css,/\.ri-inspector-equation-result\{[\s\S]*font-size:15px/);
   assert.match(css,/background:linear-gradient\(135deg,#e9fbf1 0%,#d5f4e4 100%\)/);
   assert.match(component,/OWNED · LV /);
