@@ -136,9 +136,9 @@ test("Evolution and Hero range changes render as form-colored equations without 
   assert.match(component,/rangeEquation\.operator/);
   assert.match(component,/className="ri-inspector-range-change"/);
   assert.match(component,/\{!rangeEquation && entry\.delta && <small className="ri-inspector-stat-delta"/);
-  assert.match(component,/statValueWithUnit\\(entry\\.baseValue, entry\\.sourceLabel\\)/);
-  assert.match(css,/\\.ri-inspector-range-change\\{[\\s\\S]*background:#f4edff;[\\s\\S]*color:#7738bd/);
-  assert.match(css,/\\.ri-inspector-range-equation\\.is-hero \\.ri-inspector-range-change\\{[\\s\\S]*background:#fff7df;[\\s\\S]*color:#a66a08/);
+  assert.match(component,/statValueWithUnit\(entry\.baseValue, entry\.sourceLabel\)/);
+  assert.match(css,/\.ri-inspector-range-change\{[\s\S]*background:#f4edff;[\s\S]*color:#7738bd/);
+  assert.match(css,/\.ri-inspector-range-equation\.is-hero \.ri-inspector-range-change\{[\s\S]*background:#fff7df;[\s\S]*color:#a66a08/);
 });
 
 test("all-level view uses one combined Base versus Evolution/Hero comparison table",()=>{
