@@ -76,6 +76,8 @@ test("self-made eight roles are distinct, owned, and do not borrow global usage"
     assert.ok(slot.chosen.grade >= 0 && slot.chosen.grade <= 100);
   }
   assert.ok(best.score >= 0 && best.score <= 100);
+  assert.equal(best.playstyle.focus,"balanced");
+  assert.ok(best.playstyle.score >= 0 && best.playstyle.score <= 100);
   assert.ok(best.strategy.scenarios.some(s => s.id === "air"));
 });
 
@@ -176,6 +178,7 @@ test("Royal Giant focus cannot quietly substitute a different win condition", ()
   assert.ok(withGiant.candidates.length > 0);
   assert.ok(withGiant.candidates.every(c =>
     c.cards.some(x => x.name === "Royal Giant")));
+  assert.ok(withGiant.candidates.every(c => c.playstyle.focus === "royal-giant"));
 });
 
 
@@ -246,4 +249,15 @@ test("a costly mega-tank cannot win the cheap mini-tank role",()=>{
   const slot=result.candidates[0].slots.find(s=>s.id==="mini")!;
   assert.ok(![slot.chosen,...slot.alternatives]
     .some(x=>x.card.id===massive.id));
+});
+
+test("Bridge Pressure and Heavy Push can use archetype-specific role candidates",()=>{
+  const bandit=own("Bandit",901,13,3);
+  const royalGhost=own("Royal Ghost",902,13,3);
+  const nightWitch=own("Night Witch",903,13,4);
+  assert.equal(qualifiesForSelfSlot("mini",bandit),false);
+  assert.equal(qualifiesForSelfSlot("mini",bandit,null,"bridge-pressure"),true);
+  assert.equal(qualifiesForSelfSlot("ground",royalGhost,null,"bridge-pressure"),true);
+  assert.equal(qualifiesForSelfSlot("mini",nightWitch),false);
+  assert.equal(qualifiesForSelfSlot("mini",nightWitch,null,"heavy-push"),true);
 });
