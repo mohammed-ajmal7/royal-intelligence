@@ -145,6 +145,37 @@ function historicalSections(record: ReturnType<typeof getMechanicsRecord>): Card
   })];
 }
 
+function LevelMetricIcon({ label }: { label: string }) {
+  const normalized = label.toLowerCase();
+  const kind = /hit ?points|health/.test(normalized)
+    ? "health"
+    : /damage\s*\/\s*sec|dps/.test(normalized)
+      ? "dps"
+      : /damage/.test(normalized)
+        ? "damage"
+        : "level";
+  return (
+    <span className={"ri-level-metric-icon is-" + kind} aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        {kind === "health" ? (
+          <path d="M10 17s-7-4.1-7-9.2A3.8 3.8 0 0 1 10 5.7a3.8 3.8 0 0 1 7 2.1C17 12.9 10 17 10 17Z" fill="currentColor"/>
+        ) : kind === "dps" ? (
+          <path d="m11.2 1.8-7 9h4.5l-.1 7.4 7.2-10h-4.6l0-6.4Z" fill="currentColor"/>
+        ) : kind === "damage" ? (
+          <>
+            <path d="m4 15.8 9.9-9.9 2 2L6 17.8H4v-2Z" fill="currentColor"/>
+            <path d="m12.7 4.1 2-2 3.2 3.2-2 2-3.2-3.2ZM3 17l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </>
+        ) : (
+          <>
+            <path d="M3 16.5h14M5 13V8.5m5 4.5V5m5 8V2.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </>
+        )}
+      </svg>
+    </span>
+  );
+}
+
 function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
   section: CardReferenceSection; level: number; cap: number; allLevels: boolean; formMarkers?: FormMarkers;
 }) {
@@ -152,15 +183,81 @@ function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
   const current = section.levels[level];
   if (!entries.length) return null;
   const columns = [...new Set(entries.flatMap(([, row]) => Object.keys(row)))];
+  const maxByColumn = Object.fromEntries(columns.map(label => {
+    const values = entries.map(([, row]) => row[label]).filter(
+      (value): value is number => typeof value === "number" && Number.isFinite(value),
+    );
+    return [label, Math.max(0, ...values)];
+  }));
   if (allLevels) {
-    return <div className="ri-inspector-table" tabIndex={0} role="region" aria-label={section.name + " by level"}>
-      <table>
-        <thead><tr><th scope="col">Level</th>{columns.map(label => <th key={label} scope="col">{label}{formMarkers[label] && <FormMarker form={formMarkers[label]}/>}</th>)}</tr></thead>
-        <tbody>{entries.map(([value, row]) => <tr key={value} className={Number(value) === level ? "is-viewing" : undefined}>
-          <th scope="row">{value}</th>{columns.map(label => <td key={label}>{row[label] ?? "—"}</td>)}
-        </tr>)}</tbody>
-      </table>
-    </div>;
+    return (
+      <section className="ri-level-table-section" aria-label={section.name + " level progression"}>
+        <div className="ri-level-table-heading">
+          <div className="ri-level-table-heading-copy">
+            <span className="ri-level-table-eyebrow">LEVEL PROGRESSION</span>
+            <strong>{section.name}</strong>
+          </div>
+          <span className="ri-level-table-count">{entries.length} levels</span>
+        </div>
+        <p className="ri-level-table-caption">Compare how each stat grows by level. Bars show the relative value within each stat.</p>
+        <div className="ri-inspector-table" tabIndex={0} role="region" aria-label={section.name + " stats by level"}>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">
+                  <span className="ri-level-table-column is-level">
+                    <LevelMetricIcon label="level"/>
+                    <span>Level</span>
+                  </span>
+                </th>
+                {columns.map(label => (
+                  <th key={label} scope="col">
+                    <span className={"ri-level-table-column is-" + (/hit ?points|health/i.test(label) ? "health" : /damage\s*\/\s*sec|dps/i.test(label) ? "dps" : /damage/i.test(label) ? "damage" : "other")}>
+                      <LevelMetricIcon label={label}/>
+                      <span className="ri-level-table-column-label">{label}</span>
+                      {formMarkers[label] && <FormMarker form={formMarkers[label]}/>}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map(([value, row]) => {
+                const isViewing = Number(value) === level;
+                return (
+                  <tr key={value} className={isViewing ? "is-viewing" : undefined} aria-current={isViewing ? "true" : undefined}>
+                    <th scope="row">
+                      <span className="ri-level-row-level">{value}</span>
+                      {isViewing && <span className="ri-level-row-current">Viewing</span>}
+                    </th>
+                    {columns.map(label => {
+                      const cell = row[label] ?? "—";
+                      const numericValue = typeof cell === "number" && Number.isFinite(cell) ? cell : null;
+                      const maximum = maxByColumn[label] ?? 0;
+                      const ratio = numericValue !== null && maximum > 0
+                        ? Math.max(0, Math.min(100, numericValue / maximum * 100))
+                        : null;
+                      return (
+                        <td key={label} className={ratio === null ? undefined : "has-level-bar"}>
+                          <span className="ri-level-table-cell">
+                            <span className="ri-level-table-value">{cell}</span>
+                            {ratio !== null && (
+                              <span className="ri-level-table-track" aria-hidden="true">
+                                <span style={{ width: ratio + "%" }}/>
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
   }
   return current ? null : <p className="ri-inspector-note">No values are published for level {level}.</p>;
 }
