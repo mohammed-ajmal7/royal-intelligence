@@ -90,6 +90,7 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
   const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+  const overviewCss=readFileSync(new URL("../src/app/overview-dashboard.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
   assert.match(page,/useState<FormStatusFilter>\("All"\)/);
   assert.match(page,/useState<CardTypeFilter>\(""\)/);
@@ -99,6 +100,11 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   assert.match(page,/aria-label="Card type"/);
   assert.match(page,/label:"Evolution"/);
   assert.match(page,/label:"Hero"/);
+  assert.match(page,/import \{ CardFormIcon \} from "\.\.\/components\/CardFormIcon"/);
+  assert.match(page,/form=\{option\.value==="Evolutions"\?"evolution":"hero"\}/);
+  assert.match(page,/className="ri-card-type-icon"/);
+  assert.match(overviewCss,/\.ri-card-type-toggle button/);
+  assert.match(overviewCss,/\.ri-card-type-icon/);
   assert.match(page,/cardsFilter&&cardsOwnership==="Owned"/);
   assert.match(page,/\["All","Unlocked","Locked"\] as const/);
   const cardsSection=page.slice(page.indexOf('{tab==="Cards"'),page.indexOf('{tab==="Decks"'));
