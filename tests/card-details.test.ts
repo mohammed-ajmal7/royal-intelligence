@@ -158,7 +158,7 @@ test("combat stat grid shows owned-level arithmetic and keeps the owned level fi
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   assert.match(component,/const ownedLevel = card\.owned && card\.level != null \? card\.level : null/);
   assert.match(component,/buildUnifiedStatEntries\(comparisonBase, activeSections, form, viewing, ownedLevel\)/);
-  assert.match(component,/entry\.ownedProgression\.equation/);
+  assert.match(component,/entry\.ownedProgression\.operator/);
   assert.match(component,/ri-inspector-equation-result/);
   assert.match(component,/entry\.ownedProgression\.fromValue/);
   assert.match(component,/entry\.ownedProgression\.changeValue/);
