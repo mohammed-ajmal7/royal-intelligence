@@ -118,12 +118,22 @@ function formatStatNumber(value: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
 
-export function ownedLevelStatEquation(
+export type OwnedLevelStatBreakdown = {
+  level: number;
+  targetLevel: number;
+  fromValue: string;
+  changeValue: string;
+  operator: "+" | "−";
+  toValue: string;
+  equation: string;
+};
+
+export function ownedLevelStatBreakdown(
   ownedValue: string | null,
   targetValue: string | null,
   ownedLevel: number,
   targetLevel: number,
-): string | null {
+): OwnedLevelStatBreakdown | null {
   if (ownedValue == null || targetValue == null || ownedLevel === targetLevel) return null;
   const owned = numericParts(ownedValue);
   const target = numericParts(targetValue);
@@ -133,9 +143,29 @@ export function ownedLevelStatEquation(
   if (Math.abs(difference) < 0.000001) return null;
   const operator = difference < 0 ? "−" : "+";
   const unit = target.unit ? " " + target.unit : "";
-  return "Lv " + ownedLevel + ": " + formatStatNumber(owned.number) + " " +
-    operator + " " + formatStatNumber(Math.abs(difference)) + " = " +
-    formatStatNumber(target.number) + unit + " (Lv " + targetLevel + ")";
+  const fromValue = formatStatNumber(owned.number) + (owned.unit ? " " + owned.unit : "");
+  const changeValue = formatStatNumber(Math.abs(difference)) + (target.unit ? " " + target.unit : "");
+  const toValue = formatStatNumber(target.number) + unit;
+  return {
+    level: ownedLevel,
+    targetLevel,
+    fromValue,
+    changeValue,
+    operator,
+    toValue,
+    equation: "Lv " + ownedLevel + ": " + formatStatNumber(owned.number) + " " +
+      operator + " " + formatStatNumber(Math.abs(difference)) + " = " +
+      toValue + " (Lv " + targetLevel + ")",
+  };
+}
+
+export function ownedLevelStatEquation(
+  ownedValue: string | null,
+  targetValue: string | null,
+  ownedLevel: number,
+  targetLevel: number,
+): string | null {
+  return ownedLevelStatBreakdown(ownedValue, targetValue, ownedLevel, targetLevel)?.equation ?? null;
 }
 
 function comparison(
@@ -156,14 +186,14 @@ function comparison(
   const ownedBaseValue = ownedLevel == null ? null : valueAt(baseSection, label, ownedLevel);
   const ownedFormValue = ownedLevel == null ? null : valueAt(formSection, label, ownedLevel);
   const ownedValue = form === "base" ? ownedBaseValue : ownedFormValue ?? ownedBaseValue;
-  const ownedEquation = ownedLevel != null
-    ? ownedLevelStatEquation(ownedValue, value, ownedLevel, level)
+  const ownedProgression = ownedLevel != null
+    ? ownedLevelStatBreakdown(ownedValue, value, ownedLevel, level)
     : null;
   return {
     value,
     baseValue,
     delta: different ? signedStatDelta(baseValue, formValue) : null,
-    ownedProgression: ownedEquation && ownedLevel != null ? { level: ownedLevel, equation: ownedEquation } : null,
+    ownedProgression,
     marker: different ? form as Exclude<StatForm, "base"> : null,
     id: section + "::" + label,
     section,
