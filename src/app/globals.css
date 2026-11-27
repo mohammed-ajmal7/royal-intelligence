@@ -381,11 +381,3 @@ html:has(.ri-card-dialog[open]) { overflow: hidden; }
  .ri-battle-player-heading{align-items:flex-start;flex-direction:column;gap:2px}
 }
 
-
-/* Selected deck metrics sit at the lower-right edge of the deck panel. */
-.ri-deck-summary{display:flex;justify-content:flex-end;align-items:center;gap:9px;margin-top:16px}
-.ri-deck-summary-item{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:7px 11px;border:1px solid var(--ri-border);border-radius:8px;background:#f9fafc;color:var(--ri-sub);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
-.ri-deck-summary-item>svg{flex:none;color:#7650c8}
-.ri-deck-summary-item .ri-deck-summary-elixir{width:17px;height:17px}
-.ri-deck-summary-item strong{color:var(--ri-text);font-size:13px;font-weight:750}
-@media(max-width:480px){.ri-deck-summary{justify-content:flex-start;flex-wrap:wrap}.ri-deck-summary-item{min-height:32px;padding:6px 9px}}
