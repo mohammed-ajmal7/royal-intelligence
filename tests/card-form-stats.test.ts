@@ -5,6 +5,7 @@ import {
   buildUnifiedStatEntries,
   signedStatDelta,
   ownedLevelStatEquation,
+  ownedLevelStatBreakdown,
 } from "../src/lib/cardFormStats";
 import type { CardReferenceSection } from "../src/lib/liveCardReference";
 
@@ -127,3 +128,37 @@ test("owned-level stat equations use the player's level as a fixed baseline",()=
   assert.equal(ownedLevelStatEquation("Ground","Air",9,15),null);
   assert.equal(ownedLevelStatEquation(null,"200",9,15),null);
 });
+
+test("Archer level 12 shows owned-level arithmetic and highlights the verified final HP",()=>{
+  const archer: CardReferenceSection = {
+    name:"Card stats",
+    facts:{},
+    levels:{
+      11:{Hitpoints:"304"},
+      12:{Hitpoints:"334"},
+    },
+  };
+
+  const level11=buildUnifiedStatEntries([archer],[archer],"base",11,11)
+    .find(entry=>entry.label==="Hitpoints");
+  const level12=buildUnifiedStatEntries([archer],[archer],"base",12,11)
+    .find(entry=>entry.label==="Hitpoints");
+
+  assert.equal(level11?.value,"304");
+  assert.equal(level11?.ownedProgression,null);
+  assert.equal(level12?.value,"334");
+  assert.deepEqual(level12?.ownedProgression,{
+    level:11,
+    targetLevel:12,
+    fromValue:"304",
+    changeValue:"30",
+    operator:"+",
+    toValue:"334",
+    equation:"Lv 11: 304 + 30 = 334 (Lv 12)",
+  });
+
+  const breakdown=ownedLevelStatBreakdown("304","334",11,12);
+  assert.equal(breakdown?.equation,"Lv 11: 304 + 30 = 334 (Lv 12)");
+  assert.equal(ownedLevelStatBreakdown("304","274",11,12)?.operator,"−");
+});
+
