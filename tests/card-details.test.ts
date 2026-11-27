@@ -71,8 +71,9 @@ test("card inspector uses compact spacing without removing card information",()=
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
 
   // Keep every data section and the original fields visible in the component.
-  assert.match(component,/<FactGrid combat facts=/);
-  assert.match(component,/<LevelStats section=/);
+  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
+  assert.match(component,/buildUnifiedLevelTable/);
+  assert.match(component,/ri-inspector-unified-section/);
   assert.match(component,/<h3>Card information<\/h3>/);
   for(const field of ["Star level","Maximum star level","Evolution:","Hero:","Unlock arena","Roles:"])
     assert.ok(component.includes(field),`Card information field missing: ${field}`);
