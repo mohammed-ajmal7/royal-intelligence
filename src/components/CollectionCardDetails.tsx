@@ -6,6 +6,7 @@ import type { Card } from "../lib/model";
 import type { CardReferenceSection, CurrentReference } from "../lib/liveCardReference";
 import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../lib/mechanics";
 import { statIconPath, statValueWithUnit, elixirAsset } from "../lib/statAssets";
+import { CardFormIcon } from "./CardFormIcon";
 import "./collection-card-details.css";
 
 type Form = "base" | "evolution" | "hero";
@@ -52,10 +53,7 @@ function formStatMarkers(
 }
 
 function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
-  const label = form === "evolution" ? "Evolution" : "Hero";
-  return <img className={"ri-inspector-form-marker is-" + form}
-    src={form === "evolution" ? "/game-icons/stats/evolution.svg" : "/game-icons/stats/hero.svg"}
-    alt={label + " stat"} title={label + " stat"} aria-label={label + " stat"}/>;
+  return <CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>;
 }
 
 function FactGrid({ facts, combat = false, unavailableFacts = [], formMarkers = {} }: {
