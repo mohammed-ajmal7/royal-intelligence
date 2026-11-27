@@ -35,7 +35,8 @@ test("dashboard Battles tab shows four distinct 2v2 player decks",()=>{
   assert.match(dashboard,/Teammate · /);
   assert.match(dashboard,/"Opponent "\+\(index\+1\)/);
   assert.match(dashboard,/2v2 · 4 players · 4 decks/);
-  assert.match(dashboard,/reduce\(\(sum,person\)=>sum\+person\.cards\.length,0\)\/32 cards returned/);
+  assert.match(dashboard,/reduce\(\(sum,person\)=>sum\+person\.cards\.length,0\)\}/);
+  assert.match(dashboard,/32 cards returned/);
   assert.match(dashboard,/<MiniDeck cards=\{person\.cards\}\/?>/);
   assert.doesNotMatch(dashboard,/MiniDeck cards=\{b\.team\[0\]/);
   assert.doesNotMatch(dashboard,/MiniDeck cards=\{b\.opponent\[0\]/);
