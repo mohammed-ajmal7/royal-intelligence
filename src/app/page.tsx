@@ -8,7 +8,7 @@ import "./api-explorer.css";
 import "./deck-generator.css";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Flame, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Flame, Frown, History, Layers3, Medal, Percent, Repeat2, Search, Smile, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -469,7 +469,7 @@ export default function Home() {
           </div>}
           {tab==="Decks"&&<div className="ri-stack">
             <section className="ri-panel"><div className="ri-section-title"><div><h2>Selected deck</h2>
-              <p>{deck.length}/8 · {current?.avg?.toFixed(2)??"—"} elixir · {current?.cycle??"—"} cycle</p></div>
+              <p>{deck.length}/8 cards</p></div>
               {deck.length===8&&<a href={deckLink(deck)} className="ri-button-secondary" target="_blank" rel="noreferrer">Open in game <ExternalLink size={14}/></a>}</div>
               <MiniDeck cards={deck} select={c=>{setSelectedCardForm("base");setSelectedCard(c)}} active={selectedCard?.id}/>
               {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("");chooseTab("Cards");}}>Browse owned cards</button>}
@@ -481,6 +481,19 @@ export default function Home() {
               {strategy&&<div className="ri-mini-metrics"><span>Air defense <strong>{strategy.scenarios.find(x=>x.id==="air")?.score??"—"}/100</strong></span>
                 <span>Tank defense <strong>{strategy.scenarios.find(x=>x.id==="tanks")?.score??"—"}/100</strong></span>
                 <span>Swarm defense <strong>{strategy.scenarios.find(x=>x.id==="swarms")?.score??"—"}/100</strong></span></div>}
+              <div className="ri-deck-summary" aria-label="Deck elixir summary">
+                <div className="ri-deck-summary-item">
+                  <svg className="ri-deck-summary-elixir" viewBox="0 0 24 24" role="img" aria-label="Average elixir">
+                    <path d="M12 2.5C9.2 6.3 5.3 10.3 5.3 14.5a6.7 6.7 0 0 0 13.4 0C18.7 10.3 14.8 6.3 12 2.5Z" fill="currentColor"/>
+                    <path d="M9 15.2c.2 1.6 1.2 2.5 2.8 2.8" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <span>Average elixir</span><strong>{current?.avg?.toFixed(2)??"—"}</strong>
+                </div>
+                <div className="ri-deck-summary-item">
+                  <Repeat2 size={17} strokeWidth={2.2} aria-hidden="true"/>
+                  <span>4-card cycle</span><strong>{current?.cycle??"—"}</strong>
+                </div>
+              </div>
             </section>
             <section className="ri-panel"><div className="ri-section-title"><h2>Deck generator</h2></div>
               <div className="ri-generator-form">
