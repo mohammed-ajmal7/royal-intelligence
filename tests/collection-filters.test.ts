@@ -130,3 +130,14 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   assert.match(cardCss,/\.ri-special-empty-action/);
   assert.match(css,/@media\(max-width:760px\)/);
 });
+
+
+test("form-specific artwork is sufficient evidence for Evolution/Hero collection eligibility",()=>{
+  const artOnly:Card[]=[
+    item("Evo art only",true,10,{evolutionImage:"https://example.com/evolution.png"}),
+    item("Hero art only",true,10,{heroImage:"https://example.com/hero.png"}),
+    item("Base only",true,10,{image:"https://example.com/base.png"}),
+  ];
+  assert.deepEqual(filterCollection(artOnly,{ownership:"All",type:"Evolutions",query:""}).map(c=>c.name),["Evo art only"]);
+  assert.deepEqual(filterCollection(artOnly,{ownership:"All",type:"Heroes",query:""}).map(c=>c.name),["Hero art only"]);
+});
