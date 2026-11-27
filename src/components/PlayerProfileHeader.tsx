@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, Shield } from "lucide-react";
 import type { Snapshot } from "../lib/model";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -79,8 +79,8 @@ function MetaItem({
   className: string;
   label: string;
   title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
+  icon: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className={"ri-profile-meta-item " + className} title={title}>
@@ -152,7 +152,7 @@ export function PlayerProfileHeader({ player }: { player: Snapshot }) {
         <MetaItem
           className="ri-profile-king"
           label="King Tower"
-          title="King Tower level " + (player.kingLevel ?? "unavailable")
+          title={"King Tower level " + (player.kingLevel ?? "unavailable")}
           icon={<KingTowerIcon/>}
         >
           {player.kingLevel ?? "—"}
