@@ -124,6 +124,10 @@ test("all-level table uses metric SVGs, relative growth bars and a clear selecte
 
   assert.match(component,/function LevelMetricIcon/);
   assert.match(component,/ri-level-metric-icon is-/);
+  assert.match(component,/10 1\.2 12\.1 5\.3 16\.5 3\.8/);
+  assert.match(component,/fill="#fff" opacity="\.92"/);
+  assert.match(css,/\.ri-level-metric-icon\.is-damage\{\s*background:#fff0e5;\s*color:#e46e2f/);
+
   assert.match(component,/LEVEL PROGRESSION/);
   assert.match(component,/\{entries\.length\} levels/);
   assert.match(component,/Bars show the relative value within each stat/);
