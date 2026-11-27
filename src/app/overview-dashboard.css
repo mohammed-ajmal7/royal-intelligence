@@ -216,3 +216,34 @@
 @media(prefers-reduced-motion:reduce){
   .ri-overview-deck .ri-deck-tile{transition:none}
 }
+
+/* Official in-game form badges beside the Evolution and Hero card filters. */
+.ri-card-type-toggle button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.ri-card-type-icon{
+  display:block;
+  flex:0 0 19px;
+  width:19px;
+  height:19px;
+  overflow:hidden;
+  filter:drop-shadow(0 1px 1px rgba(15,23,42,.18));
+}
+.ri-inspector-form-marker{
+  display:inline-block;
+  width:17px;
+  height:17px;
+  margin-left:5px;
+  vertical-align:-4px;
+  overflow:hidden;
+  flex:0 0 auto;
+}
+.ri-inspector-table th .ri-inspector-form-marker{
+  width:15px;
+  height:15px;
+  vertical-align:-3px;
+}
+
