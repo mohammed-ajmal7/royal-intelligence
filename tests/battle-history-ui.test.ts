@@ -54,9 +54,8 @@ test("dashboard Battles tab shows four distinct 2v2 player decks with readable m
   assert.match(dashboard,/formatBattleDate\(b\.time\)/);
   assert.match(dashboard,/yourTeamNames\+" vs "\+opponentNames/);
   assert.match(dashboard,/formatBattleMode\(b\.mode,isTwoVTwo\)/);
-  const twoVTwoDetail=dashboard.slice(dashboard.indexOf('{isTwoVTwo\\n                     ? <>'),dashboard.indexOf(': <>',dashboard.indexOf('{isTwoVTwo\\n                     ? <>')));
-  assert.doesNotMatch(twoVTwoDetail,/ri-battle-match-context/);
-  assert.doesNotMatch(twoVTwoDetail,/<small>Opponent<\\/small>/);
+  assert.doesNotMatch(dashboard,/aria-label="2v2 match details"/);
+  assert.match(dashboard,/ri-battle-2v2-teams/);
   assert.match(dashboard,/Your Deck/);
   assert.match(dashboard,/singleOpponentName\+"’s Deck"/);
   assert.match(dashboard,/<MiniDeck cards=\{person\.cards\}\/?>/);
