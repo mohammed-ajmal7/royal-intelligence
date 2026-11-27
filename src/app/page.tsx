@@ -5,7 +5,7 @@ import "./card-sorting.css";
 import "./card-form-badges.css";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
+import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, Search, Swords, Trophy, X } from "lucide-react";
 import { type Card, type Snapshot } from "../lib/model";
 import { defaults, deckLink, evaluate } from "../lib/engine";
 import { stats } from "../lib/engine";
@@ -398,7 +398,6 @@ export default function Home() {
         </form>
         <div className="ri-row ri-statuses" aria-live="polite">
           {(loading||apiReady===false||player?.stale)&&<span className="ri-status">{loading?"Loading…":apiReady===false?"API unavailable":"Saved profile"}</span>}
-          {player&&<button className="ri-refresh" onClick={()=>void loadPlayer(player.tag)} disabled={loading} aria-label="Refresh player data"><RefreshCw size={15}/></button>}
         </div>
       </div>
       {error&&<div className="ri-alert" role="alert">{error}</div>}
