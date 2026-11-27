@@ -159,9 +159,9 @@ function isApiRecord(value:unknown):value is ApiRecord{
 function apiFieldLabel(key:string){
   return key.replace(/([a-z0-9])([A-Z])/g,"$1 $2")
     .replace(/[_-]+/g," ")
-    .replace(/\\s+/g," ")
+    .replace(/\s+/g," ")
     .trim()
-    .replace(/\\b[a-z]/g,letter=>letter.toUpperCase());
+    .replace(/\b[a-z]/g,letter=>letter.toUpperCase());
 }
 function apiItemTitle(value:ApiRecord,index:number){
   return text(value.name)||text(value.title)||text(value.tag)||text(value.id)||text(value.key)||"Record "+(index+1);
