@@ -15,6 +15,7 @@ import { filterCollection, type CardOwnership, type FormStatusFilter, type CardT
 import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { elixirAsset } from "../lib/statAssets";
+import { formatBattleDate, formatBattleMode } from "../lib/battlePresentation";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy}[] = [
@@ -500,15 +501,16 @@ export default function Home() {
               const yourTeamNames=b.team.map((person,index)=>
                 index===(ownTeamIndex>=0?ownTeamIndex:0)
                   ?"You ("+person.name+")"
-                  :"Teammate ("+person.name+")"
+                  :person.name
               ).join(" + ");
               const opponentNames=b.opponent.map(person=>person.name).join(" + ");
+              const singleOpponentName=b.opponent[0]?.name??"Unknown opponent";
               const playerDeck=(person:Snapshot["battles"][number]["team"][number],index:number,side:"team"|"opponent")=>
                 <article className="ri-battle-player" key={(person.tag||person.name)+"-"+index}>
                   <header className="ri-battle-player-heading">
                     <strong>{side==="team"
                       ? (person.tag===player?.tag || (ownTeamIndex<0&&index===0))?"You · "+person.name:"Teammate · "+person.name
-                      : "Opponent "+(index+1)+" · "+person.name}</strong>
+                      : person.name}</strong>
                     <small>{person.tag||"Player tag unavailable"} · {person.cards.length}/8 cards</small>
                   </header>
                   {person.cards.length
@@ -519,28 +521,39 @@ export default function Home() {
                 <summary><span className={"ri-result-dot "+(b.outcome==="win"?"is-win":b.outcome==="loss"?"is-loss":"")}></span>
                   <span className="ri-battle-name"><strong>{isTwoVTwo
                     ? yourTeamNames+" vs "+opponentNames
-                    : b.opponent[0]?.name??"Unknown opponent"}</strong><small>{isTwoVTwo?"2v2 · 4 players · 4 decks · ":""}{b.mode} · {b.time.slice(0,10)}</small></span>
+                    : singleOpponentName}</strong><small>{formatBattleMode(b.mode,isTwoVTwo)} · {formatBattleDate(b.time)}</small></span>
                   <span className="ri-battle-result">{b.outcome.toUpperCase()}{b.trophyChange!=null?" · "+(b.trophyChange>0?"+":"")+b.trophyChange:""}</span><ChevronRight size={16}/></summary>
                 <div className="ri-battle-detail">
                   {isTwoVTwo
                     ? <>
-                        <p>2v2 match · 4 players · 4 separate decks · {[...b.team,...b.opponent].reduce((sum,person)=>sum+person.cards.length,0)}/32 cards returned</p>
+                        <div className="ri-battle-match-context" aria-label="2v2 match details">
+                          <div><small>Opponent</small><strong>{opponentNames||"Unknown opponents"}</strong></div>
+                          <div><small>Mode</small><strong>{formatBattleMode(b.mode,true)}</strong></div>
+                        </div>
                         <div className="ri-battle-2v2-teams">
                           <section className="ri-battle-team">
-                            <header><strong>Your team</strong><small>2 players · 16 cards expected</small></header>
+                            <header><strong>Your team</strong><small>2 players</small></header>
                             {b.team.map((person,index)=>playerDeck(person,index,"team"))}
                           </section>
                           <section className="ri-battle-team">
-                            <header><strong>Opposing team</strong><small>2 players · 16 cards expected</small></header>
+                            <header><strong>Opponents</strong><small>2 players</small></header>
                             {b.opponent.map((person,index)=>playerDeck(person,index,"opponent"))}
                           </section>
                         </div>
                       </>
                     : <>
-                        <p>Opponent: {b.opponent.map(person=>person.name).join(", ")||"unknown"} · Mode: {b.mode}</p>
+                        <div className="ri-battle-match-context" aria-label="Match details">
+                          <div><small>Opponent</small><strong>{singleOpponentName}</strong></div>
+                        </div>
                         <div className="ri-battle-decks">
-                          <div><small>Your cards</small><MiniDeck cards={b.team[0]?.cards??[]}/></div>
-                          <div><small>Opponent cards</small><MiniDeck cards={b.opponent[0]?.cards??[]}/></div>
+                          <section className="ri-battle-deck-panel">
+                            <header><strong>Your Deck</strong><small>{b.team[0]?.cards.length??0}/8 cards</small></header>
+                            <MiniDeck cards={b.team[0]?.cards??[]}/>
+                          </section>
+                          <section className="ri-battle-deck-panel">
+                            <header><strong>{singleOpponentName==="Unknown opponent"?"Opponent’s Deck":singleOpponentName+"’s Deck"}</strong><small>{b.opponent[0]?.cards.length??0}/8 cards</small></header>
+                            <MiniDeck cards={b.opponent[0]?.cards??[]}/>
+                          </section>
                         </div>
                       </>}
                 </div>
