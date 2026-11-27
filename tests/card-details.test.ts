@@ -151,3 +151,16 @@ test("all-level view uses one combined Base versus Evolution/Hero comparison tab
   assert.ok(css.includes("position:sticky"));
   assert.ok(css.includes("@media(max-width:560px)"));
 });
+
+
+test("combat stat grid shows owned-level arithmetic and keeps the owned level fixed",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+  assert.match(component,/const ownedLevel = card\.owned && card\.level != null \? card\.level : null/);
+  assert.match(component,/buildUnifiedStatEntries\(comparisonBase, activeSections, form, viewing, ownedLevel\)/);
+  assert.match(component,/entry\.ownedProgression\.equation/);
+  assert.match(component,/OWNED · LV /);
+  assert.match(component,/isOwned \? "✓ OWNED" : "LEVEL"/);
+  assert.match(component,/Your owned card level/);
+  assert.match(css,/\.ri-inspector-owned-equation/);
+});
