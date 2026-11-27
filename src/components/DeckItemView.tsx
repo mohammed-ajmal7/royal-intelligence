@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { Card, Snapshot } from "../lib/model";
 import { GroupUnitDetails } from "./GroupUnitDetails";
+import { ElixirIcon } from "./ElixirIcon";
 import { getMechanicsRecord, type MechanicsCatalog, type MechanicsCard } from "../lib/mechanics";
 import {
   defaultItemOptions,
@@ -551,7 +552,9 @@ export function DeckItemView({
                         ? <img src={item.card.image} alt="" loading="lazy"/>
                         : <Crown size={33}/>}
                       {item.card.elixir!==null &&
-                        <span className="deck-item-elixir">{item.card.elixir}</span>}
+                        <span className="deck-item-elixir" aria-label={item.card.elixir+" elixir"}>
+                          <ElixirIcon cost={item.card.elixir} size={25} decorative/>
+                        </span>}
                     </span>
                     <span className="deck-item-name">
                       <strong>{item.card.name}</strong>
