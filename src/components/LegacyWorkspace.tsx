@@ -805,56 +805,139 @@ export default function App() {
     }))
     .sort((a, b) => b.score - a.score);
   function battleRow(b: Battle) {
-    return (
-      <div className="battle" key={b.id}>
-        <button
-          className="battle-summary"
-          onClick={() => setOpenBattle(openBattle === b.id ? "" : b.id)}
-        >
-          <span>
-            <strong>{b.opponent.map((p) => p.name).join(" & ")}</strong>
-            <small>
-              {b.mode} · {b.time.slice(0, 10)}
-              {b.trophyChange == null ? "" : " · " + (b.trophyChange > 0 ? "+" : "") + b.trophyChange + " trophies"}
-            </small>
+    const isTwoVTwo = b.team.length === 2 && b.opponent.length === 2;
+    const isExpanded = openBattle === b.id ||
+      (isTwoVTwo && page === "Battle History");
+    const teamNames = b.team.map(person => person.name).join(" & ");
+    const opponentNames = b.opponent.map(person => person.name).join(" & ");
+    const renderPlayer = (person: Battle["team"][number], index: number) => (
+      <article className="battle-player" key={(person.tag || person.name) + "-" + index}>
+        <header className="battle-player-heading">
+          <div>
+            <h4>{person.name}</h4>
+            <small>{person.tag || "Player tag unavailable"} · {person.cards.length}/8 cards</small>
+          </div>
+          <span className={"battle-player-deck-status" + (person.cards.length === 8 ? " complete" : "")}>
+            {person.cards.length === 8 ? "Full deck" : "Partial deck"}
           </span>
+        </header>
+        {person.cards.length > 0
+          ? <Deck cards={person.cards} onClick={setSelected}/>
+          : <p className="battle-player-no-deck">Deck cards were not included in this battle record.</p>}
+        <div className="actions">
+          <button type="button" className="text-btn"
+            disabled={!person.tag.startsWith("#")}
+            onClick={() => { setTag(person.tag); go("Overview"); void connect(person.tag); }}>
+            View public player ↗
+          </button>
+          {person.cards.length === 8 && (
+            <button type="button" className="text-btn"
+              onClick={() => {
+                setEnemy(person.cards);
+                setScouted(null);
+                go("Matchup Lab");
+              }}>Analyze this battle deck ↗</button>
+          )}
+        </div>
+      </article>
+    );
+    const summary = (
+      <>
+        <span className="battle-summary-main">
+          <strong>{isTwoVTwo
+            ? teamNames + "  vs  " + opponentNames
+            : opponentNames}</strong>
+          <small>
+            {isTwoVTwo ? "2v2 · 4 players · 4 decks · " : ""}
+            {b.mode} · {b.time.slice(0, 10)}
+            {b.trophyChange == null ? "" : " · " + (b.trophyChange > 0 ? "+" : "") + b.trophyChange + " trophies"}
+          </small>
+        </span>
+        {isTwoVTwo && !isExpanded ? (
+          <div className="battle-2v2-preview" aria-label="Four player deck previews">
+            {[...b.team, ...b.opponent].map((person, index) => (
+              <span className="battle-2v2-preview-player" key={(person.tag || person.name) + "-" + index}>
+                <small>{person.name}</small>
+                <span className="mini-deck">
+                  {person.cards.slice(0, 4).map(c => (
+                    <img key={c.id} src={c.image} alt={c.name}/>
+                  ))}
+                </span>
+              </span>
+            ))}
+          </div>
+        ) : !isTwoVTwo ? (
           <span className="mini-deck">
-            {b.team
-              .find((p) => p.tag === s.tag)
-              ?.cards.slice(0, 4)
-              .map((c) => (
-                <img key={c.id} src={c.image} alt={c.name} />
-              ))}
+            {b.team.find(person => person.tag === s.tag)?.cards.slice(0, 4).map(c => (
+              <img key={c.id} src={c.image} alt={c.name}/>
+            ))}
           </span>
-          <Pill
-            tone={
-              b.outcome === "win" ? "green" : b.outcome === "loss" ? "red" : ""
-            }
+        ) : null}
+        <Pill tone={b.outcome === "win" ? "green" : b.outcome === "loss" ? "red" : ""}>
+          {b.outcome}
+        </Pill>
+        <strong className="battle-crowns">
+          {b.team[0]?.crowns ?? "?"} : {b.opponent[0]?.crowns ?? "?"}
+        </strong>
+      </>
+    );
+    return (
+      <div className={"battle" + (isTwoVTwo ? " battle-2v2" : "")} key={b.id}>
+        {isTwoVTwo && page === "Battle History" ? (
+          <div className="battle-summary battle-summary-2v2 battle-summary-static">
+            {summary}
+          </div>
+        ) : (
+          <button
+            className={"battle-summary" + (isTwoVTwo ? " battle-summary-2v2" : "")}
+            aria-expanded={isExpanded}
+            onClick={() => setOpenBattle(openBattle === b.id ? "" : b.id)}
           >
-            {b.outcome}
-          </Pill>
-          <strong>
-            {b.team[0]?.crowns ?? "?"} : {b.opponent[0]?.crowns ?? "?"}
-          </strong>
-        </button>
-        {openBattle === b.id && (
+            {summary}
+          </button>
+        )}
+        {isTwoVTwo && isExpanded && (
+          <div className="battle-detail battle-detail-2v2">
+            <div className="battle-2v2-grid">
+              <section className="battle-side battle-side-own">
+                <header className="battle-side-heading">
+                  <strong>Your team</strong>
+                  <span>2 players · 2 decks</span>
+                </header>
+                <div className="battle-side-players">
+                  {b.team.map(renderPlayer)}
+                </div>
+              </section>
+              <section className="battle-side battle-side-opponents">
+                <header className="battle-side-heading">
+                  <strong>Opposing team</strong>
+                  <span>2 players · 2 decks</span>
+                </header>
+                <div className="battle-side-players">
+                  {b.opponent.map(renderPlayer)}
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+        {!isTwoVTwo && openBattle === b.id && (
           <div className="battle-detail">
-            {[...b.team, ...b.opponent].map((p, i) => (
-              <div key={p.tag + i}>
+            {[...b.team, ...b.opponent].map((person, index) => (
+              <div key={person.tag + index}>
                 <h4>
-                  {i < b.team.length ? "Team" : "Opponent"} · {p.name}
+                  {index < b.team.length ? "Team" : "Opponent"} · {person.name}
                 </h4>
-                <Deck cards={p.cards} onClick={setSelected} />
+                <Deck cards={person.cards} onClick={setSelected}/>
                 <div className="actions">
                   <button type="button" className="text-btn"
-                    disabled={!p.tag.startsWith("#")}
-                    onClick={() => { setTag(p.tag); go("Overview"); void connect(p.tag); }}>
+                    disabled={!person.tag.startsWith("#")}
+                    onClick={() => { setTag(person.tag); go("Overview"); void connect(person.tag); }}>
                     View public player ↗
                   </button>
-                  {p.cards.length === 8 && (
+                  {person.cards.length === 8 && (
                     <button type="button" className="text-btn"
                       onClick={() => {
-                        setEnemy(p.cards);
+                        setEnemy(person.cards);
                         setScouted(null);
                         go("Matchup Lab");
                       }}>Analyze this battle deck ↗</button>
