@@ -61,8 +61,9 @@ const labelFor=(focus:StrategyFocus,deck:Card[])=>{
 };
 function countFit(actual:number,target:number,minimum=0){
   if(actual>=target)return 100;
-  if(actual<minimum)return clamp(actual/Math.max(1,minimum)*55);
-  return clamp(55+(actual-minimum+1)/(target-minimum)*45);
+  if(actual<=0)return minimum===0?20:0;
+  if(actual<minimum)return clamp(actual/Math.max(1,minimum)*45);
+  return clamp(45+(actual-minimum)/Math.max(1,target-minimum)*55);
 }
 function rangeFit(value:number|null,low:number,high:number,tolerance:number){
   if(value===null)return 28;
@@ -108,7 +109,7 @@ function personalEvidence(deck:Card[],battles:Battle[],mechanics:MechanicsCatalo
         ?(counts.tank+counts.buildings>0?"Dedicated tank defence is included.":"No dedicated tank answer is present.")
         :(counts.splash+counts.small>0?"Splash or small-spell control is included.":"Swarm/bait control is thin.");
     return {name:signal.name,seen:signal.seen,losses:signal.losses,
-      response,priority:lossRate>=.5&&vulnerable?1:0};
+      response,lossRate,priority:lossRate>=.5&&vulnerable?1:0};
   });
 }
 
@@ -232,10 +233,12 @@ export function analyseDeckPlaystyle(
       add("rotation","Balanced rotation",rangeFit(avg,3,4.2,1.8),15,
         avg===null?"Average elixir is unknown.":"Average elixir "+avg.toFixed(2)+".");
   }
-  const lossEvidence=personal.filter(item=>item.priority===1);
-  if(lossEvidence.length){
-    add("personal-threats","Your observed matchup risks",100,12,
-      lossEvidence.map(item=>item.name+" ("+item.losses+"/"+item.seen+" losses): "+item.response).join(" "));
+  const pressured=personal.filter(item=>item.lossRate>=.5);
+  if(pressured.length){
+    const covered=pressured.filter(item=>item.priority===0).length;
+    const responseScore=covered/pressured.length*100;
+    add("personal-threats","Your observed matchup risks",responseScore,12,
+      pressured.map(item=>item.name+" ("+item.losses+"/"+item.seen+" losses): "+item.response).join(" "));
   }
   const weight=factors.reduce((sum,item)=>sum+item.weight,0);
   const score=weight?Math.round(factors.reduce((sum,item)=>sum+item.score*item.weight,0)/weight*10)/10:0;
