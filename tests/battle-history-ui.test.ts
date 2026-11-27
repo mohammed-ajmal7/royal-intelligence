@@ -53,9 +53,10 @@ test("dashboard Battles tab shows four distinct 2v2 player decks with readable m
   assert.match(dashboard,/formatBattleMode\(b\.mode,isTwoVTwo\)/);
   assert.match(dashboard,/formatBattleDate\(b\.time\)/);
   assert.match(dashboard,/yourTeamNames\+" vs "\+opponentNames/);
-  assert.match(dashboard,/ri-battle-match-context/);
-  assert.match(dashboard,/<small>Opponent<\/small>/);
-  assert.match(dashboard,/formatBattleMode\(b\.mode,true\)/);
+  assert.match(dashboard,/formatBattleMode\(b\.mode,isTwoVTwo\)/);
+  const twoVTwoDetail=dashboard.slice(dashboard.indexOf('{isTwoVTwo\\n                     ? <>'),dashboard.indexOf(': <>',dashboard.indexOf('{isTwoVTwo\\n                     ? <>')));
+  assert.doesNotMatch(twoVTwoDetail,/ri-battle-match-context/);
+  assert.doesNotMatch(twoVTwoDetail,/<small>Opponent<\\/small>/);
   assert.match(dashboard,/Your Deck/);
   assert.match(dashboard,/singleOpponentName\+"’s Deck"/);
   assert.match(dashboard,/<MiniDeck cards=\{person\.cards\}\/?>/);
@@ -66,6 +67,10 @@ test("dashboard Battles tab shows four distinct 2v2 player decks with readable m
   assert.match(css,/\.ri-battle-player \.ri-deck-grid\{grid-template-columns:repeat\(8/);
   assert.match(battleStyles,/\.ri-battle-match-context/);
   assert.match(battleStyles,/\.ri-battle-deck-panel/);
+  assert.match(battleStyles,/\.ri-battle-2v2-teams\{[\s\S]*grid-template-columns:repeat\(2/);
+  assert.match(battleStyles,/\.ri-battle-2v2 \.ri-battle-player \.ri-deck-grid\{[\s\S]*grid-template-columns:repeat\(4/);
+  assert.match(battleStyles,/\.ri-battle-2v2 \.ri-battle-player \.ri-art\{[\s\S]*height:64px;[\s\S]*aspect-ratio:auto/);
+  assert.match(battleStyles,/@media\(max-width:540px\)/);
   assert.ok(css.length<27000,"Primary stylesheet stays within size budget");
 });
 
