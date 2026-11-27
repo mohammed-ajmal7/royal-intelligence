@@ -100,15 +100,23 @@ export function qualifiesForSelfSlot(
   slot: SelfSlotId,
   card: Card,
   mechanics: MechanicsCatalog | null = null,
+  focus: StrategyFocus = "balanced",
 ): boolean {
   switch (slot) {
     case "win": return role(card, "Win condition");
-    case "mini": return role(card, "Mini tank") && !role(card, "Spell") && (card.elixir ?? 99) <= 5;
+    case "mini": return (
+      role(card, "Mini tank") ||
+      (focus === "bridge-pressure" && role(card, "Pressure")) ||
+      (focus === "heavy-push" && role(card, "Support"))
+    ) && !role(card, "Spell") && (card.elixir ?? 99) <= 5;
     case "air": return canSustainAir(card, mechanics);
     case "splash": return canSustainAir(card, mechanics) &&
       role(card, "Swarm control");
     case "tank": return role(card, "Tank killer") || defensiveBuildings.has(card.name);
-    case "ground": return role(card, "Ground defense") && isTroopOrBuilding(card);
+    case "ground": return (
+      role(card, "Ground defense") ||
+      (focus === "bridge-pressure" && role(card, "Pressure"))
+    ) && isTroopOrBuilding(card);
     case "small": return role(card, "Small spell");
     case "heavy": return role(card, "Heavy spell");
   }
@@ -400,7 +408,7 @@ export function generateSelfMadeDecks(
   }
   const options = new Map<SelfSlotId, SelfCardComparison[]>();
   for (const slot of SELF_SLOTS) {
-    const eligible = pool.filter(c => qualifiesForSelfSlot(slot.id, c, mechanics));
+    const eligible = pool.filter(c => qualifiesForSelfSlot(slot.id, c, mechanics, focus));
     const matches = roleProfiles(eligible, slot.id, benchmark, mechanics)
       .sort((a, b) => b.grade - a.grade ||
         (b.numericScore ?? -1) - (a.numericScore ?? -1) ||
@@ -504,7 +512,10 @@ export function generateSelfMadeDecks(
       const chosen = options.get(slot.id)!.find(x =>
         x.card.id === state.chosen.find(s => s.id === slot.id)!.card.id)!;
       return {
-        id:slot.id, label:slot.label, purpose:slot.purpose, chosen,
+        id:slot.id,
+        label:slot.id==="mini"&&focus==="bridge-pressure"?"Mini tank / pressure unit":
+          slot.id==="mini"&&focus==="heavy-push"?"Mini tank / push support":slot.label,
+        purpose:slot.purpose, chosen,
         // Expose the full ordered owned-card ranking for transparency.
         alternatives:options.get(slot.id)!.filter(x =>
           x.card.id !== chosen.card.id),
