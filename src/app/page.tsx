@@ -25,9 +25,9 @@ import { formatBattleDate, formatBattleMode } from "../lib/battlePresentation";
 import { CardFormIcon } from "../components/CardFormIcon";
 import { getCardFormBadges } from "../lib/cardFormBadges";
 
-type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
+type Tab = "Profile" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy}[] = [
-  {name:"Overview",Icon:Trophy},
+  {name:"Profile",Icon:Trophy},
   {name:"Cards",Icon:Layers3},
   {name:"Decks",Icon:Swords},
   {name:"Battles",Icon:History},
@@ -267,7 +267,7 @@ function PlayGuide({deck,mechanics,focus}:{deck:Card[];mechanics:MechanicsCatalo
 }
 
 export default function Home() {
-  const [tab,setTab]=useState<Tab>("Overview");
+  const [tab,setTab]=useState<Tab>("Profile");
   const [tagInput,setTagInput]=useState("");
   const [player,setPlayer]=useState<Snapshot|null>(null);
   const [deck,setDeck]=useState<Card[]>([]);
@@ -317,7 +317,7 @@ export default function Home() {
   useEffect(()=>{
     function syncTab(){
       const hash=window.location.hash.slice(1).toLowerCase();
-      const next=NAV.find(item=>item.name.toLowerCase()===hash)?.name??"Overview";
+      const next=NAV.find(item=>item.name.toLowerCase()===hash)?.name??"Profile";
       setTab(next);
       setSelectedCard(null);
     }
@@ -332,7 +332,7 @@ export default function Home() {
     return ()=>window.removeEventListener("hashchange",syncTab);
   },[]);
   // Optional community mechanics are only loaded if the user opens cards
-  // or deck analysis; the simple overview never downloads the large catalog.
+  // or deck analysis; the profile view never downloads the large catalog.
   useEffect(()=>{
     if((tab!=="Cards"&&tab!=="Decks")||mechanicsStatus!=="idle")return;
     setMechanicsStatus("loading");
@@ -359,7 +359,7 @@ export default function Home() {
   function chooseTab(next:Tab){
     if(next!==tab){
       const url=new URL(window.location.href);
-      url.hash=next==="Overview"?"":next.toLowerCase();
+      url.hash=next==="Profile"?"":next.toLowerCase();
       window.history.pushState(null,"",url);
       setTab(next);
     }
@@ -375,12 +375,12 @@ export default function Home() {
       deck.map(c=>c.id===replaceId?card:c);
     setDeck(next);setSelf(null);setReplaceId(null);
   }
-  const currentDeck=tab==="Overview"&&player?evaluate(player.deck,{...defaults,cap:player.cap}):null;
+  const currentDeck=tab==="Profile"&&player?evaluate(player.deck,{...defaults,cap:player.cap}):null;
   const currentWinCondition=player?.deck.find(c=>c.roles.includes("Win condition"))?.name??"Custom";
   return <div className="ri-shell">
     <header className="ri-header">
       <div className="ri-topbar">
-        <button type="button" className="ri-brand" onClick={()=>chooseTab("Overview")} aria-label="Royaleon home">
+        <button type="button" className="ri-brand" onClick={()=>chooseTab("Profile")} aria-label="Royaleon home">
           <span className="ri-logo"><img src="/brand/royaleon-mark.svg" width={34} height={34} alt="" /></span><span>Royaleon</span>
         </button>
         <nav className="ri-nav" aria-label="Main navigation">{NAV.map(({name})=>
@@ -402,12 +402,12 @@ export default function Home() {
       </div>
       {error&&<div className="ri-alert" role="alert">{error}</div>}
       {tab==="Explore"?<ApiExplorer playerTag={player?.tag??tagInput} clanTag={text(asObject(player?.raw).clan&&asObject(asObject(player?.raw).clan).tag)}/>:<>
-        <div className="ri-heading"><h1>{tab==="Overview"?"Overview":tab==="Cards"?"Cards":tab==="Decks"?"Decks":"Battles"}</h1>
+        <div className="ri-heading"><h1>{tab==="Profile"?"Profile":tab==="Cards"?"Cards":tab==="Decks"?"Decks":"Battles"}</h1>
           {player&&<span className="ri-tag">#{player.tag.replace(/^#/,"")}</span>}</div>
         {!player?<div className="ri-welcome" aria-busy={loading}>
           <Crown size={27} aria-hidden="true"/><h2>{loading?"Loading profile…":"Enter a player tag above"}</h2>
         </div>:<>
-          {tab==="Overview"&&<div className="ri-stack ri-overview-stack">
+          {tab==="Profile"&&<div className="ri-stack ri-overview-stack">
             <PlayerProfileHeader player={player} metrics={{
               trophies:fmt(player.trophies),
               personalBest:fmt(player.bestTrophies),
