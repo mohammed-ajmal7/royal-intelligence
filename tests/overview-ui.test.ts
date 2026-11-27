@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-test("Profile uses compact metric cards with clear visual hierarchy",()=>{
+test("Profile uses compact top-right stat pills with clear visual hierarchy",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
   const header=readFileSync(new URL("../src/components/PlayerProfileHeader.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/app/player-profile.css",import.meta.url),"utf8");
@@ -25,7 +25,7 @@ test("Profile uses compact metric cards with clear visual hierarchy",()=>{
   assert.match(header,/label="Personal best"/);
   assert.match(header,/label="Cards"/);
   assert.match(header,/label="Win rate"/);
-  assert.match(header,/ri-profile-stat-copy/);
+  assert.match(header,/className="ri-profile-heading"/);\n  assert.match(header,/className="ri-profile-stats" aria-label="Player statistics"/);\n  assert.match(header,/metrics.cardsOwned \+ " \/ " \+ metrics.cardsTotal/);\n  assert.match(header,/ri-profile-stat-label/);
 
   assert.match(page,/className="ri-panel ri-overview-deck"/);
   assert.match(page,/\{player\.deck\.length\}\/8 CARDS/);
