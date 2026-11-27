@@ -91,8 +91,8 @@ function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
 
 type RangeEquationEntry = ReturnType<typeof buildUnifiedStatEntries>[number];
 
-function rangeEvolutionEquation(entry: RangeEquationEntry, form: Form) {
-  if (form !== "evolution" || !/range/i.test(entry.sourceLabel) || entry.baseValue == null) return null;
+function rangeFormEquation(entry: RangeEquationEntry, form: Form) {
+  if ((form !== "evolution" && form !== "hero") || !/range/i.test(entry.sourceLabel) || entry.baseValue == null) return null;
 
   const parse = (value: string) => {
     const match = value.trim().replace(/,/g, "").match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(.*?)$/);
@@ -102,16 +102,18 @@ function rangeEvolutionEquation(entry: RangeEquationEntry, form: Form) {
   };
 
   const base = parse(entry.baseValue);
-  const evolved = parse(entry.value);
-  if (!base || !evolved || base.unit.toLowerCase() !== evolved.unit.toLowerCase()) return null;
+  const selectedForm = parse(entry.value);
+  if (!base || !selectedForm || base.unit.toLowerCase() !== selectedForm.unit.toLowerCase()) return null;
 
-  const difference = Math.round((evolved.number - base.number) * 100) / 100;
-  if (difference <= 0) return null;
+  const difference = Math.round((selectedForm.number - base.number) * 100) / 100;
+  if (Math.abs(difference) < 0.000001) return null;
 
   return {
-    from: entry.baseValue,
-    change: new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(difference),
-    to: entry.value,
+    from: statValueWithUnit(entry.baseValue, entry.sourceLabel),
+    operator: difference < 0 ? "−" : "+",
+    change: new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Math.abs(difference)),
+    to: statValueWithUnit(entry.value, entry.sourceLabel),
+    form,
   };
 }
 
@@ -148,7 +150,7 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
   return <dl className="ri-inspector-facts ri-inspector-combat-facts ri-inspector-unified-facts">
     {entries.map(entry=>{
       const isAbilityField = abilitySections.includes(entry.section);
-      const rangeEquation = rangeEvolutionEquation(entry, form);
+      const rangeEquation = rangeFormEquation(entry, form);
       return <div key={entry.id} className={"ri-inspector-fact" + (isAbilityField ? " is-ability-field" : "")}>
       {statIconPath(entry.sourceLabel)&&<img className="ri-inspector-stat-icon" src={statIconPath(entry.sourceLabel)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
@@ -158,10 +160,11 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
         </dt>
         <dd className={entry.ownedProgression && !rangeEquation ? "has-owned-progression" : undefined}>
           {rangeEquation ? (
-            <div className="ri-inspector-range-equation" role="group"
-              aria-label={"Range: " + rangeEquation.from + " + " + rangeEquation.change + " = " + rangeEquation.to}>
+            <div className={"ri-inspector-range-equation is-" + rangeEquation.form} role="group"
+              aria-label={"Range: " + rangeEquation.from + " " + rangeEquation.operator + " " + rangeEquation.change + " = " + rangeEquation.to}>
               <span className="ri-inspector-range-from">{rangeEquation.from}</span>
-              <span className="ri-inspector-range-increase">+{rangeEquation.change}</span>
+              <span className="ri-inspector-range-operator" aria-hidden="true">{rangeEquation.operator}</span>
+              <span className="ri-inspector-range-change">{rangeEquation.change}</span>
               <span className="ri-inspector-range-operator" aria-hidden="true">=</span>
               <strong className="ri-inspector-range-result">{rangeEquation.to}</strong>
             </div>
@@ -179,7 +182,7 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
               <strong className="ri-inspector-equation-result">{entry.ownedProgression.toValue}</strong>
             </div>
           ) : <span className="ri-inspector-stat-value">{statValueWithUnit(entry.value,entry.sourceLabel)}</span>}
-          {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
+          {!rangeEquation && entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
         </dd>
       </div>
     </div>;
