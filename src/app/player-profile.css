@@ -1,0 +1,239 @@
+/* Player identity and collection metadata header. */
+.ri-profile {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "avatar title"
+    "avatar meta";
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid #e1e6ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(21, 37, 65, .045);
+}
+
+.ri-profile > .ri-profile-avatar-wrap {
+  grid-area: avatar;
+  width: 112px;
+  height: 112px;
+  padding: 5px;
+  border: 3px solid #dce7f7;
+  border-radius: 22px;
+  background: #f3f6fb;
+  box-shadow: 0 5px 14px rgba(34, 68, 122, .09);
+}
+
+.ri-profile .ri-profile-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  background: #edf2fa;
+  object-fit: contain;
+}
+
+.ri-profile-title-row {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ri-profile-title-row h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #131d30;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 760;
+  line-height: 1.08;
+  letter-spacing: -.9px;
+}
+
+.ri-profile-saved {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid #e3e8ef;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #65748a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ri-profile-meta {
+  grid-area: meta;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.ri-profile-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 66px;
+  padding: 10px 12px;
+  border: 1px solid #e1e8f2;
+  border-radius: 14px;
+  background: #f7f9fc;
+}
+
+.ri-profile-meta-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 38px;
+  color: #425d8c;
+}
+
+.ri-profile-meta-icon img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.ri-profile-king-icon {
+  display: block;
+  width: 34px;
+  height: 34px;
+}
+
+.ri-profile-meta-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ri-profile-meta-copy small {
+  color: #8290a6;
+  font-size: 10px;
+  font-weight: 760;
+  line-height: 1.2;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+}
+
+.ri-profile-meta-copy strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #35445e;
+  font-size: 15px;
+  font-weight: 730;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ri-profile-clan.is-no-clan {
+  background: #fafbfc;
+}
+
+@media (max-width: 760px) {
+  .ri-profile {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 10px 14px;
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .ri-profile > .ri-profile-avatar-wrap {
+    width: 82px;
+    height: 82px;
+    padding: 4px;
+    border-radius: 18px;
+  }
+
+  .ri-profile .ri-profile-avatar {
+    border-radius: 12px;
+  }
+
+  .ri-profile-meta {
+    gap: 7px;
+  }
+
+  .ri-profile-meta-item {
+    gap: 7px;
+    min-height: 58px;
+    padding: 8px;
+    border-radius: 11px;
+  }
+
+  .ri-profile-meta-icon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 32px;
+  }
+
+  .ri-profile-meta-icon img,
+  .ri-profile-king-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .ri-profile-meta-copy small {
+    font-size: 9px;
+  }
+
+  .ri-profile-meta-copy strong {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ri-profile {
+    grid-template-columns: 68px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "avatar title"
+      "meta meta";
+    gap: 12px;
+    padding: 13px;
+  }
+
+  .ri-profile > .ri-profile-avatar-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+  }
+
+  .ri-profile .ri-profile-avatar {
+    border-radius: 10px;
+  }
+
+  .ri-profile-title-row h2 {
+    font-size: 25px;
+  }
+
+  .ri-profile-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .ri-profile-meta-item {
+    min-height: 56px;
+  }
+
+  .ri-profile-meta-copy strong {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .ri-profile-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
