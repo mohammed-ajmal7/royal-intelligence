@@ -515,7 +515,8 @@ export function generateSelfMadeDecks(
         id:slot.id,
         label:slot.id==="mini"&&focus==="bridge-pressure"?"Mini tank / pressure unit":
           slot.id==="mini"&&focus==="heavy-push"?"Mini tank / push support":slot.label,
-        purpose:slot.purpose, chosen,
+        purpose:slot.id==="ground"&&focus==="bridge-pressure"
+          ?"Ground response or second bridge-pressure threat":slot.purpose, chosen,
         // Expose the full ordered owned-card ranking for transparency.
         alternatives:options.get(slot.id)!.filter(x =>
           x.card.id !== chosen.card.id),
