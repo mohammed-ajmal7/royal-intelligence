@@ -62,7 +62,7 @@ test("required compliance, access to advanced tools and original features remain
   assert.match(page,/aria-label="Mobile navigation"/);
   assert.match(page,/generateSelfMadeDecks\(/);
   assert.match(page,/API_RESOURCES/);
-  assert.match(page,/buildDeckPlaybook\(/);
+  assert.match(deckAnalysis,/buildDeckPlaybook\(/);
   assert.match(page,/className="ri-battles"/);
   assert.match(legacy,/Self-Made Deck Generator/);
 });
