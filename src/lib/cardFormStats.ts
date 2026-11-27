@@ -10,7 +10,7 @@ export type UnifiedStatEntry = {
   value: string;
   baseValue: string | null;
   delta: string | null;
-  ownedProgression: { level: number; equation: string } | null;
+  ownedProgression: OwnedLevelStatBreakdown | null;
   marker: Exclude<StatForm, "base"> | null;
 };
 
