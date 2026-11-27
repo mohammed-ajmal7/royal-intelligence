@@ -16,7 +16,7 @@ import { CollectionCardDetails } from "../components/CollectionCardDetails";
 import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
 import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
-import { elixirAsset } from "../lib/statAssets";
+import { ElixirIcon } from "../components/ElixirIcon";
 import { formatBattleDate, formatBattleMode } from "../lib/battlePresentation";
 import { CardFormIcon } from "../components/CardFormIcon";
 
@@ -36,7 +36,7 @@ const digits=(v:number|null|undefined)=>v==null?"—":Number.isInteger(v)?fmt(v)
 function CardArt({card,size="normal"}:{card:Card;size?:"normal"|"small"}){
   return <div className={"ri-art "+(size==="small"?"ri-art-small":"")}>
     {card.image?<img src={card.image} alt="" loading="lazy"/>:<Crown size={22}/>}
-    {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}>{elixirAsset(card.elixir)?<img src={elixirAsset(card.elixir)!} alt="" width={28} height={28}/>:card.elixir??"—"}</span>}
+    {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}><ElixirIcon cost={card.elixir} size={28} decorative/></span>}
   </div>;
 }
 
