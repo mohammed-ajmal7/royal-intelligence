@@ -126,6 +126,19 @@ test("selected form uses one unified stat grid and official form icons",()=>{
   assert.ok(overviewCss.includes(".ri-card-type-icon"));
 });
 
+test("Evolution range changes render as a purple additive equation",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  assert.match(component,/function rangeEvolutionEquation/);
+  assert.match(component,/form !== "evolution" \|\| !\/range\/i\.test\(entry\.sourceLabel\)/);
+  assert.match(component,/className="ri-inspector-range-equation"/);
+  assert.match(component,/className="ri-inspector-range-increase">\+\{rangeEquation\.change\}/);
+  assert.match(component,/rangeEquation\.from/);
+  assert.match(component,/rangeEquation\.to/);
+  assert.match(css,/\.ri-inspector-range-increase\{[\s\S]*background:#f4edff;[\s\S]*color:#7738bd/);
+});
+
 test("all-level view uses one combined Base versus Evolution/Hero comparison table",()=>{
   const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
