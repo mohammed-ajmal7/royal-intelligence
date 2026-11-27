@@ -95,7 +95,7 @@ function rangeEvolutionEquation(entry: RangeEquationEntry, form: Form) {
   if (form !== "evolution" || !/range/i.test(entry.sourceLabel) || entry.baseValue == null) return null;
 
   const parse = (value: string) => {
-    const match = value.trim().replace(/,/g, "").match(/^([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))\\s*(.*?)$/);
+    const match = value.trim().replace(/,/g, "").match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(.*?)$/);
     if (!match) return null;
     const number = Number(match[1]);
     return Number.isFinite(number) ? { number, unit: match[2].trim() } : null;
