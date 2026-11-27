@@ -4,6 +4,7 @@ import {
   buildUnifiedLevelTable,
   buildUnifiedStatEntries,
   signedStatDelta,
+  ownedLevelStatEquation,
 } from "../src/lib/cardFormStats";
 import type { CardReferenceSection } from "../src/lib/liveCardReference";
 
@@ -104,4 +105,25 @@ test("signed stat differences retain units and ignore unchanged or non-numeric v
   assert.equal(signedStatDelta("Ground", "Air"), null);
   assert.equal(signedStatDelta(null, "90"), null);
   assert.equal(signedStatDelta("100", null), null);
+});
+
+
+test("owned-level stat equations use the player's level as a fixed baseline",()=>{
+  const section: CardReferenceSection = {
+    name:"Card stats",
+    facts:{},
+    levels:{
+      9:{Hitpoints:"1,462",Damage:"167","Hit Speed":"1.2 s"},
+      15:{Hitpoints:"2,566",Damage:"293","Hit Speed":"1.2 s"},
+    },
+  };
+  const entries=buildUnifiedStatEntries([section],[section],"base",15,9);
+  const byLabel=Object.fromEntries(entries.map(entry=>[entry.label,entry]));
+  assert.equal(byLabel.Hitpoints.ownedProgression?.equation,"Lv 9: 1,462 + 1,104 = 2,566 (Lv 15)");
+  assert.equal(byLabel.Damage.ownedProgression?.equation,"Lv 9: 167 + 126 = 293 (Lv 15)");
+  assert.equal(byLabel["Hit Speed"].ownedProgression,null);
+  assert.equal(ownedLevelStatEquation("2,566","1,462",9,5),"Lv 9: 2,566 − 1,104 = 1,462 (Lv 5)");
+  assert.equal(ownedLevelStatEquation("1.2 s","1.5 s",9,15),"Lv 9: 1.2 + 0.3 = 1.5 s (Lv 15)");
+  assert.equal(ownedLevelStatEquation("Ground","Air",9,15),null);
+  assert.equal(ownedLevelStatEquation(null,"200",9,15),null);
 });
