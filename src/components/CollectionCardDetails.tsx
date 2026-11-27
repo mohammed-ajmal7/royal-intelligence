@@ -5,7 +5,8 @@ import { ChevronDown, Crown, X } from "lucide-react";
 import type { Card } from "../lib/model";
 import type { CardReferenceSection, CurrentReference } from "../lib/liveCardReference";
 import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../lib/mechanics";
-import { statIconPath, statValueWithUnit, elixirAsset } from "../lib/statAssets";
+import { statIconPath, statValueWithUnit } from "../lib/statAssets";
+import { ElixirIcon } from "./ElixirIcon";
 import { CardFormIcon } from "./CardFormIcon";
 import { buildUnifiedLevelTable, buildUnifiedStatEntries } from "../lib/cardFormStats";
 import "./collection-card-details.css";
@@ -338,7 +339,6 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
   const sourceUrl = reference?.card.sourceUrl ?? fallbackUrl;
   const sourceDate = reference?.updatedAt ?? prior?.sourceUpdatedAt ?? mechanics?.sourceUpdatedAt;
   const starLevel = card.starLevel == null ? "Not reported" : card.starLevel === 0 ? "None" : String(card.starLevel);
-  const costIcon=elixirAsset(card.elixir);
   const formStatus = (available: boolean | null, unlocked: boolean | null, unavailableLabel = "No form listed") =>
     unlocked ? "Unlocked" : available ? card.owned && unlocked === false ? "Locked" : "Available" :
       available === false || profile ? unavailableLabel : "Unknown";
@@ -359,7 +359,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
             <span>{card.rarity !== "unknown" ? card.rarity : profile?.rarity ?? "Unknown rarity"}</span>
             <span className="ri-inspector-meta-dot" aria-hidden="true">·</span>
             <span>{card.tower ? "Tower Troop" : profile?.type ?? (prior?.kind !== "Other" ? prior?.kind : null) ?? "Unknown type"}</span>
-            {costIcon && <span className="ri-inspector-cost"><img src={costIcon} width={24} height={24} alt={card.elixir+" elixir"} />Elixir</span>}
+            {card.elixir != null && <span className="ri-inspector-cost" aria-label={card.elixir+" elixir"}><ElixirIcon cost={card.elixir} size={24} decorative/>Elixir</span>}
           </div>
           <p className="ri-inspector-ownership">{card.owned ? card.level != null ? "Lv "+card.level+" · Current" : "Current" : "Not owned"}</p>
         </div>
