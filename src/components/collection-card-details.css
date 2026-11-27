@@ -524,3 +524,325 @@
 }
 
 .ri-special-empty-art.is-evolution svg{filter:drop-shadow(0 5px 9px rgba(117,83,189,.13))}
+
+
+/* Dense card inspector: reduce visual footprint without hiding card data. */
+.ri-card-dialog.ri-inspector{
+  width:min(600px,calc(100% - 24px));
+  max-height:88dvh;
+  padding:0;
+  border-radius:12px;
+  overflow:auto;
+}
+.ri-inspector-header{
+  gap:10px;
+  padding:10px 46px 9px 14px;
+}
+.ri-inspector-portrait{
+  flex-basis:42px;
+  height:50px;
+  border-radius:7px;
+}
+.ri-inspector-identity h2{
+  font-size:17px;
+  line-height:1.15;
+}
+.ri-inspector-meta{
+  margin-top:3px;
+  column-gap:5px;
+  font-size:11px;
+}
+.ri-inspector-cost{
+  margin-left:3px;
+  font-size:10px;
+}
+.ri-inspector-cost img{
+  width:20px;
+  height:20px;
+}
+.ri-inspector-ownership{
+  margin-top:2px!important;
+  font-size:10px!important;
+}
+.ri-inspector .ri-close{
+  inset:7px 7px auto auto;
+}
+.ri-inspector-body{
+  gap:9px;
+  padding:10px 14px 13px;
+}
+.ri-inspector-controls{
+  gap:6px;
+}
+.ri-inspector-forms{
+  gap:1px;
+  padding:2px;
+  border-radius:7px;
+}
+.ri-inspector-forms button{
+  min-height:29px;
+  padding:5px 9px;
+  font-size:11px;
+}
+.ri-inspector-level select{
+  min-height:32px;
+  padding:5px 28px 5px 8px;
+  font-size:11px;
+}
+.ri-card-dialog.ri-inspector .ri-inspector-all-levels{
+  min-height:31px;
+  padding:6px 9px;
+  font-size:10px;
+}
+.ri-inspector-section{
+  gap:6px;
+  padding-top:9px;
+}
+.ri-inspector-section h3{
+  font-size:12px;
+}
+.ri-inspector-section-level{
+  font-size:10px;
+}
+.ri-inspector-facts{
+  border-radius:8px;
+}
+.ri-inspector-fact{
+  min-height:43px;
+  gap:7px;
+  padding:5px 7px;
+}
+.ri-inspector-stat-icon{
+  flex-basis:26px;
+  width:26px;
+  height:26px;
+  border-radius:6px;
+}
+.ri-inspector-facts dt{
+  margin-bottom:1px;
+  font-size:9.5px;
+  line-height:1.18;
+}
+.ri-inspector-facts dd{
+  font-size:12px;
+  line-height:1.2;
+}
+.ri-inspector-information-facts .ri-inspector-fact{
+  min-height:43px;
+  gap:6px;
+  padding:5px 7px;
+}
+.ri-inspector-information-facts .ri-inspector-stat-icon{
+  flex-basis:21px;
+  width:21px;
+  height:21px;
+}
+.ri-inspector-information-facts dt{
+  font-size:9px;
+}
+.ri-inspector-information-facts dd{
+  font-size:10px;
+  line-height:1.2;
+}
+.ri-inspector-about{
+  padding-top:8px;
+}
+.ri-inspector-about summary{
+  font-size:10px;
+}
+.ri-inspector-about p{
+  padding-top:5px;
+  font-size:11px;
+  line-height:1.4;
+}
+.ri-inspector-note{
+  font-size:10px;
+  line-height:1.4;
+}
+.ri-inspector-notice{
+  gap:6px;
+  padding:7px 8px;
+  font-size:10px;
+}
+.ri-inspector-table{
+  border-radius:7px;
+}
+.ri-inspector-table table{
+  font-size:10px;
+}
+.ri-inspector-table th,.ri-inspector-table td{
+  padding:5px 7px;
+}
+.ri-inspector-body>.ri-button-secondary{
+  min-height:31px;
+  padding:6px 9px;
+}
+
+/* Compact level picker while retaining all selectable levels and status labels. */
+.ri-level-design{
+  gap:7px;
+}
+.ri-level-design-heading{
+  font-size:13px;
+}
+.ri-level-trigger{
+  min-height:46px;
+  gap:9px;
+  padding:7px 9px;
+  border-radius:8px;
+}
+.ri-level-trigger-copy{
+  gap:2px;
+}
+.ri-level-trigger-copy>span{
+  font-size:9px;
+}
+.ri-level-trigger-copy strong{
+  font-size:13px;
+}
+.ri-level-owned-badge{
+  padding:4px 7px;
+  font-size:9px;
+  letter-spacing:.25px;
+}
+.ri-level-trigger-chevron{
+  width:15px;
+  height:15px;
+}
+.ri-level-popover{
+  top:calc(100% + 5px);
+  max-height:min(66dvh,480px);
+  border-radius:11px;
+}
+.ri-level-popover .ri-level-panel{
+  padding:11px;
+}
+.ri-level-panel-header{
+  gap:8px;
+  margin-bottom:10px;
+}
+.ri-level-panel-header h3{
+  font-size:13px;
+}
+.ri-level-panel-header p{
+  margin-top:2px;
+  font-size:10px;
+}
+.ri-level-grid{
+  gap:6px;
+}
+.ri-level-option{
+  min-height:48px;
+  gap:4px;
+  padding:6px 4px;
+  border-radius:8px;
+}
+.ri-level-option strong{
+  font-size:16px;
+}
+.ri-level-option span{
+  font-size:8px;
+  letter-spacing:.2px;
+}
+.ri-level-option.is-selected{
+  padding:5px 3px;
+}
+.ri-level-panel-footer{
+  gap:8px;
+  margin-top:10px;
+  padding-top:9px;
+}
+.ri-level-panel-footer span{
+  font-size:10px;
+}
+.ri-level-panel-footer strong{
+  font-size:12px;
+}
+.ri-level-design>.ri-inspector-all-levels{
+  min-height:29px;
+  padding:5px 8px;
+  font-size:10px;
+}
+
+@media(max-width:560px){
+  .ri-card-dialog.ri-inspector{
+    width:calc(100% - 14px);
+    max-height:94dvh;
+    border-radius:10px;
+  }
+  .ri-inspector-header{
+    gap:8px;
+    padding:8px 39px 8px 10px;
+  }
+  .ri-inspector-portrait{
+    flex-basis:38px;
+    height:46px;
+  }
+  .ri-inspector-identity h2{
+    font-size:15px;
+  }
+  .ri-inspector-meta{
+    font-size:10px;
+  }
+  .ri-inspector-cost img{
+    width:18px;
+    height:18px;
+  }
+  .ri-inspector-body{
+    gap:8px;
+    padding:8px 10px 11px;
+  }
+  .ri-inspector-forms button{
+    min-height:32px;
+    padding:5px 7px;
+  }
+  .ri-inspector-fact{
+    min-height:40px;
+    gap:5px;
+    padding:5px 6px;
+  }
+  .ri-inspector-stat-icon{
+    flex-basis:23px;
+    width:23px;
+    height:23px;
+  }
+  .ri-inspector-facts dt{
+    font-size:9px;
+  }
+  .ri-inspector-facts dd{
+    font-size:11px;
+  }
+  .ri-inspector-information-facts .ri-inspector-fact{
+    min-height:40px;
+    gap:5px;
+    padding:5px 6px;
+  }
+  .ri-inspector-information-facts .ri-inspector-stat-icon{
+    flex-basis:19px;
+    width:19px;
+    height:19px;
+  }
+  .ri-inspector-information-facts dd{
+    font-size:9.5px;
+  }
+  .ri-level-trigger{
+    min-height:43px;
+  }
+  .ri-level-popover{
+    max-height:70dvh;
+  }
+  .ri-level-popover .ri-level-panel{
+    padding:9px;
+  }
+  .ri-level-option{
+    min-height:44px;
+  }
+}
+@media(max-width:360px){
+  .ri-inspector-information-facts{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .ri-level-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
