@@ -14,6 +14,7 @@ import "./collection-card-details.css";
 type Form = "base" | "evolution" | "hero";
 type Props = {
   card: Card;
+  initialForm?: Form;
   cap: number;
   mechanics: MechanicsCatalog | null;
   mechanicsLoading: boolean;
@@ -264,12 +265,12 @@ function LevelStats({ baseSections, formSections, form, minimum, cap, viewing }:
 
 const formLabels: Record<Form, string> = { base: "Base", evolution: "Evolution", hero: "Hero" };
 
-export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, deckAction, onClose }: Props) {
+export function CollectionCardDetails({ card, initialForm = "base", cap, mechanics, mechanicsLoading, deckAction, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const levelPickerRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const levelPickerId = useId();
-  const [form, setForm] = useState<Form>("base");
+  const [form, setForm] = useState<Form>(initialForm);
   const [level, setLevel] = useState(card.level ?? Math.min(11, cap));
   const [allLevels, setAllLevels] = useState(false);
   const [levelPickerOpen, setLevelPickerOpen] = useState(false);
@@ -324,8 +325,8 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
 
   const profile = reference?.profile;
   const prior = getMechanicsRecord(card, mechanics);
-  const hasEvolution = Boolean(profile?.forms.evolution) || (card.hasEvolution ?? card.evo ?? null);
-  const hasHero = Boolean(profile?.forms.hero) || (card.hasHero ?? card.hero ?? null);
+  const hasEvolution = Boolean(profile?.forms.evolution) || Boolean(card.evolutionImage) || (card.hasEvolution ?? card.evo ?? null);
+  const hasHero = Boolean(profile?.forms.hero) || Boolean(card.heroImage) || (card.hasHero ?? card.hero ?? null);
   const selectable: Form[] = ["base", ...(hasEvolution ? ["evolution" as const] : []), ...(hasHero ? ["hero" as const] : [])];
   const baseSections = profile?.forms.base?.sections ?? (referenceStatus === "unavailable" ? historicalSections(prior) : []);
   const chosen = profile?.forms[form];
