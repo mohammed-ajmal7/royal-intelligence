@@ -112,13 +112,23 @@ function FactGrid({ facts, unavailableFacts = [] }: {
   </dl>;
 }
 
-function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedStatEntries> }) {
+function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
+  entries: ReturnType<typeof buildUnifiedStatEntries>;
+  cardName: string;
+  form: Form;
+  abilitySections: readonly string[];
+}) {
   if (!entries.length) return <p className="ri-inspector-note">No combat statistics are available for this form at the selected level.</p>;
   return <dl className="ri-inspector-facts ri-inspector-combat-facts ri-inspector-unified-facts">
-    {entries.map(entry=><div key={entry.id} className="ri-inspector-fact">
+    {entries.map(entry=>{
+      const isAbilityField = abilitySections.includes(entry.section);
+      return <div key={entry.id} className={"ri-inspector-fact" + (isAbilityField ? " is-ability-field" : "")}>
       {statIconPath(entry.sourceLabel)&&<img className="ri-inspector-stat-icon" src={statIconPath(entry.sourceLabel)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
-        <dt>{entry.label}{entry.marker && <FormMarker form={entry.marker}/>}</dt>
+        <dt className={isAbilityField ? "ri-inspector-ability-field-label" : undefined}>
+          {isAbilityField && <CardAbilityIcon cardName={cardName} form={form} abilityName={entry.section} size="small"/>}
+          <span>{entry.label}</span>{entry.marker && <FormMarker form={entry.marker}/>}
+        </dt>
         <dd className={entry.ownedProgression ? "has-owned-progression" : undefined}>
           {entry.ownedProgression ? (
             <div className="ri-inspector-owned-equation" role="group"
@@ -137,7 +147,8 @@ function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedS
           {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
         </dd>
       </div>
-    </div>)}
+    </div>;
+    })}
   </dl>;
 }
 
@@ -349,7 +360,12 @@ export function CollectionCardDetails({ card, initialForm = "base", cap, mechani
   const ownedLevel = card.owned && card.level != null ? card.level : null;
   const statEntries = buildUnifiedStatEntries(comparisonBase, activeSections, form, viewing, ownedLevel);
   const hasRows = buildUnifiedLevelTable(comparisonBase, activeSections, form, minimum, cap).rows.length > 0;
-  const abilityDescriptions = activeSections.filter(section => section.name !== "Card stats" && section.description);
+  const abilitySections = activeSections.filter(section =>
+    section.name !== "Card stats" &&
+    (Boolean(section.description) || Object.keys(section.facts).some(label => /^ability\b/i.test(label)))
+  );
+  const abilityDescriptions = abilitySections.filter(section => section.description);
+  const abilitySectionNames = abilitySections.map(section => section.name);
   const description = chosen?.description ?? (form === "base" && !profile ? prior?.description : null);
   const image = (form === "evolution" ? card.evolutionImage : form === "hero" ? card.heroImage : card.image) ?? card.image;
   const fallbackUrl = referenceStatus === "unavailable" && prior ? prior.sourceUrl ?? MECHANICS_SOURCE : null;
@@ -454,7 +470,7 @@ export function CollectionCardDetails({ card, initialForm = "base", cap, mechani
           <p className="ri-inspector-note">Stats for this form are unavailable.</p>}
         <section className="ri-inspector-section ri-inspector-unified-section">
           <h3>Combat stats <span className="ri-inspector-section-level"> · Lv {viewing}</span></h3>
-          <UnifiedStatGrid entries={statEntries}/>
+          <UnifiedStatGrid entries={statEntries} cardName={card.name} form={form} abilitySections={abilitySectionNames}/>
           {allLevels && <LevelStats baseSections={comparisonBase} formSections={activeSections}
             form={form} minimum={minimum} cap={cap} viewing={viewing}/>}
           {abilityDescriptions.length > 0 && <details className="ri-inspector-about">
