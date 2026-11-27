@@ -7,7 +7,7 @@ const layout=readFileSync(new URL("../src/app/layout.tsx",import.meta.url),"utf8
 const legacy=readFileSync(new URL("../src/components/LegacyWorkspace.tsx",import.meta.url),"utf8");
 
 test("one five-tab workspace rather than thirteen competing destinations",()=>{
-  for(const label of ["Overview","Cards","Decks","Battles","Explore"])
+  for(const label of ["Profile","Cards","Decks","Battles","Explore"])
     assert.ok(page.includes('name:"'+label+'"'),"Missing navigation: "+label);
   assert.match(page,/aria-label="Main navigation"/);
   assert.match(page,/aria-label="Mobile navigation"/);
