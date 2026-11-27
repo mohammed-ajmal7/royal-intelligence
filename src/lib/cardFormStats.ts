@@ -130,6 +130,7 @@ export function ownedLevelStatEquation(
   if (!owned || !target || owned.unit.toLowerCase() !== target.unit.toLowerCase()) return null;
 
   const difference = Math.round((target.number - owned.number) * 100) / 100;
+  if (Math.abs(difference) < 0.000001) return null;
   const operator = difference < 0 ? "−" : "+";
   const unit = target.unit ? " " + target.unit : "";
   return "Lv " + ownedLevel + ": " + formatStatNumber(owned.number) + " " +
