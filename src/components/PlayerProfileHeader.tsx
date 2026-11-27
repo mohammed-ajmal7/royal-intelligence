@@ -114,12 +114,14 @@ function ProfileStat({
 }) {
   return (
     <div className="ri-profile-stat">
-      <div className="ri-profile-stat-head">
-        <span className="ri-profile-stat-icon"><Icon size={19} strokeWidth={2.2}/></span>
-        <span>{label}</span>
-      </div>
-      <strong>{value}</strong>
-      {hint && <small>{hint}</small>}
+      <span className="ri-profile-stat-icon" aria-hidden="true">
+        <Icon size={18} strokeWidth={2.2}/>
+      </span>
+      <span className="ri-profile-stat-copy">
+        <small>{label}</small>
+        <strong>{value}</strong>
+        {hint && <span className="ri-profile-stat-hint">{hint}</span>}
+      </span>
     </div>
   );
 }
