@@ -114,3 +114,30 @@ test("card stats identify Evolution and Hero-only values with their form icons",
   assert.match(heroIcon,/<svg/);
 });
 
+
+
+test("all-level table uses metric SVGs, relative growth bars and a clear selected-level state",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  assert.match(component,/function LevelMetricIcon/);
+  assert.match(component,/ri-level-metric-icon is-/);
+  assert.match(component,/LEVEL PROGRESSION/);
+  assert.match(component,/\{entries\.length\} levels/);
+  assert.match(component,/Bars show the relative value within each stat/);
+  assert.match(component,/aria-label=\{section\.name \+ " stats by level"\}/);
+  assert.match(component,/aria-current=\{isViewing \? "true" : undefined\}/);
+  assert.match(component,/ri-level-row-current/);
+  assert.match(component,/ri-level-table-track/);
+  assert.match(component,/width: ratio \+ "%"/);
+  assert.match(component,/row\[label\] \?\? "—"/);
+
+  assert.match(css,/\.ri-level-table-heading/);
+  assert.match(css,/\.ri-level-metric-icon\.is-health/);
+  assert.match(css,/\.ri-level-metric-icon\.is-dps/);
+  assert.match(css,/\.ri-level-metric-icon\.is-damage/);
+  assert.match(css,/\.ri-inspector-table tbody tr\.is-viewing/);
+  assert.match(css,/\.ri-level-table-track/);
+  assert.match(css,/position:sticky/);
+  assert.match(css,/@media\(max-width:560px\)/);
+});
