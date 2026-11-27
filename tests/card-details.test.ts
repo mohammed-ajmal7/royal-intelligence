@@ -97,49 +97,56 @@ test("card inspector uses compact spacing without removing card information",()=
   assert.match(css,/\.ri-level-panel-footer\{[\s\S]*margin-top:7px/);
 });
 
-test("card stats use the official Evolution and Hero game badges",()=>{
+test("selected form uses one unified stat grid and official form icons",()=>{
   const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
   const icon=readFileSync(new URL("../src/components/CardFormIcon.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   const overviewCss=readFileSync(new URL("../src/app/overview-dashboard.css",import.meta.url),"utf8");
 
-  assert.match(component,/function formStatMarkers\(/);
-  assert.match(component,/base\?\.facts\[label\] !== value/);
-  assert.match(component,/base\?\.levels\[Number\(level\)\]\?\.\[label\] !== value/);
-  assert.match(component,/import \{ CardFormIcon \} from "\.\/CardFormIcon"/);
-  assert.match(component,/<CardFormIcon className=\{["']ri-inspector-form-marker/);
-  assert.match(component,/formMarkers=\{formMarkers\}/);
-  assert.match(icon,/api-assets\.clashroyale\.com\/cardevolutions/);
-  assert.match(icon,/api-assets\.clashroyale\.com\/cardheroes/);
+  assert.match(component,/buildUnifiedStatEntries/);
+  assert.match(component,/buildUnifiedLevelTable/);
+  assert.match(component,/function FormMarker/);
+  assert.match(component,/<CardFormIcon className=\\{\\\"ri-inspector-form-marker is-\\\" \\+ form\\} form=\\{form\\}\\/?>/);
+  assert.match(component,/ri-inspector-unified-section/);
+  assert.match(component,/<UnifiedStatGrid entries=\\{statEntries\\}\\/?>/);
+  assert.match(component,/option !== "base" && <CardFormIcon/);
+  assert.match(component,/className="ri-inspector-form-tab-icon"/);
+  assert.doesNotMatch(component,/sections\\.map\\(section/);
+  assert.match(component,/abilityDescriptions\\.map/);
+
+  assert.match(icon,/api-assets\\.clashroyale\\.com\\/cardevolutions/);
+  assert.match(icon,/api-assets\\.clashroyale\\.com\\/cardheroes/);
   assert.match(icon,/<image/);
   assert.match(icon,/clipPath=/);
-  assert.match(css,/\.ri-inspector-form-marker/);
-  assert.match(overviewCss,/\.ri-card-type-icon/);
+  assert.match(css,/\\.ri-inspector-form-marker/);
+  assert.match(css,/\\.ri-inspector-form-tab-icon/);
+  assert.match(css,/\\.ri-inspector-stat-delta/);
+  assert.match(overviewCss,/\\.ri-card-type-icon/);
 });
 
-
-test("all-level table uses metric SVGs, relative growth bars and a clear selected-level state",()=>{
+test("all-level view uses one combined Base versus Evolution/Hero comparison table",()=>{
   const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
 
   assert.match(component,/function LevelMetricIcon/);
-  assert.match(component,/ri-level-metric-icon is-/);
-  assert.match(component,/LEVEL PROGRESSION/);
-  assert.match(component,/\{entries\.length\} levels/);
-  assert.match(component,/Bars show the relative value within each stat/);
-  assert.match(component,/aria-label=\{section\.name \+ " stats by level"\}/);
-  assert.match(component,/aria-current=\{isViewing \? "true" : undefined\}/);
+  assert.match(component,/function LevelStats/);
+  assert.match(component,/buildUnifiedLevelTable\\(baseSections, formSections, form, minimum, cap\\)/);
+  assert.match(component,/Combined card stats by level/);
+  assert.match(component,/Each level is compared with Base at the same level/);
+  assert.match(component,/aria-current=\\{row\\.level === viewing \\? "true" : undefined\\}/);
   assert.match(component,/ri-level-row-current/);
+  assert.match(component,/cell\\.delta/);
   assert.match(component,/ri-level-table-track/);
-  assert.match(component,/width: ratio \+ "%"/);
-  assert.match(component,/row\[label\] \?\? "—"/);
+  assert.match(component,/width:ratio\\+"%"/);
 
-  assert.match(css,/\.ri-level-table-heading/);
-  assert.match(css,/\.ri-level-metric-icon\.is-health/);
-  assert.match(css,/\.ri-level-metric-icon\.is-dps/);
-  assert.match(css,/\.ri-level-metric-icon\.is-damage/);
-  assert.match(css,/\.ri-inspector-table tbody tr\.is-viewing/);
-  assert.match(css,/\.ri-level-table-track/);
+  assert.match(css,/\\.ri-level-table-heading/);
+  assert.match(css,/\\.ri-level-metric-icon\\.is-health/);
+  assert.match(css,/\\.ri-level-metric-icon\\.is-dps/);
+  assert.match(css,/\\.ri-level-metric-icon\\.is-damage/);
+  assert.match(css,/\\.ri-inspector-table tbody tr\\.is-viewing/);
+  assert.match(css,/\\.ri-level-table-track/);
+  assert.match(css,/\\.ri-inspector-stat-delta/);
+  assert.match(css,/\\.ri-level-table-delta/);
   assert.match(css,/position:sticky/);
-  assert.match(css,/@media\(max-width:560px\)/);
+  assert.match(css,/@media\\(max-width:560px\\)/);
 });
