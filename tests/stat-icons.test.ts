@@ -77,3 +77,19 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   const globalCss=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
   assert.match(globalCss,/\.ri-cost\s*\{[^}]*background:\s*transparent/);
 });
+
+
+test("all Damage labels use the shared blast SVG everywhere",()=>{
+  const asset=statIconPath("Damage");
+  assert.equal(asset,"/game-icons/stats/damage.svg");
+  assert.equal(statIconPath("Ranged Damage"),asset);
+  assert.equal(statIconPath("Power Shot Damage"),asset);
+  assert.equal(statIconPath("Damage/sec"),"/game-icons/stats/damage-per-second.svg");
+  const svg=readFileSync(fromPublic(asset!),"utf8");
+  assert.match(svg,/<title>Damage blast<\/title>/);
+  assert.match(svg,/fill="#ffb33b"/);
+  assert.match(svg,/fill="#f36c35"/);
+  assert.match(svg,/stroke-linejoin="round"/);
+  assert.match(ui,/10 1\.2 12\.1 5\.3 16\.5 3\.8/);
+  assert.match(css,/\.ri-level-metric-icon\.is-damage\{\s*background:#fff0e5;\s*color:#e46e2f/);
+});
