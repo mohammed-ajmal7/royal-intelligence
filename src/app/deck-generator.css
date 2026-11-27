@@ -150,3 +150,44 @@
   .ri-generator-submit{grid-column:1/-1;width:100%}
   .ri-playstyle-factors{grid-template-columns:minmax(0,1fr)}
 }
+
+.ri-role-ranking-scroll{
+  max-width:100%;
+  overflow:auto;
+  border:1px solid var(--ri-border);
+  border-radius:8px;
+  background:#fff;
+  overscroll-behavior-inline:contain;
+}
+.ri-role-ranking-scroll table{
+  min-width:920px;
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:10px;
+}
+.ri-role-ranking-scroll th{
+  position:sticky;
+  top:0;
+  padding:8px;
+  background:#f4f6f9;
+  color:#667085;
+  font-size:9px;
+  text-align:left;
+  white-space:nowrap;
+}
+.ri-role-ranking-scroll td{
+  padding:7px 8px;
+  border-top:1px solid #edf0f4;
+  color:#344054;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.ri-role-ranking-scroll tr:first-child td{
+  background:#f2f7ff;
+  color:#224d92;
+  font-weight:750;
+}
+@media(max-width:560px){
+  .ri-role-ranking-scroll table{min-width:840px}
+}
