@@ -25,7 +25,10 @@ test("Profile uses compact top-right stat pills with clear visual hierarchy",()=
   assert.match(header,/label="Personal best"/);
   assert.match(header,/label="Cards"/);
   assert.match(header,/label="Win rate"/);
-  assert.match(header,/className="ri-profile-heading"/);\n  assert.match(header,/className="ri-profile-stats" aria-label="Player statistics"/);\n  assert.match(header,/metrics.cardsOwned \+ " \/ " \+ metrics.cardsTotal/);\n  assert.match(header,/ri-profile-stat-label/);
+  assert.match(header,/className="ri-profile-heading"/);
+  assert.match(header,/className="ri-profile-stats" aria-label="Player statistics"/);
+  assert.match(header,/metrics\.cardsOwned \+ " \/ " \+ metrics\.cardsTotal/);
+  assert.match(header,/ri-profile-stat-label/);
 
   assert.match(page,/className="ri-panel ri-overview-deck"/);
   assert.match(page,/\{player\.deck\.length\}\/8 CARDS/);
@@ -36,9 +39,10 @@ test("Profile uses compact top-right stat pills with clear visual hierarchy",()=
   assert.match(page,/c\.evo===true\?" · Evo":""/);
   assert.match(page,/c\.hero===true\?" · Hero":""/);
 
-  assert.match(css,/\.ri-profile-stats[\s\S]*grid-template-columns: repeat\(4/);
-  assert.match(css,/\.ri-profile-stat-icon/);
+  assert.match(css,/\.ri-profile-stats[\s\S]*justify-content: flex-end/);
+  assert.match(css,/\.ri-profile-stat\s*\{[\s\S]*border-radius: 999px/);
+  assert.match(css,/\.ri-profile-stat-label/);
   assert.match(css,/\.ri-profile-title-row/);
   assert.match(css,/@media \(max-width: 560px\)/);
-  assert.match(css,/grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css,/\.ri-profile-heading[\s\S]*flex-wrap: wrap/);
 });
