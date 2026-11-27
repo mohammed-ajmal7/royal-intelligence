@@ -161,6 +161,6 @@ test("combat stat grid shows owned-level arithmetic and keeps the owned level fi
   assert.match(component,/entry\.ownedProgression\.equation/);
   assert.match(component,/OWNED · LV /);
   assert.match(component,/isOwned \? "✓ OWNED" : "LEVEL"/);
-  assert.match(component,/Your owned card level/);
+  assert.match(component,/Your actual card level/);
   assert.match(css,/\.ri-inspector-owned-equation/);
 });
