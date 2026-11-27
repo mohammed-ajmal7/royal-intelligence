@@ -27,7 +27,43 @@ const priority = (label:string) =>
   /range/i.test(label) ? 5 :
   /count/i.test(label) ? 6 : 7;
 
-function FactGrid({ facts, combat = false, unavailableFacts = [] }: { facts: Record<string,string>; combat?: boolean; unavailableFacts?: readonly string[] }) {
+type FormMarkers = Record<string, Exclude<Form, "base">>;
+
+function formStatMarkers(
+  section: CardReferenceSection,
+  baseSections: CardReferenceSection[],
+  formSections: CardReferenceSection[],
+  form: Form,
+): FormMarkers {
+  if (form === "base") return {};
+  const base = baseSections.find(item => item.name === section.name);
+  const source = formSections.find(item => item.name === section.name);
+  if (!source) return {};
+  const markers: FormMarkers = {};
+  for (const [label, value] of Object.entries(source.facts)) {
+    if (base?.facts[label] !== value) markers[label] = form;
+  }
+  for (const [level, fields] of Object.entries(source.levels)) {
+    for (const [label, value] of Object.entries(fields)) {
+      if (base?.levels[Number(level)]?.[label] !== value) markers[label] = form;
+    }
+  }
+  return markers;
+}
+
+function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
+  const label = form === "evolution" ? "Evolution" : "Hero";
+  return <img className={"ri-inspector-form-marker is-" + form}
+    src={form === "evolution" ? "/game-icons/stats/evolution.svg" : "/game-icons/stats/hero.svg"}
+    alt={label + " stat"} title={label + " stat"} aria-label={label + " stat"}/>;
+}
+
+function FactGrid({ facts, combat = false, unavailableFacts = [], formMarkers = {} }: {
+  facts: Record<string,string>;
+  combat?: boolean;
+  unavailableFacts?: readonly string[];
+  formMarkers?: FormMarkers;
+}) {
   const entries=Object.entries(facts);
   if (!entries.length) return null;
   if (combat) entries.sort(([a],[b]) => priority(a)-priority(b));
@@ -35,7 +71,7 @@ function FactGrid({ facts, combat = false, unavailableFacts = [] }: { facts: Rec
     {entries.map(([label,value])=><div key={label} className={"ri-inspector-fact" + (unavailableFacts.includes(label) ? " is-unavailable" : "")}>
       {statIconPath(label)&&<img className="ri-inspector-stat-icon" src={statIconPath(label)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
-        <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
+        <dt>{label}{formMarkers[label] && <FormMarker form={formMarkers[label]}/>}</dt><dd>{statValueWithUnit(value,label)}</dd>
       </div>
     </div>)}
   </dl>;
@@ -109,8 +145,8 @@ function historicalSections(record: ReturnType<typeof getMechanicsRecord>): Card
   })];
 }
 
-function LevelStats({ section, level, cap, allLevels }: {
-  section: CardReferenceSection; level: number; cap: number; allLevels: boolean;
+function LevelStats({ section, level, cap, allLevels, formMarkers = {} }: {
+  section: CardReferenceSection; level: number; cap: number; allLevels: boolean; formMarkers?: FormMarkers;
 }) {
   const entries = Object.entries(section.levels).filter(([value]) => Number(value) <= cap);
   const current = section.levels[level];
@@ -119,7 +155,7 @@ function LevelStats({ section, level, cap, allLevels }: {
   if (allLevels) {
     return <div className="ri-inspector-table" tabIndex={0} role="region" aria-label={section.name + " by level"}>
       <table>
-        <thead><tr><th scope="col">Level</th>{columns.map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
+        <thead><tr><th scope="col">Level</th>{columns.map(label => <th key={label} scope="col">{label}{formMarkers[label] && <FormMarker form={formMarkers[label]}/>}</th>)}</tr></thead>
         <tbody>{entries.map(([value, row]) => <tr key={value} className={Number(value) === level ? "is-viewing" : undefined}>
           <th scope="row">{value}</th>{columns.map(label => <td key={label}>{row[label] ?? "—"}</td>)}
         </tr>)}</tbody>
@@ -301,13 +337,16 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
         {form !== "base" && !chosen && referenceStatus !== "loading" &&
           <p className="ri-inspector-note">Stats for this form are unavailable.</p>}
         {chosen?.cycles != null && <FactGrid facts={{ "Evolution cycles": String(chosen.cycles) }}/>}
-        {sections.map(section => <section key={section.name} className="ri-inspector-section">
-          <h3>{section.name === "Card stats" ? "Combat stats" : section.name}
-            {!allLevels && <span className="ri-inspector-section-level"> · Lv {viewing}</span>}</h3>
-          <FactGrid combat facts={{...section.facts,...(allLevels?{}:(section.levels[viewing]??{}))}}/>
-          <LevelStats section={section} level={viewing} cap={cap} allLevels={allLevels}/>
-          {section.description && <details className="ri-inspector-about"><summary>Ability details</summary><p>{section.description}</p></details>}
-        </section>)}
+        {sections.map(section => {
+          const formMarkers = formStatMarkers(section, baseSections, chosen?.sections ?? [], form);
+          return <section key={section.name} className="ri-inspector-section">
+            <h3>{section.name === "Card stats" ? "Combat stats" : section.name}
+              {!allLevels && <span className="ri-inspector-section-level"> · Lv {viewing}</span>}</h3>
+            <FactGrid combat facts={{...section.facts,...(allLevels?{}:(section.levels[viewing]??{}))}} formMarkers={formMarkers}/>
+            <LevelStats section={section} level={viewing} cap={cap} allLevels={allLevels} formMarkers={formMarkers}/>
+            {section.description && <details className="ri-inspector-about"><summary>Ability details</summary><p>{section.description}</p></details>}
+          </section>;
+        })}
 
         {description && <details className="ri-inspector-about"><summary>About {card.name}</summary><p>{description}</p></details>}
         <section className="ri-inspector-section">
