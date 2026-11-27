@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { ArrowLeftRight, Crown, Shield, Swords, X } from "lucide-react";
 import type { Card } from "../lib/model";
+import { ElixirIcon } from "./ElixirIcon";
 import {
   resolveMechanics,
   getMechanicsRecord,
@@ -48,7 +49,7 @@ function CardPortrait({
       )}
       <div>
         <small>
-          {card.rarity} · {card.elixir ?? "?"} elixir
+          {card.rarity} · <ElixirIcon cost={card.elixir} size={18} decorative/> elixir
         </small>
         <h3>{card.name}</h3>
         <span>Viewing level {level ?? "unknown"}</span>
