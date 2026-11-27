@@ -1,0 +1,102 @@
+/* Battle history: clear match context and deck ownership at a glance. */
+.ri-battle-match-context{
+  display:flex;
+  align-items:stretch;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:13px 0 14px;
+}
+.ri-battle-match-context>div{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  padding:8px 11px;
+  border:1px solid var(--ri-border);
+  border-radius:9px;
+  background:#f8fafc;
+}
+.ri-battle-match-context small{
+  color:var(--ri-sub);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.ri-battle-match-context strong{
+  min-width:0;
+  color:var(--ri-ink);
+  font-size:12px;
+  overflow-wrap:anywhere;
+}
+.ri-battle-decks{
+  align-items:start;
+  gap:12px;
+}
+.ri-battle-deck-panel{
+  min-width:0;
+  padding:11px;
+  border:1px solid var(--ri-border);
+  border-radius:10px;
+  background:#f8fafc;
+}
+.ri-battle-deck-panel>header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:7px;
+}
+.ri-battle-deck-panel>header strong{
+  color:var(--ri-ink);
+  font-size:12px;
+  font-weight:700;
+}
+.ri-battle-deck-panel>header small{
+  flex:0 0 auto;
+  color:var(--ri-sub);
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.ri-battle-deck-panel .ri-deck-grid{
+  margin-top:0;
+}
+.ri-battle-team{
+  padding:12px;
+  background:#f8fafc;
+}
+.ri-battle-team>header strong{
+  font-size:12px;
+  font-weight:750;
+}
+.ri-battle-player-heading{
+  align-items:center;
+}
+.ri-battle-player-heading strong{
+  font-size:11px;
+}
+.ri-battle-player-heading small{
+  padding:3px 6px;
+  border:1px solid var(--ri-border);
+  border-radius:6px;
+  background:#fff;
+  font-size:9px;
+  white-space:nowrap;
+}
+.ri-battle-player .ri-deck-grid{
+  row-gap:6px;
+}
+.ri-battle[open] .ri-battle-detail{
+  padding-top:2px;
+}
+@media(max-width:690px){
+  .ri-battle-match-context{gap:6px;margin:10px 0 12px}
+  .ri-battle-match-context>div{padding:7px 9px}
+  .ri-battle-deck-panel{padding:9px}
+  .ri-battle-team{padding:9px}
+}
+@media(max-width:420px){
+  .ri-battle-match-context>div{width:100%;justify-content:space-between}
+  .ri-battle-deck-panel>header{align-items:flex-start;flex-direction:column;gap:3px}
+}
+
