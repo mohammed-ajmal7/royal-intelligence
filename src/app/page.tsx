@@ -1,6 +1,7 @@
 "use client";
 
 import "./overview-dashboard.css";
+import "./card-sorting.css";
 import "./card-form-badges.css";
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,7 +15,9 @@ import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
+import { CardSortControls } from "../components/CardSortControls";
 import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
+import { sortCardsByStat, type CardStatSortMetric, type CardStatSortMode } from "../lib/cardCollectionSort";
 import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { ElixirIcon } from "../components/ElixirIcon";
@@ -279,6 +282,8 @@ export default function Home() {
   const [cardsOwnership,setCardsOwnership]=useState<CardOwnership>("Owned");
   const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("");
   const [cardsFormStatus,setCardsFormStatus]=useState<FormStatusFilter>("All");
+  const [cardsSort,setCardsSort]=useState<CardStatSortMetric>("none");
+  const [cardsSortMode,setCardsSortMode]=useState<CardStatSortMode>("current");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
   const [selectedCardForm,setSelectedCardForm]=useState<CardPreviewForm>("base");
   const [replaceId,setReplaceId]=useState<number|null>(null);
@@ -341,6 +346,8 @@ export default function Home() {
   const visible=useMemo(()=>filterCollection(collection,{
     ownership:cardsOwnership,type:cardsFilter,formStatus:cardsFormStatus,query:cardsQuery,
   }),[collection,cardsQuery,cardsOwnership,cardsFilter,cardsFormStatus]);
+  const sortedVisible=useMemo(()=>sortCardsByStat(visible,cardsSort,cardsSortMode,mechanics),
+    [visible,cardsSort,cardsSortMode,mechanics]);
   const current=player?evaluate(deck,{...defaults,cap:player.cap},mechanics):null;
   const strategy=deck.length===8?assessStrategy(deck,mechanics,{focus}):null;
   const battleSummary=player?stats(localBattles):null;
@@ -477,6 +484,8 @@ export default function Home() {
                   </div>}
                 </div>
               </div>
+              <CardSortControls sort={cardsSort} mode={cardsSortMode} status={mechanicsStatus}
+                onSortChange={setCardsSort} onModeChange={setCardsSortMode}/>
             </div>
             {activeCard&&<CollectionCardDetails key={activeCard.id+"-"+selectedCardForm} card={activeCard} initialForm={selectedCardForm} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
@@ -491,7 +500,7 @@ export default function Home() {
               ? <SpecialFormEmptyState type={cardsFilter} status={cardsFormStatus}
                   onShowAll={()=>{setCardsOwnership("Owned");setCardsFormStatus("All");setSelectedCard(null);}}/>
               : <div className="ri-empty">No cards match these filters.</div>)}
-            <div className="ri-cards">{visible.map(c=>
+            <div className="ri-cards">{sortedVisible.map(c=>
               <button type="button" key={c.id} className={"ri-card "+(selectedCard?.id===c.id?"is-selected":"")}
                 aria-haspopup="dialog" onClick={()=>{setSelectedCardForm(cardsFilter==="Evolutions"?"evolution":cardsFilter==="Heroes"?"hero":"base");setSelectedCard(c);}}>
                 <CardArt card={c} form={cardsFilter==="Evolutions"?"evolution":cardsFilter==="Heroes"?"hero":"base"}/>

@@ -109,6 +109,7 @@ test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty s
   assert.match(page,/\["All","Unlocked","Locked"\] as const/);
   const cardsSection=page.slice(page.indexOf('{tab==="Cards"'),page.indexOf('{tab==="Decks"'));
   assert.doesNotMatch(cardsSection,/<select/);
+  assert.match(cardsSection,/<CardSortControls sort=\{cardsSort\}/);
   assert.doesNotMatch(cardsSection,/All card types/);
   assert.match(page,/filterCollection\(collection/);
   assert.match(page,/function SpecialFormEmptyState/);
