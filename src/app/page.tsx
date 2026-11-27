@@ -33,11 +33,24 @@ const text=(v:unknown)=>typeof v==="string"||typeof v==="number"?String(v):"";
 const asObject=(v:unknown):Record<string,unknown> =>
   v&&typeof v==="object"&&!Array.isArray(v)?v as Record<string,unknown>:{};
 const digits=(v:number|null|undefined)=>v==null?"—":Number.isInteger(v)?fmt(v):v.toFixed(1);
-function CardArt({card,size="normal"}:{card:Card;size?:"normal"|"small"}){
+type CardPreviewForm = "base" | "evolution" | "hero";
+
+function CardArt({card,size="normal",form="base"}:{card:Card;size?:"normal"|"small";form?:CardPreviewForm}){
+  const image = form === "evolution" ? card.evolutionImage ?? card.image :
+    form === "hero" ? card.heroImage ?? card.image : card.image;
   return <div className={"ri-art "+(size==="small"?"ri-art-small":"")}>
-    {card.image?<img src={card.image} alt="" loading="lazy"/>:<Crown size={22}/>}
+    {image?<img src={image} alt="" loading="lazy"/>:<Crown size={22}/>}
     {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}><ElixirIcon cost={card.elixir} size={28} decorative/></span>}
   </div>;
+}
+
+function CollectionCardCaption({card,form}:{card:Card;form:CardPreviewForm}){
+  if(form==="base")return <>{card.owned?"Lv "+(card.level??"?"):"Locked"}{card.evo===true?" · Evo":""}{card.hero===true?" · Hero":""}</>;
+  const isEvolution=form==="evolution";
+  const label=isEvolution?"Evolution":"Hero";
+  const unlocked=isEvolution?card.evo:card.hero;
+  const status=unlocked===true?"Unlocked":unlocked===false&&card.owned?"Locked":!card.owned?"Card locked":"Status unknown";
+  return <>{card.owned?"Lv "+(card.level??"?"):"Locked"} · {label} · {status}</>;
 }
 
 function SpecialFormEmptyState({
@@ -247,6 +260,7 @@ export default function Home() {
   const [cardsFilter,setCardsFilter]=useState<CardTypeFilter>("");
   const [cardsFormStatus,setCardsFormStatus]=useState<FormStatusFilter>("All");
   const [selectedCard,setSelectedCard]=useState<Card|null>(null);
+  const [selectedCardForm,setSelectedCardForm]=useState<CardPreviewForm>("base");
   const [replaceId,setReplaceId]=useState<number|null>(null);
   const [battleFilter,setBattleFilter]=useState("All");
   const [localBattles,setLocalBattles]=useState<Snapshot["battles"]>([]);
@@ -391,7 +405,7 @@ export default function Home() {
                 </div>
                 <button className="ri-text-button ri-overview-edit" onClick={()=>chooseTab("Decks")}>Edit deck <ChevronRight size={15}/></button>
               </div>
-              <MiniDeck cards={player.deck} select={c=>{setSelectedCard(c);chooseTab("Cards")}}/>
+              <MiniDeck cards={player.deck} select={c=>{setSelectedCardForm("base");setSelectedCard(c);chooseTab("Cards")}}/>
             </section>
             {player.warnings.length>0&&<details className="ri-muted ri-tiny"><summary>Data notes ({player.warnings.length})</summary><ul>{player.warnings.map((w,i)=><li key={i}>{w}</li>)}</ul></details>}
           </div>}
@@ -444,7 +458,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {activeCard&&<CollectionCardDetails key={activeCard.id} card={activeCard} cap={player.cap}
+            {activeCard&&<CollectionCardDetails key={activeCard.id+"-"+selectedCardForm} card={activeCard} initialForm={selectedCardForm} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
               onClose={()=>setSelectedCard(null)}
               deckAction={activeCard.owned&&!activeCard.tower ? {
@@ -459,14 +473,15 @@ export default function Home() {
               : <div className="ri-empty">No cards match these filters.</div>)}
             <div className="ri-cards">{visible.map(c=>
               <button type="button" key={c.id} className={"ri-card "+(selectedCard?.id===c.id?"is-selected":"")}
-                aria-haspopup="dialog" onClick={()=>setSelectedCard(c)}><CardArt card={c}/><strong>{c.name}</strong>
-                <small>{c.owned?"Lv "+(c.level??"?"):"Locked"}{c.evo===true?" · Evo":""}{c.hero===true?" · Hero":""}</small></button>)}</div>
+                aria-haspopup="dialog" onClick={()=>{setSelectedCardForm(cardsFilter==="Evolutions"?"evolution":cardsFilter==="Heroes"?"hero":"base");setSelectedCard(c);}}>
+                <CardArt card={c} form={cardsFilter==="Evolutions"?"evolution":cardsFilter==="Heroes"?"hero":"base"}/>
+                <strong>{c.name}</strong><small><CollectionCardCaption card={c} form={cardsFilter==="Evolutions"?"evolution":cardsFilter==="Heroes"?"hero":"base"}/></small></button>)}</div>
           </div>}
           {tab==="Decks"&&<div className="ri-stack">
             <section className="ri-panel"><div className="ri-section-title"><div><h2>Selected deck</h2>
               <p>{deck.length}/8 · {current?.avg?.toFixed(2)??"—"} elixir · {current?.cycle??"—"} cycle</p></div>
               {deck.length===8&&<a href={deckLink(deck)} className="ri-button-secondary" target="_blank" rel="noreferrer">Open in game <ExternalLink size={14}/></a>}</div>
-              <MiniDeck cards={deck} select={c=>setSelectedCard(c)} active={selectedCard?.id}/>
+              <MiniDeck cards={deck} select={c=>{setSelectedCardForm("base");setSelectedCard(c)}} active={selectedCard?.id}/>
               {deck.length<8&&<button type="button" className="ri-button-secondary" onClick={()=>{setSelectedCard(null);setCardsOwnership("Owned");setCardsFilter("");chooseTab("Cards");}}>Browse owned cards</button>}
               {selectedCard&&deck.some(c=>c.id===selectedCard.id)&&<div className="ri-row ri-selection">
                 <span>{selectedCard.name} selected</span>
