@@ -88,7 +88,7 @@ test("owned profiles inherit eligible form metadata from the global catalog",()=
 });
 test("Cards toolbar uses contextual ownership filters and Evolution/Hero empty states",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
-  const css=readFileSync(new URL("../src/app/card-form-badges.css",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
   const cardCss=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
   const overviewCss=readFileSync(new URL("../src/app/overview-dashboard.css",import.meta.url),"utf8");
   assert.match(page,/useState<CardOwnership>\("Owned"\)/);
@@ -145,7 +145,7 @@ test("form-specific artwork is sufficient evidence for Evolution/Hero collection
 
 test("card art shows top-right Evolution and Hero badges with unlocked and locked states",()=>{
   const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
-  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/card-form-badges.css",import.meta.url),"utf8");
   const badgeLib=readFileSync(new URL("../src/lib/cardFormBadges.ts",import.meta.url),"utf8");
   const heroCoin=readFileSync(new URL("../public/game-icons/card-forms/hero-coin.svg",import.meta.url),"utf8");
 
