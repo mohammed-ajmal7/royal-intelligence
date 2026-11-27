@@ -141,3 +141,26 @@ test("form-specific artwork is sufficient evidence for Evolution/Hero collection
   assert.deepEqual(filterCollection(artOnly,{ownership:"All",type:"Evolutions",query:""}).map(c=>c.name),["Evo art only"]);
   assert.deepEqual(filterCollection(artOnly,{ownership:"All",type:"Heroes",query:""}).map(c=>c.name),["Hero art only"]);
 });
+
+
+test("card art shows top-right Evolution and Hero badges with unlocked and locked states",()=>{
+  const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const badgeLib=readFileSync(new URL("../src/lib/cardFormBadges.ts",import.meta.url),"utf8");
+  const heroCoin=readFileSync(new URL("../public/game-icons/card-forms/hero-coin.svg",import.meta.url),"utf8");
+
+  assert.match(page,/import \{ getCardFormBadges \} from "\.\.\/lib\/cardFormBadges"/);
+  assert.match(page,/function CardFormBadges\(\{card\}:\{card:Card\}\)/);
+  assert.match(page,/className=\{"ri-card-form-badge is-"\+form\+" "\+\(unlocked\?"is-unlocked":"is-locked"\)\}/);
+  assert.match(page,/CardFormIcon form="evolution"/);
+  assert.match(page,/src="\/game-icons\/card-forms\/hero-coin\.svg"/);
+  assert.match(page,/<CardFormBadges card=\{card\}\/?>/);
+  assert.match(page,/ElixirIcon cost=\{card\.elixir\} size=\{28\}/);
+  assert.match(css,/\.ri-card-form-badges\{[\s\S]*position:absolute;[\s\S]*top:3px;[\s\S]*right:3px/);
+  assert.match(css,/\.ri-card-form-badge\.is-locked\{[\s\S]*filter:grayscale\(1\)/);
+  assert.match(css,/\.ri-card-form-badge\.is-unlocked/);
+  assert.match(badgeLib,/card\.hasEvolution === true \|\| card\.evo === true \|\| Boolean\(card\.evolutionImage\)/);
+  assert.match(badgeLib,/card\.hasHero === true \|\| card\.hero === true \|\| Boolean\(card\.heroImage\)/);
+  assert.match(heroCoin,/<title>Hero coin<\/title>/);
+  assert.match(heroCoin,/linearGradient id="heroCoinFace"/);
+});
