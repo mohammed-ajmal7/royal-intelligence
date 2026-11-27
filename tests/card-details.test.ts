@@ -96,3 +96,21 @@ test("card inspector uses compact spacing without removing card information",()=
   assert.match(css,/\.ri-level-option\{[\s\S]*min-height:39px/);
   assert.match(css,/\.ri-level-panel-footer\{[\s\S]*margin-top:7px/);
 });
+
+test("card stats identify Evolution and Hero-only values with their form icons",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+  const evolutionIcon=readFileSync(new URL("../public/game-icons/stats/evolution.svg",import.meta.url),"utf8");
+  const heroIcon=readFileSync(new URL("../public/game-icons/stats/hero.svg",import.meta.url),"utf8");
+
+  assert.match(component,/function formStatMarkers\(/);
+  assert.match(component,/base\?\.facts\[label\] !== value/);
+  assert.match(component,/base\?\.levels\[Number\(level\)\]\?\.\[label\] !== value/);
+  assert.match(component,/src=\{form === "evolution" \? "\/game-icons\/stats\/evolution\.svg" : "\/game-icons\/stats\/hero\.svg"\}/);
+  assert.match(component,/<FormMarker form=\{formMarkers\[label\]\}\/?>/);
+  assert.match(component,/formMarkers=\{formMarkers\}/);
+  assert.match(css,/\.ri-inspector-form-marker/);
+  assert.match(evolutionIcon,/<svg/);
+  assert.match(heroIcon,/<svg/);
+});
+
