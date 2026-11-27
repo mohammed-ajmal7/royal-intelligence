@@ -26,7 +26,7 @@ test("2v2 battle history renders all four players and all four decks", () => {
 
 test("dashboard Battles summaries use concise team names and compact SVG result badges",()=>{
   const dashboard=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
-  const css=readFileSync(new URL("../src/app/globals.css",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/app/battles.css",import.meta.url),"utf8");
 
   assert.match(dashboard,/"You"\s*:\s*person\.name/);
   assert.doesNotMatch(dashboard,/"You \(" \+ person\.name/);
