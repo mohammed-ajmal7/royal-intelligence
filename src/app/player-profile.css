@@ -331,9 +331,6 @@
     padding: 6px 8px;
   }
 
-  .ri-profile-stat-hint {
-    font-size: 10px;
-  }
 }
 
 @media (max-width: 360px) {
