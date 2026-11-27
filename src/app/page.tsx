@@ -499,15 +499,18 @@ export default function Home() {
               <button key={x} className={"ri-chip "+(battleFilter===x?"is-active":"")} aria-pressed={battleFilter===x} onClick={()=>{setBattleFilter(x);setBattleLimit(20);}}>{x}</button>)}</div>
             <div className="ri-battles">{recent.map(b=>{
               const isTwoVTwo=b.team.length===2&&b.opponent.length===2;
+              const ownTeamIndex=b.team.findIndex(person=>person.tag===player?.tag);
               const yourTeamNames=b.team.map((person,index)=>
-                person.tag===player?.tag?"You ("+person.name+")":(index===1?"Teammate ("+person.name+")":person.name)
+                index===(ownTeamIndex>=0?ownTeamIndex:0)
+                  ?"You ("+person.name+")"
+                  :"Teammate ("+person.name+")"
               ).join(" + ");
               const opponentNames=b.opponent.map(person=>person.name).join(" + ");
               const playerDeck=(person:Snapshot["battles"][number]["team"][number],index:number,side:"team"|"opponent")=>
                 <article className="ri-battle-player" key={(person.tag||person.name)+"-"+index}>
                   <header className="ri-battle-player-heading">
                     <strong>{side==="team"
-                      ? person.tag===player?.tag?"You · "+person.name:"Teammate · "+person.name
+                      ? (person.tag===player?.tag || (ownTeamIndex<0&&index===0))?"You · "+person.name:"Teammate · "+person.name
                       : "Opponent "+(index+1)+" · "+person.name}</strong>
                     <small>{person.tag||"Player tag unavailable"} · {person.cards.length}/8 cards</small>
                   </header>
