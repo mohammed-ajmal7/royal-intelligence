@@ -1,60 +1,86 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="72" viewBox="0 0 128 144">
 <title>6 Elixir</title>
-<desc>Glossy purple elixir drop marked 6</desc>
+<desc>Glossy magenta Clash Royale-style elixir drop with the number 6</desc>
 <defs>
- <linearGradient id="drop" x1="12" y1="9" x2="53" y2="58" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#f4d5ff"/>
-  <stop offset=".22" stop-color="#d18aff"/>
-  <stop offset=".52" stop-color="#a348e5"/>
-  <stop offset=".78" stop-color="#7924c2"/>
-  <stop offset="1" stop-color="#481080"/>
- </linearGradient>
- <linearGradient id="edge" x1="12" y1="17" x2="53" y2="54" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#fff0ff" stop-opacity=".95"/>
-  <stop offset=".35" stop-color="#d8a0ff" stop-opacity=".55"/>
-  <stop offset="1" stop-color="#3b086c" stop-opacity=".9"/>
- </linearGradient>
- <linearGradient id="facetLeft" x1="13" y1="23" x2="33" y2="53" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#f7caff" stop-opacity=".82"/>
-  <stop offset="1" stop-color="#a74ce5" stop-opacity=".12"/>
- </linearGradient>
- <linearGradient id="facetRight" x1="34" y1="20" x2="50" y2="57" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#8b31cf" stop-opacity=".15"/>
-  <stop offset="1" stop-color="#36065f" stop-opacity=".65"/>
- </linearGradient>
- <linearGradient id="number" x1="0" y1="23" x2="0" y2="49" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#fff"/>
-  <stop offset="1" stop-color="#f0e5ff"/>
- </linearGradient>
- <filter id="shadow" x="-25%" y="-20%" width="150%" height="155%">
-  <feGaussianBlur in="SourceAlpha" stdDeviation="2.1"/>
-  <feOffset dy="2"/>
-  <feComponentTransfer><feFuncA type="linear" slope=".34"/></feComponentTransfer>
-  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
- </filter>
- <clipPath id="dropClip">
-  <path d="M32 3.5C27.6 11.2 10.5 28.1 10.5 42.2c0 12.1 9.2 19.1 21.5 19.1s21.5-7 21.5-19.1C53.5 28.1 36.4 11.2 32 3.5Z"/>
- </clipPath>
+  <radialGradient id="magenta" cx="48%" cy="36%" r="68%">
+    <stop offset="0" stop-color="#ff22da"/>
+    <stop offset=".42" stop-color="#ed00c8"/>
+    <stop offset=".72" stop-color="#c900b8"/>
+    <stop offset="1" stop-color="#79006f"/>
+  </radialGradient>
+  <linearGradient id="edge" x1="14" y1="18" x2="111" y2="132" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#05030a"/>
+    <stop offset=".48" stop-color="#100817"/>
+    <stop offset="1" stop-color="#050309"/>
+  </linearGradient>
+  <radialGradient id="innerGlow" cx="50%" cy="43%" r="60%">
+    <stop stop-color="#ff4ce4" stop-opacity=".88"/>
+    <stop offset=".62" stop-color="#ff16d4" stop-opacity=".16"/>
+    <stop offset="1" stop-color="#8b007e" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="shine" cx="50%" cy="50%" r="50%">
+    <stop stop-color="#fff" stop-opacity=".9"/>
+    <stop offset=".24" stop-color="#fff" stop-opacity=".42"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bottomGloss" x1="37" y1="102" x2="83" y2="137" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#ff8aed" stop-opacity="0"/>
+    <stop offset=".55" stop-color="#ff91f0" stop-opacity=".68"/>
+    <stop offset="1" stop-color="#f000c7" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="outerShadow" x="-30%" y="-20%" width="160%" height="165%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="2.3"/>
+    <feOffset dy="2.2"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="softGlow" x="-200%" y="-200%" width="500%" height="500%">
+    <feGaussianBlur stdDeviation="5"/>
+  </filter>
+  <clipPath id="dropClip">
+    <path d="M104 4
+      C113 3 116 7 116 17
+      C117 31 121 52 124 73
+      C130 111 111 137 76 140
+      C37 143 7 125 6 91
+      C4 51 35 15 78 7
+      C89 5 98 4 104 4Z"/>
+  </clipPath>
 </defs>
-<g filter="url(#shadow)">
- <path d="M32 3.5C27.6 11.2 10.5 28.1 10.5 42.2c0 12.1 9.2 19.1 21.5 19.1s21.5-7 21.5-19.1C53.5 28.1 36.4 11.2 32 3.5Z"
-       fill="url(#drop)" stroke="#42106f" stroke-width="2"/>
- <g clip-path="url(#dropClip)">
-  <path d="M30.9 9.1C25.6 17.2 16 28.5 16 41.6c0 7.6 3.3 12.8 9.2 15.5-7.9-2.1-12.1-7.5-12.1-15.1 0-10.9 12-25.7 17.8-32.9Z"
-        fill="url(#facetLeft)"/>
-  <path d="M32 8.5 45.9 30 35.1 39.1 32 59.5 28.8 39.1 18.1 30Z"
-        fill="#f0b5ff" opacity=".16"/>
-  <path d="M32 8.5 45.9 30 35.1 39.1 32 59.5Z" fill="url(#facetRight)"/>
-  <path d="M12.6 39.2c1-9.1 8-18.5 12.7-24.6" fill="none" stroke="#fff" stroke-width="3.1" stroke-linecap="round" opacity=".76"/>
-  <path d="M17.1 24.8c1.2-2.1 2.6-4.1 4.2-6.2" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".68"/>
-  <path d="M18 49.7c2.2 5.1 6.7 7.1 12 7.6" fill="none" stroke="#eecbff" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
-  <path d="M34.5 57.1c8.2-.9 13.1-5.9 14.2-13" fill="none" stroke="#4c0d80" stroke-width="2.2" stroke-linecap="round" opacity=".44"/>
-  <circle cx="22.7" cy="15.4" r="1.5" fill="#fff" opacity=".9"/>
-  <circle cx="19.4" cy="19.7" r=".9" fill="#fff" opacity=".75"/>
- </g>
- <path d="M32 4.7c-4.2 7.4-20.3 23.9-20.3 37.5" fill="none" stroke="url(#edge)" stroke-width="1.15" stroke-linecap="round" opacity=".8"/>
- <text x="32" y="46" text-anchor="middle" fill="url(#number)" stroke="#4b1679" stroke-width="3.1"
-       stroke-linejoin="round" paint-order="stroke fill" font-family="Arial,Helvetica,sans-serif"
-       font-weight="900" font-size="21" letter-spacing="0">6</text>
+<g filter="url(#outerShadow)">
+  <path d="M104 4
+    C113 3 116 7 116 17
+    C117 31 121 52 124 73
+    C130 111 111 137 76 140
+    C37 143 7 125 6 91
+    C4 51 35 15 78 7
+    C89 5 98 4 104 4Z"
+    fill="url(#magenta)" stroke="url(#edge)" stroke-width="4.8"
+    stroke-linejoin="round"/>
+  <g clip-path="url(#dropClip)">
+    <rect x="0" y="0" width="128" height="144" fill="url(#innerGlow)"/>
+    <path d="M10 86 C12 47 43 15 84 8 C56 18 34 43 28 72 C22 101 36 128 62 139 C27 137 8 117 10 86Z"
+      fill="#ff72eb" opacity=".2"/>
+    <path d="M17 92 C18 57 44 28 74 17" fill="none" stroke="#ff85f1"
+      stroke-width="3.2" stroke-linecap="round" opacity=".5"/>
+    <path d="M20 98 C21 62 49 31 77 22" fill="none" stroke="#ffb6f5"
+      stroke-width="1.5" stroke-linecap="round" opacity=".38"/>
+    <path d="M24 112 C42 135 87 141 111 112" fill="none"
+      stroke="url(#bottomGloss)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M31 123 C51 139 91 132 108 112" fill="none"
+      stroke="#ff62e3" stroke-width="2.3" stroke-linecap="round" opacity=".42"/>
+    <ellipse cx="42" cy="61" rx="9" ry="10" fill="#fff" opacity=".5" filter="url(#softGlow)"/>
+    <ellipse cx="42" cy="61" rx="3.2" ry="4" fill="#fff" opacity=".43"/>
+    <ellipse cx="91" cy="64" rx="5" ry="7" fill="#fff" opacity=".28" filter="url(#softGlow)"/>
+    <path d="M111 22 C117 48 122 75 122 88" fill="none"
+      stroke="#ff9af0" stroke-width="1.7" stroke-linecap="round" opacity=".22"/>
+  </g>
+  <path d="M104 5 C111 4 114 8 114 17" fill="none" stroke="#09040d"
+    stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
+  <text x="66" y="105" text-anchor="middle"
+    fill="#fff" stroke="#fff" stroke-width="1.4" paint-order="stroke fill"
+    font-family="Arial,Helvetica,sans-serif" font-size="83"
+    font-style="italic" font-weight="900" letter-spacing="0"
+    transform="skewX(-7)">6</text>
 </g>
 </svg>
