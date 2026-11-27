@@ -93,12 +93,19 @@ function FactGrid({ facts, unavailableFacts = [] }: {
   const entries=Object.entries(facts);
   if (!entries.length) return null;
   return <dl className="ri-inspector-facts ri-inspector-information-facts">
-    {entries.map(([label,value])=><div key={label} className={"ri-inspector-fact" + (unavailableFacts.includes(label) ? " is-unavailable" : "")}>
-      {statIconPath(label)&&<img className="ri-inspector-stat-icon" src={statIconPath(label)!} alt="" loading="lazy" aria-hidden="true"/>}
-      <div className="ri-inspector-fact-body">
-        <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
-      </div>
-    </div>)}
+    {entries.map(([label,value])=>{
+      const key = label.trim().toLowerCase();
+      const form = key === "evolution" ? "evolution" : key === "hero" ? "hero" : null;
+      const icon = statIconPath(label);
+      return <div key={label} className={"ri-inspector-fact" + (unavailableFacts.includes(label) ? " is-unavailable" : "")}>
+        {form
+          ? <CardFormIcon form={form} className="ri-inspector-stat-icon ri-inspector-form-info-icon" decorative/>
+          : icon && <img className="ri-inspector-stat-icon" src={icon} alt="" loading="lazy" aria-hidden="true"/>}
+        <div className="ri-inspector-fact-body">
+          <dt>{label}</dt><dd>{statValueWithUnit(value,label)}</dd>
+        </div>
+      </div>;
+    })}
   </dl>;
 }
 
