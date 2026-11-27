@@ -12,7 +12,7 @@ import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStr
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
 import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
-import { ProfileAvatar } from "../components/ProfileAvatar";
+import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
 import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localHistory";
 import { elixirAsset } from "../lib/statAssets";
 
@@ -359,10 +359,7 @@ export default function Home() {
           <Crown size={27} aria-hidden="true"/><h2>{loading?"Loading profile…":"Enter a player tag above"}</h2>
         </div>:<>
           {tab==="Overview"&&<div className="ri-stack">
-            <div className="ri-profile"><ProfileAvatar playerTag={player.tag} playerName={player.name}/>
-              <div><h2>{player.name}</h2>
-                <p>{player.arena} {player.clan?"· "+player.clan:""} · King {player.kingLevel??"—"}</p></div>
-              {player.stale&&<span className="ri-status">Saved</span>}</div>
+            <PlayerProfileHeader player={player}/>
             <div className="ri-stat-grid">
               <Stat label="Trophies" value={fmt(player.trophies)}/>
               <Stat label="Personal best" value={fmt(player.bestTrophies)}/>
