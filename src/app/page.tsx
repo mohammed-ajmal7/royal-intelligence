@@ -4,6 +4,7 @@ import "./overview-dashboard.css";
 import "./card-sorting.css";
 import "./card-form-badges.css";
 import "./battles.css";
+import "./api-explorer.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, Frown, History, Layers3, Medal, Percent, Search, Smile, Swords, Trophy, X } from "lucide-react";
@@ -187,7 +188,7 @@ function ApiObjectTable({rows}:{rows:ApiRecord[]}){
   return <div className="ri-api-table-wrap">
     <table className="ri-api-table">
       <thead><tr>{columns.map(key=><th key={key}>{apiFieldLabel(key)}</th>)}</tr></thead>
-      <tbody>{rows.map((row,index)=><tr key={text(row.tag)||text(row.id)||index}>
+      <tbody>{rows.map((row,index)=><tr key={(text(row.tag)||text(row.id)||"record")+":"+index}>
         {columns.map(key=><td key={key}><ApiCell value={row[key]}/></td>)}
       </tr>)}</tbody>
     </table>
