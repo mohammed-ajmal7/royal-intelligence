@@ -164,3 +164,20 @@ test("combat stat grid shows owned-level arithmetic and keeps the owned level fi
   assert.match(component,/Your actual card level/);
   assert.match(css,/\.ri-inspector-owned-equation/);
 });
+
+
+test("Evolution and Hero collection cards render their form artwork and open the matching detail form",()=>{
+  const page=readFileSync(new URL("../src/app/page.tsx",import.meta.url),"utf8");
+  const details=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  assert.match(page,/function CardArt\([\s\S]*form\?:CardPreviewForm/);
+  assert.match(page,/form === "evolution" \? card\.evolutionImage \?\? card\.image/);
+  assert.match(page,/form === "hero" \? card\.heroImage \?\? card\.image/);
+  assert.match(page,/setSelectedCardForm\(cardsFilter==="Evolutions"\?"evolution":cardsFilter==="Heroes"\?"hero":"base"\)/);
+  assert.match(page,/initialForm=\{selectedCardForm\}/);
+  assert.match(page,/key=\{activeCard\.id\+"-"+selectedCardForm\}/);
+  assert.match(page,/CollectionCardCaption card=\{c\} form=/);
+  assert.match(details,/initialForm\?: Form/);
+  assert.match(details,/useState<Form>\(initialForm\)/);
+  assert.match(details,/Boolean\(card\.evolutionImage\)/);
+  assert.match(details,/Boolean\(card\.heroImage\)/);
+});
