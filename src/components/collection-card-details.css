@@ -1354,11 +1354,91 @@
 }
 
 
-/* Owned-level arithmetic: exact change from the player's owned level to the preview. */
-.ri-inspector-owned-equation{
-  display:block;width:max-content;max-width:100%;margin-top:3px;padding:3px 6px;
-  border:1px solid #dce7f7;border-radius:6px;background:#f2f6fd;color:#31558f;
-  font-size:9px;font-weight:750;line-height:1.35;white-space:normal;
-  font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+/* Owned-level arithmetic: make the final preview value the visual focus. */
+.ri-inspector-facts dd.has-owned-progression{
+  display:block;
 }
-@media(max-width:560px){.ri-inspector-owned-equation{padding:2px 5px;font-size:8px}}
+.ri-inspector-owned-equation{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:4px;
+  width:fit-content;
+  max-width:100%;
+  margin-top:4px;
+  padding:5px 6px;
+  border:1px solid #d7e4fa;
+  border-radius:9px;
+  background:linear-gradient(135deg,#f8faff 0%,#edf4ff 100%);
+  color:#29466f;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+}
+.ri-inspector-equation-from-level,
+.ri-inspector-equation-target-level{
+  padding:2px 4px;
+  border-radius:4px;
+  background:#e3eaf5;
+  color:#5a6d8c;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.035em;
+}
+.ri-inspector-equation-value{
+  color:#253d61;
+  font-size:12px;
+  font-weight:850;
+}
+.ri-inspector-equation-operator{
+  font-size:13px;
+  font-weight:950;
+}
+.ri-inspector-equation-operator.is-increase,
+.ri-inspector-equation-change{
+  color:#098454;
+}
+.ri-inspector-equation-operator.is-decrease{
+  color:#c04b52;
+}
+.ri-inspector-equation-change{
+  font-size:12px;
+  font-weight:900;
+}
+.ri-inspector-equation-equals{
+  color:#71809a;
+  font-size:12px;
+  font-weight:900;
+}
+.ri-inspector-equation-result{
+  display:inline-flex;
+  align-items:center;
+  min-height:25px;
+  padding:3px 8px;
+  border:1px solid #88d2ad;
+  border-radius:7px;
+  background:linear-gradient(135deg,#e9fbf1 0%,#d5f4e4 100%);
+  color:#087749;
+  font-size:15px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.25px;
+  box-shadow:inset 0 1px #fff,0 1px 2px #0d8a5718;
+}
+.ri-inspector-equation-target-level{
+  background:#e0f3e9;
+  color:#18764d;
+}
+.ri-inspector-stat-value{
+  display:inline-block;
+  font-size:13px;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:560px){
+  .ri-inspector-owned-equation{gap:3px;padding:4px 5px}
+  .ri-inspector-equation-value,.ri-inspector-equation-change{font-size:11px}
+  .ri-inspector-equation-result{min-height:23px;padding:3px 6px;font-size:14px}
+  .ri-inspector-equation-from-level,.ri-inspector-equation-target-level{font-size:7px}
+}
