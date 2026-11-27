@@ -20,6 +20,68 @@ type Props = {
   onClose: () => void;
 };
 
+function historicalSections(record: ReturnType<typeof getMechanicsRecord>): CardReferenceSection[] {
+  if (!record) return [];
+  function build(
+    name: string,
+    facts: Record<string, string | number | null | undefined>,
+    columns: Record<string, number[] | null | undefined>,
+  ): CardReferenceSection {
+    const levels: CardReferenceSection["levels"] = {};
+    for (const [label, series] of Object.entries(columns)) {
+      series?.forEach((value, index) => {
+        if (Number.isFinite(value) && value > 0) (levels[index + 1] ??= {})[label] = String(value);
+      });
+    }
+    return {
+      name,
+      facts: Object.fromEntries(Object.entries(facts)
+        .filter(([, value]) => value != null)
+        .map(([label, value]) => [label, String(value)])),
+      levels,
+    };
+  }
+  const targets = (air: boolean | null | undefined, ground: boolean | null | undefined) =>
+    air && ground ? "Air & Ground" : air ? "Air" : ground ? "Ground" : null;
+  const seconds = (value: number | null) => value == null ? null : value + " s";
+  const common = {
+    Count: record.unitCount,
+    Radius: record.areaRadiusTiles,
+    "Deploy time": seconds(record.deploySeconds),
+  };
+
+  if (record.groupUnits?.length && (record.groupUnits.length > 1 || record.statSubject === "spawned-unit")) {
+    return [
+      build("Card stats", common, {}),
+      ...record.groupUnits.map(unit => build(unit.name, {
+        Count: unit.count,
+        Targets: targets(unit.targetsAir, unit.targetsGround),
+        Range: unit.rangeLabel ?? unit.rangeTiles,
+        Speed: unit.moveSpeedLabel,
+        "Hit speed": seconds(unit.hitSpeedSeconds),
+      }, {
+        Hitpoints: unit.hpByLevel,
+        Damage: unit.damageByLevel,
+        "Damage/sec": unit.dpsByLevel,
+        "Shield hitpoints": unit.shieldHpByLevel,
+      })),
+    ];
+  }
+
+  return [build(record.statSubject === "spawned-unit" ? record.statSubjectLabel ?? "Spawned unit" : "Card stats", {
+    ...common,
+    Targets: record.buildingsOnly ? "Buildings" : targets(record.targetsAir, record.targetsGround),
+    Range: record.rangeLabel ?? record.rangeTiles,
+    Speed: record.moveSpeedLabel ?? (record.moveSpeedRaw == null ? null : record.moveSpeedRaw + " (source units)"),
+    "Hit speed": seconds(record.hitSpeedSeconds),
+    "First hit": seconds(record.firstHitSeconds),
+  }, record.extraStatsByLevel && Object.keys(record.extraStatsByLevel).length ? record.extraStatsByLevel : {
+    Hitpoints: record.hpByLevel,
+    Damage: record.damageByLevel,
+    "Damage/sec": record.dpsByLevel,
+  })];
+}
+
 function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
   return <CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>;
 }
