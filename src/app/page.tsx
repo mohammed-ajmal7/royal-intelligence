@@ -497,14 +497,58 @@ export default function Home() {
               <Stat label="Observed matches" value={localBattles.length}/></div>
             <div className="ri-chip-row">{["All","Wins","Losses"].map(x=>
               <button key={x} className={"ri-chip "+(battleFilter===x?"is-active":"")} aria-pressed={battleFilter===x} onClick={()=>{setBattleFilter(x);setBattleLimit(20);}}>{x}</button>)}</div>
-            <div className="ri-battles">{recent.map(b=><details className="ri-battle" key={b.id}>
-              <summary><span className={"ri-result-dot "+(b.outcome==="win"?"is-win":b.outcome==="loss"?"is-loss":"")}></span>
-                <span className="ri-battle-name"><strong>{b.opponent[0]?.name??"Unknown opponent"}</strong><small>{b.mode} · {b.time.slice(0,10)}</small></span>
-                <span className="ri-battle-result">{b.outcome.toUpperCase()}{b.trophyChange!=null?" · "+(b.trophyChange>0?"+":"")+b.trophyChange:""}</span><ChevronRight size={16}/></summary>
-              <div className="ri-battle-detail"><p>Opponent: {b.opponent.map(p=>p.name).join(", ")||"unknown"} · Mode: {b.mode}</p>
-                <div className="ri-battle-decks"><div><small>Your cards</small><MiniDeck cards={b.team[0]?.cards??[]}/></div>
-                  <div><small>Opponent cards</small><MiniDeck cards={b.opponent[0]?.cards??[]}/></div></div></div>
-            </details>)}</div>
+            <div className="ri-battles">{recent.map(b=>{
+              const isTwoVTwo=b.team.length===2&&b.opponent.length===2;
+              const ownTeamIndex=b.team.findIndex(person=>person.tag===player?.tag);
+              const yourTeamNames=b.team.map((person,index)=>
+                index===(ownTeamIndex>=0?ownTeamIndex:0)
+                  ?"You ("+person.name+")"
+                  :"Teammate ("+person.name+")"
+              ).join(" + ");
+              const opponentNames=b.opponent.map(person=>person.name).join(" + ");
+              const playerDeck=(person:Snapshot["battles"][number]["team"][number],index:number,side:"team"|"opponent")=>
+                <article className="ri-battle-player" key={(person.tag||person.name)+"-"+index}>
+                  <header className="ri-battle-player-heading">
+                    <strong>{side==="team"
+                      ? (person.tag===player?.tag || (ownTeamIndex<0&&index===0))?"You · "+person.name:"Teammate · "+person.name
+                      : "Opponent "+(index+1)+" · "+person.name}</strong>
+                    <small>{person.tag||"Player tag unavailable"} · {person.cards.length}/8 cards</small>
+                  </header>
+                  {person.cards.length
+                    ? <MiniDeck cards={person.cards}/>
+                    : <p className="ri-battle-no-deck">No deck cards were returned for this player.</p>}
+                </article>;
+              return <details className={"ri-battle"+(isTwoVTwo?" ri-battle-2v2":"")} key={b.id}>
+                <summary><span className={"ri-result-dot "+(b.outcome==="win"?"is-win":b.outcome==="loss"?"is-loss":"")}></span>
+                  <span className="ri-battle-name"><strong>{isTwoVTwo
+                    ? yourTeamNames+" vs "+opponentNames
+                    : b.opponent[0]?.name??"Unknown opponent"}</strong><small>{isTwoVTwo?"2v2 · 4 players · 4 decks · ":""}{b.mode} · {b.time.slice(0,10)}</small></span>
+                  <span className="ri-battle-result">{b.outcome.toUpperCase()}{b.trophyChange!=null?" · "+(b.trophyChange>0?"+":"")+b.trophyChange:""}</span><ChevronRight size={16}/></summary>
+                <div className="ri-battle-detail">
+                  {isTwoVTwo
+                    ? <>
+                        <p>2v2 match · 4 players · 4 separate decks · {[...b.team,...b.opponent].reduce((sum,person)=>sum+person.cards.length,0)}/32 cards returned</p>
+                        <div className="ri-battle-2v2-teams">
+                          <section className="ri-battle-team">
+                            <header><strong>Your team</strong><small>2 players · 16 cards expected</small></header>
+                            {b.team.map((person,index)=>playerDeck(person,index,"team"))}
+                          </section>
+                          <section className="ri-battle-team">
+                            <header><strong>Opposing team</strong><small>2 players · 16 cards expected</small></header>
+                            {b.opponent.map((person,index)=>playerDeck(person,index,"opponent"))}
+                          </section>
+                        </div>
+                      </>
+                    : <>
+                        <p>Opponent: {b.opponent.map(person=>person.name).join(", ")||"unknown"} · Mode: {b.mode}</p>
+                        <div className="ri-battle-decks">
+                          <div><small>Your cards</small><MiniDeck cards={b.team[0]?.cards??[]}/></div>
+                          <div><small>Opponent cards</small><MiniDeck cards={b.opponent[0]?.cards??[]}/></div>
+                        </div>
+                      </>}
+                </div>
+              </details>;
+            })}</div>
             {!recent.length&&<div className="ri-empty">No battles match this filter or the game API has not returned them.</div>}
             {matches.length>recent.length&&<button className="ri-button-secondary" onClick={()=>setBattleLimit(n=>n+20)}>Show more matches ({recent.length} of {matches.length})</button>}
           </div>}
