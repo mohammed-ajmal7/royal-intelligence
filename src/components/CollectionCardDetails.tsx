@@ -89,6 +89,32 @@ function FormMarker({ form }: { form: Exclude<Form, "base"> }) {
   return <CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>;
 }
 
+type RangeEquationEntry = ReturnType<typeof buildUnifiedStatEntries>[number];
+
+function rangeEvolutionEquation(entry: RangeEquationEntry, form: Form) {
+  if (form !== "evolution" || !/range/i.test(entry.sourceLabel) || entry.baseValue == null) return null;
+
+  const parse = (value: string) => {
+    const match = value.trim().replace(/,/g, "").match(/^([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))\\s*(.*?)$/);
+    if (!match) return null;
+    const number = Number(match[1]);
+    return Number.isFinite(number) ? { number, unit: match[2].trim() } : null;
+  };
+
+  const base = parse(entry.baseValue);
+  const evolved = parse(entry.value);
+  if (!base || !evolved || base.unit.toLowerCase() !== evolved.unit.toLowerCase()) return null;
+
+  const difference = Math.round((evolved.number - base.number) * 100) / 100;
+  if (difference <= 0) return null;
+
+  return {
+    from: entry.baseValue,
+    change: new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(difference),
+    to: entry.value,
+  };
+}
+
 function FactGrid({ facts, unavailableFacts = [] }: {
   facts: Record<string,string>;
   unavailableFacts?: readonly string[];
@@ -122,6 +148,7 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
   return <dl className="ri-inspector-facts ri-inspector-combat-facts ri-inspector-unified-facts">
     {entries.map(entry=>{
       const isAbilityField = abilitySections.includes(entry.section);
+      const rangeEquation = rangeEvolutionEquation(entry, form);
       return <div key={entry.id} className={"ri-inspector-fact" + (isAbilityField ? " is-ability-field" : "")}>
       {statIconPath(entry.sourceLabel)&&<img className="ri-inspector-stat-icon" src={statIconPath(entry.sourceLabel)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
@@ -129,8 +156,17 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
           {isAbilityField && <CardAbilityIcon cardName={cardName} form={form} abilityName={entry.section} size="small"/>}
           <span>{entry.label}</span>{entry.marker && <FormMarker form={entry.marker}/>}
         </dt>
-        <dd className={entry.ownedProgression ? "has-owned-progression" : undefined}>
-          {entry.ownedProgression ? (
+        <dd className={entry.ownedProgression && !rangeEquation ? "has-owned-progression" : undefined}>
+          {rangeEquation ? (
+            <div className="ri-inspector-range-equation" role="group"
+              aria-label={"Range: " + rangeEquation.from + " + " + rangeEquation.change + " = " + rangeEquation.to}>
+              <span className="ri-inspector-range-from">{rangeEquation.from}</span>
+              <span className="ri-inspector-range-operator" aria-hidden="true">+</span>
+              <span className="ri-inspector-range-increase">+{rangeEquation.change}</span>
+              <span className="ri-inspector-range-operator" aria-hidden="true">=</span>
+              <strong className="ri-inspector-range-result">{rangeEquation.to}</strong>
+            </div>
+          ) : entry.ownedProgression ? (
             <div className="ri-inspector-owned-equation" role="group"
               aria-label={"Stat change: " + entry.ownedProgression.fromValue + " " +
                 entry.ownedProgression.operator + " " + entry.ownedProgression.changeValue + " = " +
