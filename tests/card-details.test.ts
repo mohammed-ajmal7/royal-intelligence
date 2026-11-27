@@ -58,3 +58,29 @@ test("card level selector opens as a dropdown popover and closes after selection
   assert.match(css,/\.ri-level-popover\[hidden\]\{display:none\}/);
   assert.match(css,/\.ri-level-trigger\[aria-expanded="true"\]/);
 });
+
+
+test("card inspector uses compact spacing without removing card information",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  // Keep every data section and the original fields visible in the component.
+  assert.match(component,/<FactGrid combat facts=/);
+  assert.match(component,/<LevelStats section=/);
+  assert.match(component,/<h3>Card information<\/h3>/);
+  for(const field of ["Star level","Maximum star level","Evolution:","Hero:","Unlock arena","Roles:"])
+    assert.ok(component.includes(field),`Card information field missing: ${field}`);
+  assert.match(component,/Combat stat source/);
+  assert.match(component,/Ability details/);
+  assert.match(component,/All levels/);
+
+  // Ensure the compact overrides shrink the modal and all major content groups.
+  assert.match(css,/\.ri-card-dialog\.ri-inspector\{[\s\S]*width:min\(600px/);
+  assert.match(css,/\.ri-inspector-header\{[\s\S]*padding:10px 46px 9px 14px/);
+  assert.match(css,/\.ri-inspector-body\{[\s\S]*gap:9px/);
+  assert.match(css,/\.ri-inspector-fact\{[\s\S]*min-height:43px/);
+  assert.match(css,/\.ri-inspector-stat-icon\{[\s\S]*width:26px/);
+  assert.match(css,/\.ri-inspector-information-facts \.ri-inspector-fact\{[\s\S]*min-height:43px/);
+  assert.match(css,/\.ri-level-option\{[\s\S]*min-height:48px/);
+  assert.match(css,/@media\(max-width:560px\)/);
+});
