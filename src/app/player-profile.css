@@ -2,10 +2,11 @@
 .ri-profile {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto auto;
   grid-template-areas:
     "avatar title"
-    "avatar meta";
+    "avatar meta"
+    "stats stats";
   align-items: center;
   gap: 12px 20px;
   min-width: 0;
@@ -142,12 +143,84 @@
   background: #fafbfc;
 }
 
+.ri-profile-stats {
+  grid-area: stats;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f4;
+}
+
+.ri-profile-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 88px;
+  padding: 12px 13px;
+  border: 1px solid #e3e7ee;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, .035);
+}
+
+.ri-profile-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #697790;
+  font-size: 13px;
+  font-weight: 660;
+  line-height: 1.2;
+}
+
+.ri-profile-stat-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 13px;
+  background: #eef3fc;
+  color: #2856ad;
+}
+
+.ri-profile-stat strong {
+  display: block;
+  margin-top: 7px;
+  color: #111b2d;
+  font-size: 27px;
+  font-weight: 760;
+  line-height: 1.05;
+  letter-spacing: -.7px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ri-profile-stat small {
+  margin-top: 3px;
+  color: #687790;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 @media (max-width: 760px) {
   .ri-profile {
     grid-template-columns: 82px minmax(0, 1fr);
     gap: 10px 14px;
     padding: 15px;
     border-radius: 15px;
+  }
+
+  .ri-profile-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ri-profile-stat {
+    min-height: 82px;
   }
 
   .ri-profile > .ri-profile-avatar-wrap {
@@ -196,10 +269,11 @@
 @media (max-width: 560px) {
   .ri-profile {
     grid-template-columns: 68px minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     grid-template-areas:
       "avatar title"
-      "meta meta";
+      "meta meta"
+      "stats stats";
     gap: 12px;
     padding: 13px;
   }
@@ -221,6 +295,37 @@
   .ri-profile-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
+  }
+
+  .ri-profile-stats {
+    gap: 7px;
+    padding-top: 11px;
+  }
+
+  .ri-profile-stat {
+    min-height: 78px;
+    padding: 9px 10px;
+  }
+
+  .ri-profile-stat-icon {
+    flex-basis: 31px;
+    width: 31px;
+    height: 31px;
+    border-radius: 10px;
+  }
+
+  .ri-profile-stat-head {
+    gap: 7px;
+    font-size: 11px;
+  }
+
+  .ri-profile-stat strong {
+    margin-top: 5px;
+    font-size: 23px;
+  }
+
+  .ri-profile-stat small {
+    font-size: 11px;
   }
 
   .ri-profile-meta-item {
