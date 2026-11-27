@@ -62,7 +62,7 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(ui,/statValueWithUnit\(value,label\)/);
   assert.match(ui,/className="ri-inspector-meta"/);
   assert.match(ui,/className="ri-inspector-about"/);
-  assert.match(ui,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
+  assert.match(ui,/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/);
   assert.match(ui,/buildUnifiedStatEntries/);
   assert.match(ui,/<ElixirIcon cost=\{card\.elixir\} size=\{24\} decorative\/>/);
   assert.match(css,/width:min\(628px,calc\(100% - 24px\)\)/);
