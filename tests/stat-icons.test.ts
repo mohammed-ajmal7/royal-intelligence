@@ -25,7 +25,7 @@ test("all stat pictograms are vector assets in public, including advanced mechan
     "Hitpoints","Shield hitpoints","Damage","Ranged Damage","Power Shot Damage",
     "Damage/sec","Hit Speed","First hit","Targets","Speed","Range",
     "Power Shot Range","Count","Radius","Deploy time","Evolution cycles",
-    "Star level","Evolution","Hero","Unlock arena",
+    "Star level","Unlock arena",
   ]){
     const asset=statIconPath(label);
     assert.ok(asset,label+" icon missing");
@@ -34,6 +34,12 @@ test("all stat pictograms are vector assets in public, including advanced mechan
     assert.match(svg,/<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
     assert.ok(svg.includes("</svg>"));
   }
+  // Form icons are rendered through the shared official badge component, not placeholder stat SVGs.
+  assert.equal(statIconPath("Evolution"),null);
+  assert.equal(statIconPath("Hero"),null);
+  assert.equal(statIconPath("Evolution cycles"),"/game-icons/stats/cycles.svg");
+  assert.match(ui,/key === "evolution" \? "evolution" : key === "hero" \? "hero" : null/);
+  assert.match(ui,/<CardFormIcon form=\{form\} className="ri-inspector-stat-icon ri-inspector-form-info-icon" decorative\/>/);
 });
 test("damage and attack values never accidentally receive range units",()=>{
   assert.equal(statValueWithUnit("112","Ranged Damage"),"112");
