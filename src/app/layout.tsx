@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./player-profile.css";
 import "./battles.css";
 import type { Metadata, Viewport } from "next";
 
