@@ -1326,10 +1326,42 @@
   border-top:1px solid var(--ri-border);
 }
 .ri-inspector-ability-description>strong{
-  display:block;
+  display:flex;
+  align-items:center;
+  gap:9px;
   padding-top:7px;
   color:var(--ri-text);
   font-size:11px;
+}
+.ri-inspector-ability-heading>span{
+  min-width:0;
+  font-size:12px;
+  font-weight:800;
+}
+.ri-ability-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  overflow:hidden;
+  border:1px solid #d9e2f0;
+  border-radius:9px;
+  background:#f3f6fc;
+  box-shadow:0 1px 2px rgba(22,34,54,.08);
+}
+.ri-ability-icon img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.ri-ability-icon-fallback{
+  color:#536eaa;
+}
+.ri-ability-icon-fallback svg{
+  width:25px;
+  height:25px;
 }
 .ri-inspector-ability-description>p{
   margin:0;
@@ -1337,6 +1369,7 @@
 @media(max-width:560px){
   .ri-inspector-form-tab-icon{width:16px;height:16px;flex-basis:16px}
   .ri-inspector-unified-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ri-ability-icon{flex-basis:34px;width:34px;height:34px}
   .ri-inspector-stat-delta{font-size:8px;padding:1px 4px}
   .ri-unified-level-table .ri-level-table-column-label{max-width:112px}
 }
