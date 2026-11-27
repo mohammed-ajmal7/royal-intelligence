@@ -126,17 +126,19 @@ test("selected form uses one unified stat grid and official form icons",()=>{
   assert.ok(overviewCss.includes(".ri-card-type-icon"));
 });
 
-test("Evolution range changes render as a purple additive equation",()=>{
+test("Evolution and Hero range changes render as form-colored equations without vs Base badges",()=>{
   const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
 
-  assert.match(component,/function rangeEvolutionEquation/);
-  assert.match(component,/form !== "evolution" \|\| !\/range\/i\.test\(entry\.sourceLabel\)/);
-  assert.match(component,/className="ri-inspector-range-equation"/);
-  assert.match(component,/className="ri-inspector-range-increase">\+\{rangeEquation\.change\}/);
-  assert.match(component,/rangeEquation\.from/);
-  assert.match(component,/rangeEquation\.to/);
-  assert.match(css,/\.ri-inspector-range-increase\{[\s\S]*background:#f4edff;[\s\S]*color:#7738bd/);
+  assert.match(component,/function rangeFormEquation/);
+  assert.match(component,/form !== "evolution" && form !== "hero"/);
+  assert.match(component,/className=\{"ri-inspector-range-equation is-" \+ rangeEquation\.form\}/);
+  assert.match(component,/rangeEquation\.operator/);
+  assert.match(component,/className="ri-inspector-range-change"/);
+  assert.match(component,/\{!rangeEquation && entry\.delta && <small className="ri-inspector-stat-delta"/);
+  assert.match(component,/statValueWithUnit\\(entry\\.baseValue, entry\\.sourceLabel\\)/);
+  assert.match(css,/\\.ri-inspector-range-change\\{[\\s\\S]*background:#f4edff;[\\s\\S]*color:#7738bd/);
+  assert.match(css,/\\.ri-inspector-range-equation\\.is-hero \\.ri-inspector-range-change\\{[\\s\\S]*background:#fff7df;[\\s\\S]*color:#a66a08/);
 });
 
 test("all-level view uses one combined Base versus Evolution/Hero comparison table",()=>{
