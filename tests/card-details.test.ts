@@ -174,7 +174,7 @@ test("Evolution and Hero collection cards render their form artwork and open the
   assert.match(page,/form === "hero" \? card\.heroImage \?\? card\.image/);
   assert.match(page,/setSelectedCardForm\(cardsFilter==="Evolutions"\?"evolution":cardsFilter==="Heroes"\?"hero":"base"\)/);
   assert.match(page,/initialForm=\{selectedCardForm\}/);
-  assert.match(page,/key=\{activeCard\.id\+"-"+selectedCardForm\}/);
+  assert.match(page,/activeCard&&<CollectionCardDetails[\s\S]{0,160}initialForm=\{selectedCardForm\}/);
   assert.match(page,/CollectionCardCaption card=\{c\} form=/);
   assert.match(details,/initialForm\?: Form/);
   assert.match(details,/useState<Form>\(initialForm\)/);
