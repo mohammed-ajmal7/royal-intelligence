@@ -380,3 +380,159 @@ html:has(.ri-card-dialog[open]) { overflow: hidden; }
  .ri-battle-player .ri-deck-tile strong{font-size:9px}
  .ri-battle-player-heading{align-items:flex-start;flex-direction:column;gap:2px}
 }
+
+
+/* Player identity: shared King portrait with live arena, clan and tower metadata. */
+.ri-profile{
+  align-items:center;
+  gap:16px;
+  min-width:0;
+  padding:16px 18px;
+}
+.ri-profile-avatar-wrap{
+  flex:0 0 84px;
+  width:84px;
+  height:84px;
+  overflow:hidden;
+  border:2px solid #dbe5f5;
+  border-radius:16px;
+  background:#edf3fc;
+  box-shadow:0 3px 10px rgba(30,58,110,.12);
+}
+.ri-profile-avatar{
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  border-radius:0;
+  object-fit:cover;
+  object-position:center 20%;
+}
+.ri-profile-main{
+  flex:1;
+  min-width:0;
+}
+.ri-profile-main h2{
+  margin:0;
+  color:var(--ri-text);
+  font-size:23px;
+  font-weight:780;
+  letter-spacing:-.55px;
+  line-height:1.15;
+  overflow-wrap:anywhere;
+}
+.ri-profile-meta{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px;
+}
+.ri-profile-meta-item{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  min-width:0;
+  padding:5px 9px;
+  border:1px solid #e5eaf2;
+  border-radius:9px;
+  background:#f8fafd;
+  color:#42516a;
+  font-size:11px;
+  line-height:1.15;
+}
+.ri-profile-meta-item>img{
+  display:block;
+  flex:0 0 25px;
+  width:25px;
+  height:25px;
+  object-fit:contain;
+}
+.ri-profile-meta-item>svg{
+  flex:0 0 22px;
+  width:22px;
+  height:22px;
+  color:#536c9c;
+}
+.ri-profile-meta-item>strong{
+  color:#34435a;
+  font-size:11px;
+  font-weight:700;
+  overflow-wrap:anywhere;
+}
+.ri-profile-meta-item>span{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.ri-profile-meta-item>span>small{
+  color:#7d899e;
+  font-size:8px;
+  font-weight:650;
+  letter-spacing:.25px;
+  text-transform:uppercase;
+}
+.ri-profile-meta-item>span>strong{
+  color:#25344d;
+  font-size:12px;
+  font-weight:800;
+}
+.ri-king-tower-icon{
+  flex:0 0 27px;
+  width:27px;
+  height:27px;
+}
+.ri-profile-clan.is-no-clan{
+  color:#8590a1;
+  background:#fafbfc;
+}
+.ri-profile-clan.is-no-clan>strong{
+  color:#7f8a9a;
+}
+@media(max-width:560px){
+  .ri-profile{
+    align-items:flex-start;
+    gap:11px;
+    padding:12px;
+  }
+  .ri-profile-avatar-wrap{
+    flex-basis:66px;
+    width:66px;
+    height:66px;
+    border-radius:13px;
+  }
+  .ri-profile-main h2{
+    font-size:19px;
+  }
+  .ri-profile-meta{
+    gap:5px;
+    margin-top:8px;
+  }
+  .ri-profile-meta-item{
+    min-height:31px;
+    gap:5px;
+    padding:4px 7px;
+    border-radius:8px;
+    font-size:10px;
+  }
+  .ri-profile-meta-item>img{
+    flex-basis:21px;
+    width:21px;
+    height:21px;
+  }
+  .ri-profile-meta-item>strong{
+    font-size:10px;
+  }
+  .ri-profile-meta-item>span>strong{
+    font-size:11px;
+  }
+}
+@media(max-width:380px){
+  .ri-profile{
+    flex-wrap:wrap;
+  }
+  .ri-profile .ri-status{
+    margin-left:0;
+  }
+}
