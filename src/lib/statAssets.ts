@@ -15,8 +15,7 @@ export function statIconPath(label: string): string | null {
   else if (/\b(deploy time|spawn delay|deploy delay|lifetime)\b/.test(key)) asset="deploy-time";
   else if (/\bcycles?\b/.test(key)) asset="cycles";
   else if (/\bstar level(s)?\b/.test(key)) asset="star-level";
-  else if (/\bevolution\b/.test(key)) asset="evolution";
-  else if (/\bhero\b/.test(key)) asset="hero";
+  // Evolution and Hero use the shared official card-form badge component, not stat pictograms.
   else if (/\barena\b/.test(key)) asset="arena";
   return asset ? "/game-icons/stats/" + asset + ".svg" : null;
 }
