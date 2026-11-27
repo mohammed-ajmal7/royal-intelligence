@@ -409,14 +409,15 @@ export default function Home() {
           <Crown size={27} aria-hidden="true"/><h2>{loading?"Loading profile…":"Enter a player tag above"}</h2>
         </div>:<>
           {tab==="Overview"&&<div className="ri-stack ri-overview-stack">
-            <PlayerProfileHeader player={player}/>
-            <div className="ri-stat-grid ri-overview-stats">
-              <Stat Icon={Trophy} label="Trophies" value={fmt(player.trophies)}/>
-              <Stat Icon={Medal} label="Personal best" value={fmt(player.bestTrophies)}/>
-              <Stat Icon={Layers3} label="Cards" value={player.cards.filter(c=>!c.tower).length} hint={"of "+player.catalog.filter(c=>!c.tower).length}/>
-              <Stat Icon={Percent} label="Win rate" value={battleSummary&&battleSummary.wins+battleSummary.losses?
-                Math.round(100*battleSummary.wins/(battleSummary.wins+battleSummary.losses))+"%":"—"}/>
-            </div>
+            <PlayerProfileHeader player={player} metrics={{
+              trophies:fmt(player.trophies),
+              personalBest:fmt(player.bestTrophies),
+              cardsOwned:player.cards.filter(c=>!c.tower).length,
+              cardsTotal:player.catalog.filter(c=>!c.tower).length,
+              winRate:battleSummary&&battleSummary.wins+battleSummary.losses
+                ? Math.round(100*battleSummary.wins/(battleSummary.wins+battleSummary.losses))+"%"
+                : "—",
+            }}/>
             <section className="ri-panel ri-overview-deck">
               <div className="ri-section-title ri-overview-deck-heading">
                 <div className="ri-overview-deck-title">
