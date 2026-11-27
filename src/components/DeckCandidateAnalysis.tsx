@@ -33,13 +33,16 @@ export function DeckCandidateAnalysis({
         {slot.chosen.measured.length>0&&<p className="ri-muted">Role metrics: {slot.chosen.measured.map(metric=>metric.label+" "+metric.value+" "+metric.unit+" · "+metric.relative+"% of your role benchmark").join(" · ")}</p>}
         {slot.chosen.evolved&&<p className="ri-muted">Published {slot.chosen.evolved.form} at Lv {slot.chosen.card.level}: HP {displayStat(slot.chosen.evolved.hp)} · Damage {displayStat(slot.chosen.evolved.damage)} · DPS {displayStat(slot.chosen.evolved.dps)}. Only source-published values are shown.</p>}
         {slot.alternatives.length>0&&<details className="ri-role-ranking"><summary>Full ranking · {slot.considered} owned candidates checked</summary>
-          <div className="ri-role-ranking-scroll"><table><thead><tr><th>Card</th><th>Level</th><th>Elixir</th><th>HP</th><th>Damage</th><th>DPS</th><th>Hit interval</th><th>Range</th><th>Splash</th><th>Evo / Hero</th><th>Evidence</th><th>Role score</th></tr></thead>
+          <div className="ri-role-ranking-scroll"><table><thead><tr><th>Card</th><th>Level</th><th>Elixir</th><th>HP</th><th>Damage</th><th>DPS</th><th>Hit interval</th><th>Range</th><th>Splash</th><th>Targets</th><th>Evo / Hero</th><th>Ability</th><th>Numeric coverage</th><th>Evidence</th><th>Role score</th></tr></thead>
             <tbody>{[slot.chosen,...slot.alternatives].map((entry,index)=><tr key={entry.card.id}>
               <td>{index===0?"★ ":""}{entry.card.name}</td><td>{entry.card.level??"—"}</td><td>{entry.card.elixir??"—"}</td>
               <td>{displayStat(entry.hp)}</td><td>{displayStat(entry.damage)}</td><td>{displayStat(entry.dps)}</td>
               <td>{entry.hitSpeed===null?"—":entry.hitSpeed+"s"}</td><td>{entry.range===null?"—":entry.range+" tiles"}</td>
               <td>{entry.splash===null?"—":entry.splash+" tiles"}</td>
+              <td>{entry.target}</td>
               <td>{[entry.card.evo===true?"Evo":"",entry.card.hero===true?"Hero":"",entry.card.rarity.toLowerCase()==="champion"?"Champion":""].filter(Boolean).join(" / ")||"—"}</td>
+              <td>{entry.abilityRecorded===null?"Unknown":entry.abilityRecorded?"Recorded":"None recorded"}</td>
+              <td>{entry.numericScore===null?"Unknown":entry.numericScore.toFixed(1)+" · "+Math.round(entry.numericCoverage*100)+"%"}</td>
               <td>{Math.round(entry.confidence*100)}%</td><td>{entry.grade.toFixed(1)}</td>
             </tr>)}</tbody>
           </table></div>
