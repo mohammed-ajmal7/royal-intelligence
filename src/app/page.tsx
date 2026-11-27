@@ -397,7 +397,7 @@ export default function Home() {
           <button type="submit" disabled={loading}><Search size={16}/>{loading?"Loading…":"Load player"}</button>
         </form>
         <div className="ri-row ri-statuses" aria-live="polite">
-          {(loading||apiReady===false||player?.stale)&&<span className="ri-status">{loading?"Loading…":apiReady===false?"API unavailable":"Saved profile"}</span>}
+          {(loading||apiReady===false)&&<span className="ri-status">{loading?"Loading…":"API unavailable"}</span>}
         </div>
       </div>
       {error&&<div className="ri-alert" role="alert">{error}</div>}
