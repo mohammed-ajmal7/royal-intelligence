@@ -1027,7 +1027,7 @@
   color:#98a2b3;
   font-weight:750;
 }
-.ri-inspector-range-increase{
+.ri-inspector-range-change{
   display:inline-flex;
   align-items:center;
   padding:2px 5px;
@@ -1037,6 +1037,11 @@
   color:#7738bd;
   font-size:11px;
   font-weight:800;
+}
+.ri-inspector-range-equation.is-hero .ri-inspector-range-change{
+  border-color:#f4df9f;
+  background:#fff7df;
+  color:#a66a08;
 }
 .ri-inspector-range-result{
   color:#172033;
