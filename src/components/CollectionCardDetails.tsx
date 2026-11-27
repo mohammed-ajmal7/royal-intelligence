@@ -240,8 +240,7 @@ export function CollectionCardDetails({ card, cap, mechanics, mechanicsLoading, 
               onClick={() => setForm(option)}>{formLabels[option]}</button>)}
           </div>
         </div>}
-        <section className="ri-level-design" aria-labelledby="ri-level-design-title">
-          <h2 id="ri-level-design-title" className="ri-level-design-heading">Recommended design</h2>
+        <section className="ri-level-design" aria-label="Card level">
           <div className="ri-level-picker" ref={levelPickerRef}>
             <button type="button" className="ri-level-trigger" aria-expanded={levelPickerOpen}
               aria-controls={levelPickerId} onClick={() => setLevelPickerOpen(open => !open)}>
