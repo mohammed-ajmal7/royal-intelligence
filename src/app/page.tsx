@@ -15,6 +15,7 @@ import { buildDeckPlaybook } from "../lib/deckPlaybook";
 import { assessStrategy, focusChoices, type StrategyFocus } from "../lib/deckStrategy";
 import { API_RESOURCES, type ResourceParam } from "../lib/apiResources";
 import { CollectionCardDetails } from "../components/CollectionCardDetails";
+import { CardSortControls } from "../components/CardSortControls";
 import { filterCollection, type CardOwnership, type FormStatusFilter, type CardTypeFilter } from "../lib/collectionFilter";
 import { sortCardsByStat, type CardStatSortMetric, type CardStatSortMode } from "../lib/cardCollectionSort";
 import { PlayerProfileHeader } from "../components/PlayerProfileHeader";
@@ -483,37 +484,8 @@ export default function Home() {
                   </div>}
                 </div>
               </div>
-              <div className="ri-card-sort-controls">
-                <label className="ri-card-sort-select">
-                  <span>Sort by</span>
-                  <select aria-label="Sort cards by" value={cardsSort}
-                    onChange={event=>setCardsSort(event.target.value as CardStatSortMetric)}>
-                    <option value="none">Default order</option>
-                    <option value="hitpoints">Highest Hitpoints</option>
-                    <option value="damage">Highest Damage</option>
-                    <option value="dps">Highest Damage/Sec</option>
-                  </select>
-                </label>
-                <div className="ri-card-sort-level">
-                  <span className="ri-card-sort-level-label">Compare at</span>
-                  <div className="ri-card-sort-toggle" role="group" aria-label="Card stat level">
-                    {(["current","max"] as const).map(mode=><button key={mode} type="button"
-                      aria-pressed={cardsSortMode===mode}
-                      className={cardsSortMode===mode?"is-active":""}
-                      onClick={()=>setCardsSortMode(mode)}>{mode==="current"?"Current":"Max"}</button>)}
-                  </div>
-                </div>
-                {cardsSort!=="none"&&mechanicsStatus==="loading"&&
-                  <span className="ri-card-sort-status" role="status">Loading card stats…</span>}
-                {cardsSort!=="none"&&mechanicsStatus==="unavailable"&&
-                  <span className="ri-card-sort-status" role="status">Stat data unavailable</span>}
-                {cardsSort!=="none"&&mechanicsStatus==="ready"&&
-                  <span className="ri-card-sort-status">
-                    {cardsSortMode==="current"
-                      ? "Uses each card’s owned level; cards without a current level sort last."
-                      : "Uses the highest published level for each card."}
-                  </span>}
-              </div>
+              <CardSortControls sort={cardsSort} mode={cardsSortMode} status={mechanicsStatus}
+                onSortChange={setCardsSort} onModeChange={setCardsSortMode}/>
             </div>
             {activeCard&&<CollectionCardDetails key={activeCard.id+"-"+selectedCardForm} card={activeCard} initialForm={selectedCardForm} cap={player.cap}
               mechanics={mechanics} mechanicsLoading={mechanicsStatus==="loading"}
