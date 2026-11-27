@@ -72,7 +72,7 @@ test("card inspector uses compact spacing without removing card information",()=
   const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
 
   // Keep every data section and the original fields visible in the component.
-  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
+  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/);
   assert.match(component,/buildUnifiedLevelTable/);
   assert.match(component,/ri-inspector-unified-section/);
   assert.match(component,/<h3>Card information<\/h3>/);
@@ -110,7 +110,7 @@ test("selected form uses one unified stat grid and official form icons",()=>{
   assert.ok(component.includes("function FormMarker"));
   assert.ok(component.includes('<CardFormIcon className={"ri-inspector-form-marker is-" + form} form={form}/>'));
   assert.ok(component.includes("ri-inspector-unified-section"));
-  assert.ok(component.includes("<UnifiedStatGrid entries={statEntries}/>"));
+  assert.ok(/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/.test(component));
   assert.ok(component.includes('option !== "base" && <CardFormIcon'));
   assert.ok(component.includes('className="ri-inspector-form-tab-icon"'));
   assert.ok(!component.includes("sections.map(section =>"));
@@ -210,4 +210,21 @@ test("Hero ability details render the card-specific in-game ability icon",()=>{
   assert.match(icon,/onError=\{\(\) => setFailed\(true\)\}/);
   assert.match(css,/\.ri-ability-icon/);
   assert.match(css,/\.ri-inspector-ability-heading/);
+});
+
+
+test("every ability stat field carries the same card-specific ability icon",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const icon=readFileSync(new URL("../src/components/CardAbilityIcon.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  assert.match(component,/const abilitySections = activeSections\.filter/);
+  assert.match(component,/Object\.keys\(section\.facts\)\.some\(label => \/\^ability\\b\/i\.test\(label\)\)/);
+  assert.match(component,/const isAbilityField = abilitySections\.includes\(entry\.section\)/);
+  assert.match(component,/<CardAbilityIcon cardName=\{cardName\} form=\{form\} abilityName=\{entry\.section\} size="small"\/>/);
+  assert.match(component,/<UnifiedStatGrid entries=\{statEntries\} cardName=\{card\.name\} form=\{form\} abilitySections=\{abilitySectionNames\}\/?>/);
+  assert.match(icon,/size\?: "normal" \| "small"/);
+  assert.match(icon,/size === "small" \? " is-small" : ""/);
+  assert.match(css,/\.ri-inspector-ability-field-label/);
+  assert.match(css,/\.ri-ability-icon\.is-small/);
 });
