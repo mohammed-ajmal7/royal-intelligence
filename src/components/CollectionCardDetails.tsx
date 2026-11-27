@@ -161,7 +161,6 @@ function UnifiedStatGrid({ entries, cardName, form, abilitySections }: {
             <div className="ri-inspector-range-equation" role="group"
               aria-label={"Range: " + rangeEquation.from + " + " + rangeEquation.change + " = " + rangeEquation.to}>
               <span className="ri-inspector-range-from">{rangeEquation.from}</span>
-              <span className="ri-inspector-range-operator" aria-hidden="true">+</span>
               <span className="ri-inspector-range-increase">+{rangeEquation.change}</span>
               <span className="ri-inspector-range-operator" aria-hidden="true">=</span>
               <strong className="ri-inspector-range-result">{rangeEquation.to}</strong>
