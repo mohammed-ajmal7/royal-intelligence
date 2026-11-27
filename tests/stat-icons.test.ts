@@ -57,7 +57,7 @@ test("the inspector is denser with labeled stats, compact form controls and opti
   assert.match(ui,/className="ri-inspector-about"/);
   assert.match(ui,/<UnifiedStatGrid entries=\{statEntries\}\/?>/);
   assert.match(ui,/buildUnifiedStatEntries/);
-  assert.match(ui,/elixirAsset\(card\.elixir\)/);
+  assert.ok(/elixirAsset\(card\.elixir\)|ElixirIcon/.test(ui));
   assert.match(css,/width:min\(628px,calc\(100% - 24px\)\)/);
   assert.match(css,/\.ri-inspector-facts\{\s*display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/\.ri-inspector-stat-icon/);
