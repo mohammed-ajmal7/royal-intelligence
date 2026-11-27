@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Hero coin</title>
+  <defs>
+    <linearGradient id="heroCoinRim" x1="10" y1="7" x2="53" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0A6"/>
+      <stop offset=".28" stop-color="#E9A92D"/>
+      <stop offset=".67" stop-color="#C77A16"/>
+      <stop offset="1" stop-color="#8F5118"/>
+    </linearGradient>
+    <linearGradient id="heroCoinFace" x1="20" y1="12" x2="42" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF58A"/>
+      <stop offset=".42" stop-color="#FFD83E"/>
+      <stop offset=".74" stop-color="#B9E94C"/>
+      <stop offset="1" stop-color="#64CC7E"/>
+    </linearGradient>
+    <linearGradient id="heroCoinShine" x1="17" y1="13" x2="47" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFBE0" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#FFFBE0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="heroCoinShadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+  </defs>
+  <path d="M31.9 3.3 59.1 30.1c1.2 1.2 1.2 2.8 0 4L34 60.8c-1.2 1.2-2.9 1.2-4.1 0L4.1 34.2c-1.2-1.2-1.2-2.8 0-4L27.8 3.3c1.1-1.2 2.9-1.2 4.1 0Z" fill="#6B4219" opacity=".28" filter="url(#heroCoinShadow)"/>
+  <path d="M31.9 2.6 59.1 29.4c1.2 1.2 1.2 2.8 0 4L34 60.1c-1.2 1.2-2.9 1.2-4.1 0L4.1 33.5c-1.2-1.2-1.2-2.8 0-4L27.8 2.6c1.1-1.2 2.9-1.2 4.1 0Z" fill="url(#heroCoinRim)" stroke="#9A5D1A" stroke-width="1.2"/>
+  <path d="M31.9 8.4 53.4 29.6c.9.9.9 2.1 0 3L33.9 53c-.9.9-2.1.9-3 0L10.4 32.3c-.9-.9-.9-2.1 0-3L29 8.4c.8-.9 2.1-.9 2.9 0Z" fill="url(#heroCoinFace)" stroke="#FFF0A0" stroke-width="1.3"/>
+  <path d="m31.9 10.5 18.7 18.4c.7.7.7 1.7 0 2.4L33.1 49.2c-.7.7-1.6.7-2.3 0L12.2 31.1c-.7-.7-.7-1.7 0-2.4l17.2-18.2c.7-.7 1.8-.7 2.5 0Z" fill="url(#heroCoinShine)" opacity=".5"/>
+  <path d="m17.1 29.1 13.7-14.4c.8-.8 2.1-.8 2.9 0" stroke="#FFFCE5" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>
+  <path d="m15.7 32.7 16.2 15.8" stroke="#66C879" stroke-width="1.2" stroke-linecap="round" opacity=".35"/>
+</svg>

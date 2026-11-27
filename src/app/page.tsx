@@ -1,6 +1,7 @@
 "use client";
 
 import "./overview-dashboard.css";
+import "./card-form-badges.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
@@ -19,6 +20,7 @@ import { readLocalHistory, withSnapshot, writeLocalHistory } from "../lib/localH
 import { ElixirIcon } from "../components/ElixirIcon";
 import { formatBattleDate, formatBattleMode } from "../lib/battlePresentation";
 import { CardFormIcon } from "../components/CardFormIcon";
+import { getCardFormBadges } from "../lib/cardFormBadges";
 
 type Tab = "Overview" | "Cards" | "Decks" | "Battles" | "Explore";
 const NAV: {name:Tab;Icon:typeof Trophy}[] = [
@@ -35,12 +37,30 @@ const asObject=(v:unknown):Record<string,unknown> =>
 const digits=(v:number|null|undefined)=>v==null?"—":Number.isInteger(v)?fmt(v):v.toFixed(1);
 type CardPreviewForm = "base" | "evolution" | "hero";
 
+function CardFormBadges({card}:{card:Card}){
+  const badges=getCardFormBadges(card);
+  if(!badges.length)return null;
+  return <span className="ri-card-form-badges" aria-label="Card forms">
+    {badges.map(({form,unlocked})=>
+      <span key={form}
+        className={"ri-card-form-badge is-"+form+" "+(unlocked?"is-unlocked":"is-locked")}
+        title={form==="evolution"?(unlocked?"Evolution unlocked":"Evolution locked"):(unlocked?"Hero unlocked":"Hero locked")}
+        aria-label={form==="evolution"?(unlocked?"Evolution unlocked":"Evolution locked"):(unlocked?"Hero unlocked":"Hero locked")}>
+        {form==="evolution"
+          ? <CardFormIcon form="evolution" className="ri-card-form-badge-icon" decorative/>
+          : <img className="ri-card-form-badge-coin" src="/game-icons/card-forms/hero-coin.svg" alt="" aria-hidden="true"/>}
+      </span>
+    )}
+  </span>;
+}
+
 function CardArt({card,size="normal",form="base"}:{card:Card;size?:"normal"|"small";form?:CardPreviewForm}){
   const image = form === "evolution" ? card.evolutionImage ?? card.image :
     form === "hero" ? card.heroImage ?? card.image : card.image;
   return <div className={"ri-art "+(size==="small"?"ri-art-small":"")}>
     {image?<img src={image} alt="" loading="lazy"/>:<Crown size={22}/>}
     {!card.tower&&<span className="ri-cost" aria-label={card.elixir==null?"Variable elixir cost":card.elixir+" elixir"}><ElixirIcon cost={card.elixir} size={28} decorative/></span>}
+    <CardFormBadges card={card}/>
   </div>;
 }
 
