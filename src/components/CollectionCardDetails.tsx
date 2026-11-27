@@ -135,8 +135,8 @@ function LevelMetricIcon({ label }: { label: string }) {
           <path d="m11.2 1.8-7 9h4.5l-.1 7.4 7.2-10h-4.6l0-6.4Z" fill="currentColor"/>
         ) : kind === "damage" ? (
           <>
-            <path d="m4 15.8 9.9-9.9 2 2L6 17.8H4v-2Z" fill="currentColor"/>
-            <path d="m12.7 4.1 2-2 3.2 3.2-2 2-3.2-3.2ZM3 17l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M10 1.2 12.1 5.3 16.5 3.8 15.8 8.5 19 10.4 15.3 13.1 16.8 17.5 12.2 16.8 10 20 7.7 16.1 3.2 17.2 4 12.6 1 10.1 4.8 7.6 3.4 3.2 8 4.1Z" fill="currentColor"/>
+            <path d="m10 5.4 1.2 2.5 2.8-.5-1.1 2.5 2 2-2.7.2-.8 2.6-1.8-2.1-2.4.9.6-2.6-2.2-1.4 2.7-.8-.3-2.6 2.3 1.3Z" fill="#fff" opacity=".92"/>
           </>
         ) : (
           <>
