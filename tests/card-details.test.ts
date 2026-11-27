@@ -4,6 +4,7 @@ import { projectMechanics, resolveMechanics } from "../src/lib/mechanics";
 import { comparisonDelta, detailStats } from "../src/lib/cardDetails";
 import { demo } from "../src/lib/demo";
 import { readFileSync } from "node:fs";
+import { heroAbilityIconUrl } from "../src/components/CardAbilityIcon";
 
 test("comparison preserves signed differences and reverses lower-is-better metrics", () => {
   assert.deepEqual(comparisonDelta(1000, 800, "higher"), {delta:200,tone:"better"});
@@ -189,4 +190,24 @@ test("Evolution and Hero collection cards render their form artwork and open the
   assert.match(details,/useState<Form>\(initialForm\)/);
   assert.match(details,/Boolean\(card\.evolutionImage\)/);
   assert.match(details,/Boolean\(card\.heroImage\)/);
+});
+
+
+test("Hero ability details render the card-specific in-game ability icon",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const icon=readFileSync(new URL("../src/components/CardAbilityIcon.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  assert.match(component,/import \{ CardAbilityIcon \} from "\.\/CardAbilityIcon"/);
+  assert.match(component,/<CardAbilityIcon cardName=\{card\.name\} form=\{form\} abilityName=\{section\.name\}\/?>/);
+  assert.match(component,/ri-inspector-ability-heading/);
+  assert.match(icon,/wizard: "Wizard"/);
+  assert.match(icon,/Ability-" \+ stem \+ "-Heroic\.png"/);
+  assert.match(icon,/https:\/\/clashroyale\.fandom\.com\/wiki\/Special:FilePath/);
+  assert.equal(heroAbilityIconUrl("Wizard"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Wizard-Heroic.png");
+  assert.equal(heroAbilityIconUrl("Knight"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Knight-Heroic.png");
+  assert.equal(heroAbilityIconUrl("Ice Golem"),"https://clashroyale.fandom.com/wiki/Special:FilePath/Ability-Ice-Golem-Heroic.png");
+  assert.match(icon,/onError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(css,/\.ri-ability-icon/);
+  assert.match(css,/\.ri-inspector-ability-heading/);
 });

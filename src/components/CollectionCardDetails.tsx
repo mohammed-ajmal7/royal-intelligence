@@ -8,6 +8,7 @@ import { getMechanicsRecord, MECHANICS_SOURCE, type MechanicsCatalog } from "../
 import { statIconPath, statValueWithUnit } from "../lib/statAssets";
 import { ElixirIcon } from "./ElixirIcon";
 import { CardFormIcon } from "./CardFormIcon";
+import { CardAbilityIcon } from "./CardAbilityIcon";
 import { buildUnifiedLevelTable, buildUnifiedStatEntries } from "../lib/cardFormStats";
 import "./collection-card-details.css";
 
@@ -459,7 +460,11 @@ export function CollectionCardDetails({ card, initialForm = "base", cap, mechani
           {abilityDescriptions.length > 0 && <details className="ri-inspector-about">
             <summary>Ability details</summary>
             {abilityDescriptions.map(section => <div key={section.name} className="ri-inspector-ability-description">
-              <strong>{section.name}</strong><p>{section.description}</p>
+              <strong className="ri-inspector-ability-heading">
+                <CardAbilityIcon cardName={card.name} form={form} abilityName={section.name}/>
+                <span>{section.name}</span>
+              </strong>
+              <p>{section.description}</p>
             </div>)}
           </details>}
         </section>
