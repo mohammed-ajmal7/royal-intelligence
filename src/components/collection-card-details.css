@@ -1010,6 +1010,39 @@
 .ri-inspector-form-marker.is-hero{
   box-shadow:0 0 0 1px rgba(237,182,88,.3);
 }
+.ri-inspector-range-equation{
+  display:inline-flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:4px;
+  font-size:12px;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+}
+.ri-inspector-range-from{
+  color:#344054;
+  font-weight:650;
+}
+.ri-inspector-range-operator{
+  color:#98a2b3;
+  font-weight:750;
+}
+.ri-inspector-range-increase{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 5px;
+  border:1px solid #e2d1fb;
+  border-radius:5px;
+  background:#f4edff;
+  color:#7738bd;
+  font-size:11px;
+  font-weight:800;
+}
+.ri-inspector-range-result{
+  color:#172033;
+  font-size:13px;
+  font-weight:850;
+}
 .ri-inspector-table th .ri-inspector-form-marker{
   width:13px;
   height:13px;
