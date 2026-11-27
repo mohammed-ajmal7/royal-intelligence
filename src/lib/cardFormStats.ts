@@ -242,7 +242,7 @@ export function buildUnifiedLevelTable(
     cells: columns.map(column => {
       const baseSection = findSection(baseSections, column.section);
       const formSection = findSection(formSections, column.section);
-      const item = comparison(column.section, column.sourceLabel, baseSection, formSection, form, level);
+      const item = comparison(column.section, column.sourceLabel, baseSection, formSection, form, level, null);
       return { value: item?.value ?? null, delta: item?.delta ?? null };
     }),
   })).filter(row => row.cells.some(cell => cell.value != null));
