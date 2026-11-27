@@ -190,3 +190,21 @@ test("Evolution and Hero collection cards render their form artwork and open the
   assert.match(details,/Boolean\(card\.evolutionImage\)/);
   assert.match(details,/Boolean\(card\.heroImage\)/);
 });
+
+
+test("Hero ability details render the card-specific in-game ability icon",()=>{
+  const component=readFileSync(new URL("../src/components/CollectionCardDetails.tsx",import.meta.url),"utf8");
+  const icon=readFileSync(new URL("../src/components/CardAbilityIcon.tsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../src/components/collection-card-details.css",import.meta.url),"utf8");
+
+  assert.match(component,/import \{ CardAbilityIcon \} from "\.\/CardAbilityIcon"/);
+  assert.match(component,/<CardAbilityIcon cardName=\{card\.name\} form=\{form\} abilityName=\{section\.name\}\/?>/);
+  assert.match(component,/ri-inspector-ability-heading/);
+  assert.match(icon,/wizard: "Wizard"/);
+  assert.match(icon,/Ability-" \+ stem \+ "-Heroic\.png"/);
+  assert.match(icon,/https:\/\/clashroyale\.fandom\.com\/wiki\/Special:FilePath/);
+  assert.match(icon,/Ability-Wizard-Heroic\.png/);
+  assert.match(icon,/onError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(css,/\.ri-ability-icon/);
+  assert.match(css,/\.ri-inspector-ability-heading/);
+});
