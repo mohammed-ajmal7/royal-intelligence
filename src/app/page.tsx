@@ -1,6 +1,7 @@
 "use client";
 
 import "./overview-dashboard.css";
+import "./card-form-badges.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Check, ChevronRight, Crown, ExternalLink, FlaskConical, History, Layers3, Medal, Percent, RefreshCw, Search, Swords, Trophy, X } from "lucide-react";
