@@ -117,12 +117,21 @@ function UnifiedStatGrid({ entries }: { entries: ReturnType<typeof buildUnifiedS
       {statIconPath(entry.sourceLabel)&&<img className="ri-inspector-stat-icon" src={statIconPath(entry.sourceLabel)!} alt="" loading="lazy" aria-hidden="true"/>}
       <div className="ri-inspector-fact-body">
         <dt>{entry.label}{entry.marker && <FormMarker form={entry.marker}/>}</dt>
-        <dd>{statValueWithUnit(entry.value,entry.sourceLabel)}
-          {entry.ownedProgression && (
-            <small className="ri-inspector-owned-equation" aria-label={"Owned level progression: " + entry.ownedProgression.equation}>
-              {entry.ownedProgression.equation}
-            </small>
-          )}
+        <dd className={entry.ownedProgression ? "has-owned-progression" : undefined}>
+          {entry.ownedProgression ? (
+            <div className="ri-inspector-owned-equation" role="group"
+              aria-label={"Level " + entry.ownedProgression.level + ": " + entry.ownedProgression.equation}>
+              <span className="ri-inspector-equation-from-level">LV {entry.ownedProgression.level}</span>
+              <span className="ri-inspector-equation-value">{entry.ownedProgression.fromValue}</span>
+              <span className={"ri-inspector-equation-operator " + (entry.ownedProgression.operator === "+" ? "is-increase" : "is-decrease")}>
+                {entry.ownedProgression.operator}
+              </span>
+              <span className="ri-inspector-equation-change">{entry.ownedProgression.changeValue}</span>
+              <span className="ri-inspector-equation-equals">=</span>
+              <strong className="ri-inspector-equation-result">{entry.ownedProgression.toValue}</strong>
+              <span className="ri-inspector-equation-target-level">LV {entry.ownedProgression.targetLevel}</span>
+            </div>
+          ) : <span className="ri-inspector-stat-value">{statValueWithUnit(entry.value,entry.sourceLabel)}</span>}
           {entry.delta && <small className="ri-inspector-stat-delta">{entry.delta} vs Base</small>}
         </dd>
       </div>
