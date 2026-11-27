@@ -4276,3 +4276,82 @@ pre, code { background: #061d3c; border: 1px solid #345f8a; color: #bdeaff; }
     font-size: 7px;
   }
 }
+
+/* Shared numbered elixir drop across legacy card collections and deck tools. */
+.elixir{
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  text-shadow:none;
+  color:inherit;
+}
+.elixir .ri-elixir-icon{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.deck-item-elixir{
+  display:grid;
+  place-items:center;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  text-shadow:none;
+}
+.deck-item-elixir .ri-elixir-icon{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.detail-portrait .ri-elixir-icon{
+  display:inline-block;
+  width:18px;
+  height:18px;
+  vertical-align:-4px;
+}
+.deck-play-card-cost,
+.self-lab-card-cost{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+.deck-play-card-cost .ri-elixir-icon,
+.self-lab-card-cost .ri-elixir-icon{
+  width:17px;
+  height:17px;
+}
+.self-lab-card-tile .ri-elixir-icon{
+  width:17px;
+  height:17px;
+}
+.live-meta-source-cards{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 9px;
+}
+.live-meta-source-card{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+.live-meta-source-card .ri-elixir-icon,
+.live-meta-cost-change .ri-elixir-icon{
+  width:16px;
+  height:16px;
+}
+.live-meta-cost-change b{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+@media(max-width:650px){
+  .deck-item-elixir .ri-elixir-icon{width:100%;height:100%}
+  .detail-portrait .ri-elixir-icon{width:17px;height:17px}
+}
+
