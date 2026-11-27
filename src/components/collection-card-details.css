@@ -1376,16 +1376,6 @@
   line-height:1.25;
   font-variant-numeric:tabular-nums;
 }
-.ri-inspector-equation-from-level,
-.ri-inspector-equation-target-level{
-  padding:2px 4px;
-  border-radius:4px;
-  background:#e3eaf5;
-  color:#5a6d8c;
-  font-size:8px;
-  font-weight:850;
-  letter-spacing:.035em;
-}
 .ri-inspector-equation-value{
   color:#253d61;
   font-size:12px;
@@ -1426,10 +1416,6 @@
   letter-spacing:-.25px;
   box-shadow:inset 0 1px #fff,0 1px 2px #0d8a5718;
 }
-.ri-inspector-equation-target-level{
-  background:#e0f3e9;
-  color:#18764d;
-}
 .ri-inspector-stat-value{
   display:inline-block;
   font-size:13px;
@@ -1440,5 +1426,5 @@
   .ri-inspector-owned-equation{gap:3px;padding:4px 5px}
   .ri-inspector-equation-value,.ri-inspector-equation-change{font-size:11px}
   .ri-inspector-equation-result{min-height:23px;padding:3px 6px;font-size:14px}
-  .ri-inspector-equation-from-level,.ri-inspector-equation-target-level{font-size:7px}
+  
 }
